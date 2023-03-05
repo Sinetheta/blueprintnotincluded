@@ -16,7 +16,8 @@
     "generateRepack": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpileOnly ./app/api/batch/generate-repack.ts",
     "fixHtmlLabels": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpileOnly ./app/api/batch/fix-html-labels.ts",
     "addInfoIcons": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpileOnly ./app/api/batch/add-info-icons.ts",
-    "testCanvas": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpileOnly ./app/api/batch/test-canvas.ts"
+    "testCanvas": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpileOnly ./app/api/batch/test-canvas.ts",
+    "postinstall": "cd frontend && npm install"
   },
   "author": "",
   "license": "ISC",
