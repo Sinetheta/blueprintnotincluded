@@ -13,8 +13,8 @@ export declare class SpriteInfo {
     constructor(spriteInfoId: string);
     cleanUp(): void;
     private static spriteInfosMap;
-    static readonly keys: string[];
-    static readonly spriteInfos: SpriteInfo[];
+    static get keys(): string[];
+    static get spriteInfos(): SpriteInfo[];
     static init(): void;
     static load(uiSprites: BSpriteInfo[]): void;
     static addSpriteInfoArray(sourceArray: BSpriteInfo[]): void;

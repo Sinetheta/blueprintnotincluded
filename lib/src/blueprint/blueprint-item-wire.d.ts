@@ -9,7 +9,8 @@ import { BuildableElement } from "../b-export/b-element";
 export declare class BlueprintItemWire extends BlueprintItem {
     static defaultConnections: number;
     private connections_;
-    connections: number;
+    get connections(): number;
+    set connections(value: number);
     pipeElement: BuildableElement;
     constructor(id: string);
     importOniBuilding(building: OniBuilding): void;

@@ -27,9 +27,9 @@ export declare class BlueprintItemInfo extends BlueprintItem {
     frontColor: number;
     static defaultIcon: InfoIcon;
     icon: InfoIcon;
-    readonly htmlFrontColor: string;
-    readonly htmlBackColor: string;
-    readonly htmlSvgPath: string;
+    get htmlFrontColor(): string;
+    get htmlBackColor(): string;
+    get htmlSvgPath(): string;
     constructor(id: string);
     prepareSpriteVisibility(camera: CameraService): void;
     updateTileables(blueprint: Blueprint): void;

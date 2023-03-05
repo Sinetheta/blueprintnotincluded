@@ -14,7 +14,7 @@ export declare class SpriteModifier {
     cleanUp(): void;
     hasTag(tag: SpriteTag): boolean;
     static AddSpriteModifier(bBuilding: BBuilding): void;
-    static readonly spriteModifiers: SpriteModifier[];
+    static get spriteModifiers(): SpriteModifier[];
     private static spriteModifiersMap;
     static init(): void;
     static load(spriteModifiers: BSpriteModifier[]): void;

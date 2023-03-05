@@ -5,7 +5,7 @@ import { MdbBuilding } from "../io/mdb/mdb-building";
 export declare class BlueprintItemElement extends BlueprintItem {
     static defaultMass: number;
     mass: number;
-    readonly header: string;
+    get header(): string;
     constructor(id: string);
     prepareSpriteVisibility(camera: CameraService): void;
     updateTileables(blueprint: Blueprint): void;

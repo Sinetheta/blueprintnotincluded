@@ -6,8 +6,8 @@ export declare class Vector2 {
     static compare(v1?: Vector2, v2?: Vector2): boolean;
     copyFrom(original: Vector2): void;
     clone(): Vector2;
-    readonly length: number;
-    readonly lengthSquared: number;
+    get length(): number;
+    get lengthSquared(): number;
     static clone(original: Vector2 | undefined): Vector2 | null;
     static cloneNullToZero(original: Vector2 | undefined): Vector2;
     static zero(): Vector2;
