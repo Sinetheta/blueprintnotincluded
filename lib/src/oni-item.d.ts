@@ -23,7 +23,7 @@ export declare class OniItem {
     isTile: boolean;
     isBridge: boolean;
     isElement: boolean;
-    get isInfo(): boolean;
+    readonly isInfo: boolean;
     size: Vector2;
     tileOffset: Vector2;
     utilityConnections: UtilityConnection[];
@@ -39,10 +39,9 @@ export declare class OniItem {
     spriteGroup: SpriteModifierGroup;
     tileableLeftRight: boolean;
     tileableTopBottom: boolean;
-    get isPartOfCircuit(): boolean;
+    readonly isPartOfCircuit: boolean;
     private permittedRotations_;
-    get permittedRotations(): PermittedRotations;
-    set permittedRotations(value: PermittedRotations);
+    permittedRotations: PermittedRotations;
     buildLocationRule: BuildLocationRule;
     zIndex: ZIndex;
     overlay: Overlay;
@@ -51,7 +50,7 @@ export declare class OniItem {
     getRealOverlay(overlay: Overlay): Overlay;
     cleanUp(): void;
     static oniItemsMap: Map<string, OniItem>;
-    static get oniItems(): OniItem[];
+    static readonly oniItems: OniItem[];
     static init(): void;
     static load(buildings: BBuilding[]): void;
     isOverlayPrimary(overlay: Overlay): boolean;

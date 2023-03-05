@@ -4,7 +4,7 @@ export declare class ImageSource {
     imageUrl: string;
     constructor(imageId: string, imageUrl: string);
     private static imageSourcesMapPixi;
-    static get keys(): string[];
+    static readonly keys: string[];
     private baseTexture;
     static init(): void;
     static AddImagePixi(imageId: string, imageUrl: string): void;
