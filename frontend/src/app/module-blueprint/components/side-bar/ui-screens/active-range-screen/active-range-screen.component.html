@@ -1,0 +1,12 @@
+<div>{{activeRangeSideScreen.title}} :</div>
+<div class="range-slider">
+  <p-slider 
+  [(ngModel)]="values"
+  [range]="true"
+  [min]="activeRangeSideScreen.minValue"
+  [max]="activeRangeSideScreen.maxValue"
+  (onChange)="onChange()">
+  </p-slider>
+</div>
+<div class="text-tooltip">{{activateTooltip}}</div>
+<div class="text-tooltip">{{deactivateTooltip}}</div>

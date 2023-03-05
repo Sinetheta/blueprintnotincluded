@@ -1,0 +1,27 @@
+<fieldset *ngIf="showSettings" legend="Settings" class="ui-fieldset ui-widget ui-widget-content ui-corner-all">
+  <legend class="ui-fieldset-legend ui-corner-all ui-state-default ui-unselectable-text">
+    <span class="ui-fieldset-legend-text" i18n>Settings</span>
+  </legend>
+  <div *ngFor="let uiScreen of uiScreens">
+      <app-single-slider-screen
+        *ngIf="uiScreen.id=='SingleSliderSideScreen'"
+        [blueprintItem]="blueprintItem"
+        [singleSliderSideScreen]="uiScreen">
+      </app-single-slider-screen>
+      <app-threshold-switch-screen
+        *ngIf="uiScreen.id=='ThresholdSwitchSideScreen'"
+        [blueprintItem]="blueprintItem"
+        [thresholdSwitchSideScreen]="uiScreen">
+      </app-threshold-switch-screen>
+      <app-active-range-screen
+        *ngIf="uiScreen.id=='ActiveRangeSideScreen'"
+        [blueprintItem]="blueprintItem"
+        [activeRangeSideScreen]="uiScreen">
+      </app-active-range-screen>
+      <app-bit-selection-screen
+        *ngIf="uiScreen.id=='LogicBitSelectorSideScreen'"
+        [blueprintItem]="blueprintItem"
+        [bitSelectorSideScreen]="uiScreen">
+      </app-bit-selection-screen>
+  </div>
+</fieldset>

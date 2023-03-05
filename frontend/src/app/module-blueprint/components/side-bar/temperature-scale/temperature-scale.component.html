@@ -1,0 +1,12 @@
+<div class="temperature-card ui-widget">
+  <div class="header">
+    <span class="temperature-card-header" i18n>Temperature scale</span>
+    <a class="ui-close-button" (click)="close()"><span class="pi pi-times"></span></a>
+  </div>
+  <div *ngFor="let dataItem of temperatureData; let index = index" class="temperature-line">
+    <div class="temperature-color" [style.background-color]="temperatureColor(index)"></div>
+    <div class="temperature-text">{{temperatureLabel(index)}}</div>
+    <div class="temperature-spacer"></div>
+    <div class="temperature-range">{{temperatureRange(index)}}</div>
+  </div>
+</div>

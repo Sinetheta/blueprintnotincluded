@@ -1,0 +1,22 @@
+<fieldset legend="Settings" class="ui-fieldset ui-widget ui-widget-content ui-corner-all">
+  <legend class="ui-fieldset-legend ui-corner-all ui-state-default ui-unselectable-text">
+    <span class="ui-fieldset-legend-text" i18n>Pipe Contents</span>
+  </legend>
+
+  <div class="ui-clickable-icon element-button" (click)="showElements($event)" style="margin-bottom: 5px;">
+    <div class="element-panel-content">
+      <app-element-icon [element]="currentElement" [width]="'40px'" [height]="'40px'"></app-element-icon>
+      <div class="left"></div>
+      <div>{{currentElement.name}}</div>
+      <div class="right"></div>
+    </div>
+  </div>
+
+  <p-overlayPanel #elementPanel [appendTo]="'body'">
+    <app-cell-element-picker
+      [forceTag]="forceTag"
+      (onSelectElement)="chooseElement($event)">
+    </app-cell-element-picker>
+  </p-overlayPanel>
+
+</fieldset>

@@ -1,0 +1,36 @@
+<form [formGroup]="saveBlueprintForm" (ngSubmit)="onSubmit()">
+  <p-dialog #saveDialog
+  i18n-header header='Save blueprint to the cloud'
+  [(visible)]="visible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [closable]="true"
+  [focusOnShow]="false"
+  [maximizable]="false"
+  [draggable]="false"
+  [resizable]="false"
+  >
+
+
+    <br>
+    <span class="p-float-label">
+      <input type="text" size="60" formControlName="name" pInputText>
+      <label for="inputtext" i18n>Blueprint name</label>
+    </span>
+    <div *ngIf="f.name.invalid && (f.name.dirty || f.name.touched)" class="error-red" >
+      <div *ngIf="f.name.errors.required" i18n>Blueprint name is required.</div>
+      <div *ngIf="f.name.errors.invalidChars" i18n>Invalid characters in blueprint name</div>
+      <div *ngIf="f.name.errors.tooLong" i18n>Blueprint name is too long</div>
+    </div>
+    <div *ngIf="overwrite" class="error-red" i18n>You already have a blueprint with this name. Overwrite?</div>
+    <div *ngIf="!authService.isLoggedIn()" class="error-red" i18n>You must be logged in to save a blueprint</div>
+
+    <p-footer>
+
+      <p-button *ngIf="!overwrite" type="submit" [label]="saveLabel" [icon]="icon" [disabled]="disabledSaveButton" ></p-button>
+      <button *ngIf="overwrite" type="button" pButton icon="pi pi-times" (click)="doNotOverwrite()" i18n-label label="No" class="ui-button-danger"></button>
+      <button *ngIf="overwrite" type="button" pButton [icon]="working ? 'pi pi-spin pi-spinner' : 'pi pi-check'" (click)="doOverwrite()" i18n-label label="Yes" [disabled]="disabledSaveButton"></button>
+    </p-footer>
+
+  </p-dialog>
+</form>

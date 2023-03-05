@@ -1,0 +1,29 @@
+.element-list {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: stretch;
+
+  margin-top: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.element-panel-content {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+
+  height: 35px;
+  padding: 5px;
+}
+
+.element-panel-text {
+  margin-left: 10px;
+}
+
+.second-checkbox {
+  margin-left: 10px;
+}

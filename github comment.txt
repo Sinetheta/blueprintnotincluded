@@ -1,0 +1,86 @@
+Hello, I tried to make this work with getContext('2d'). Here are the steps I have taken : 
+
+In package.json: removed the dependency to node-gles. Replaced the dependency from pixi.js to pixi.js-legacy
+In tests/index.json : 
+replaced the lines :
+```
+const app = new PIXI.Application({ preserveDrawingBuffer: true });
+console.log({ image, context: app.view.getContext('webgl2') });
+```
+with the lines : 
+```
+const app = new PIXI.Application({ forceCanvas: true, preserveDrawingBuffer: true });
+console.log({ image, context: app.view.getContext('2d') });
+```
+
+Added the following code before app.render(): 
+```
+let graphics = new PIXI.Graphics();
+graphics.beginFill(0x007AD9);
+graphics.drawRect(100, 100, 600, 400);
+graphics.endFill();
+
+app.stage.addChild(graphics);
+```
+
+Here is the output from yarn test :
+```
+yarn run v1.12.1
+$ node tests
+pixi-shim ❤️ DOM
+pixi-shim ❤️ Window 1024x768
+pixi-shim ❤️ Canvas + WebGL
+pixi-shim ❤️ polyfill performance.now
+pixi-shim ❤️ polyfill requestAnimationFrame
+pixi-shim ❤️ PIXI.js
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+pixi-shim ❤️ initialized in: 684.697ms
+{ getContext: { type: '2d', contextOptions: { alpha: false } } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+PixiJS 5.3.2 - Canvas - http://www.pixijs.com/
+{ 'PIXI.Application': true }
+{ canvas: [Canvas 800x600] }
+{ getContext: { type: '2d', contextOptions: {} } }
+{
+  image: HTMLImageElement {
+    [Symbol(SameObject caches)]: [Object: null prototype] { style: [CSSStyleDeclaration] }
+  },
+  context: CanvasRenderingContext2D { canvas: [Canvas 800x600] }
+}
+{ 'sprite dimensions': { width: 1, height: 1 } }
+{ 'PIXI.Sprite.from': true }
+{ getContext: { type: '2d', contextOptions: {} } }
+{ getContext: { type: '2d', contextOptions: {} } }
+{
+  base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAJYCAIAAAAVFBUnAAAABmJLR0QA/wD/AP+gvaeTAAAJCElEQVR4nO3WSRGAABDAMMAMHhGAR9xgojPLkSjos8sCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM+2Tge8ynFNFwDAnHOfLniNbToAAOBrDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQDEDBYAQMxgAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwM/c/yIFIF/iGlgAAAAASUVORK5CYII=',
+  toDataURL: true
+}
+{ FPS: '639.68' }
+Done in 1.85s.
+```
+
+The results : the bunny texture is not showing at all in the dataurl generated. This seems to be because there is a problem with adding the image to the DOM? (the console.log for the image returns [Object: null prototype]). The sprite dimensions logged are also wrong ({ 'sprite dimensions': { width: 1, height: 1 } }).
+
+However, the simple graphics tests I added (just adding a colored square in the center of the image) seems to be working.
+
+I also tested generating the imageurl "internally" with pixi instead by replacing the line :
+`const base64 = app.view.toDataURL("image/png", 1);`
+
+With the follwoing code : 
+```
+let brt = new PIXI.BaseRenderTexture({width: 800, height: 600 })
+let rt = new PIXI.RenderTexture(brt)
+app.renderer.render(app.stage, rt, false)
+const base64 = app.renderer.plugins.extract.canvas(rt).toDataURL()
+```
+
+Results are the same.
+
+I would really like to be able to use pixi on my backend, and use textures as part of that (I can explain my use case if needed). Pixishim, is very useful for providing the polyfills, for window, image and canvas, if anybody has ideas to make this work with textures that would be awesome ! Thank you 

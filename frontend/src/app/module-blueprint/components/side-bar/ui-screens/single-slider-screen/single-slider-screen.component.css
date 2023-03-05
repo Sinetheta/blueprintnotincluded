@@ -1,0 +1,9 @@
+.text-title {
+  margin-bottom: 10px;
+}
+
+.text-tooltip {
+  margin-top: 10px;
+  text-align: justify;
+  font-size: smaller;
+}

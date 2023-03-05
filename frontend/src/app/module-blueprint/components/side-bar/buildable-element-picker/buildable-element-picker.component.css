@@ -1,0 +1,25 @@
+.element-panel-content {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+}
+
+.element-button {
+  width: 100%;
+  height: 50px;
+  padding: 5px;
+}
+
+.left {
+  flex: 1;
+}
+
+.right {
+  flex: 2;
+}
+
+.error-red {
+	color: darkred;
+  font-size: smaller;
+  text-align: justify;
+}

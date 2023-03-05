@@ -1,0 +1,26 @@
+.temperature-panel-content {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px
+}
+
+.temperature-slider {
+  flex: 1;
+}
+
+.temperature-scale {
+  width: 100%;
+}
+
+.temperature-icon {
+  height: 40px;
+  margin-right: 20px;
+}
+
+.error-red {
+  color: darkred;
+  font-size: smaller;
+  text-align: justify;
+}

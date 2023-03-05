@@ -1,0 +1,8 @@
+.menu-line {
+  display: flex;
+  flex-flow: row;
+}
+
+.like-bloc {
+  margin-right: 1em;
+}

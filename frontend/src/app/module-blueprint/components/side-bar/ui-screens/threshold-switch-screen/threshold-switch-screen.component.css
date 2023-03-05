@@ -1,0 +1,18 @@
+.button-container {
+  display: flex;
+  flex-flow: row;
+  width: 100%;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+.button-item {
+  flex: 1;
+  width: 100%;
+}
+
+.text-tooltip {
+  margin-top: 10px;
+  text-align: justify;
+  font-size: smaller;
+}

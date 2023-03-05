@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" version="1.1" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ <circle id="back" cx="64" cy="64" r="59" fill="#007AD9"/>
+ <circle id="front" cx="64" cy="64" r="59" fill="none" stroke="#000" stroke-width="10"/>
+ <path id="icon" d="m35.8 99.94c0 3.48 1.68 5.52 5.28 5.52h45.96c3.36 0 5.16-2.04 5.16-5.52 0-3.36-1.68-5.4-5.16-5.4h-17.4v-40.8c0-3.36-1.68-5.4-5.16-5.4h-19.92c-3.6 0-5.16 2.16-5.16 5.4 0 3.48 1.56 5.52 5.16 5.52h13.32v35.28h-16.8c-3.6 0-5.28 2.04-5.28 5.4zm26.88-77.4c-3.84 0-7.2 0.84-7.2 5.28v7.68c0 4.68 3.48 5.28 7.2 5.28s6.96-0.84 6.96-5.28v-7.68c0-4.44-3.24-5.28-6.96-5.28z"/>
+</svg>

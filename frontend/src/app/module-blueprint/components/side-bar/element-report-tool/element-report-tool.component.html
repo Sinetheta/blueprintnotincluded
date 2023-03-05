@@ -1,0 +1,36 @@
+<div class="element-card ui-widget">
+  <div class="header">
+    <span class="element-card-header" i18n>Element report</span>
+    <a class="ui-close-button" (click)="close()"><span class="pi pi-times"></span></a>
+  </div>
+  <div class="scrollable">
+    <div class="element-card-header" i18n>Solids :</div>
+    <div *ngFor="let dataItem of (data | filterElementSolid)" class="scroller-line">
+      <div class="element-image"><app-element-icon [element]="dataItem.buildableElement" [width]="'30px'" [height]="'30px'"></app-element-icon></div>
+      <div class="element-color" [style.background-color]="dataItem.colorString"></div>
+      <div class="element-text">{{dataItem.buildableElement.name}}</div>
+      <div class="element-spacer"></div>
+      <div class="element-mass">{{dataItem.totalMass | addMassUnit}}</div>
+      <button pButton type="button" class="ui-button element-button" icon="pi pi-search-plus" (click)="selectEveryElement(dataItem.buildableElement)" pTooltip="Select every building made of {{dataItem.buildableElement.name}}" tooltipPosition="left"></button>
+    </div>
+    <!--TODO this is super ugly, the line should be its own component-->
+    <div class="element-card-header" i18n>Liquids :</div>
+    <div *ngFor="let dataItem of (data | filterElementLiquid)" class="scroller-line">
+      <div class="element-image"><app-element-icon [element]="dataItem.buildableElement" [width]="'30px'" [height]="'30px'"></app-element-icon></div>
+      <div class="element-color" [style.background-color]="dataItem.colorString"></div>
+      <div class="element-text">{{dataItem.buildableElement.name}}</div>
+      <div class="element-spacer"></div>
+      <div class="element-mass">{{dataItem.totalMass | addMassUnit}}</div>
+      <button pButton type="button" class="ui-button element-button" icon="pi pi-search-plus" (click)="selectEveryElement(dataItem.buildableElement)" pTooltip="Select every building made of {{dataItem.buildableElement.name}}" tooltipPosition="left"></button>
+    </div>
+    <div class="element-card-header" i18n>Gases :</div>
+    <div *ngFor="let dataItem of (data | filterElementGas)" class="scroller-line">
+      <div class="element-image"><app-element-icon [element]="dataItem.buildableElement" [width]="'30px'" [height]="'30px'"></app-element-icon></div>
+      <div class="element-color" [style.background-color]="dataItem.colorString"></div>
+      <div class="element-text">{{dataItem.buildableElement.name}}</div>
+      <div class="element-spacer"></div>
+      <div class="element-mass">{{dataItem.totalMass | addMassUnit}}</div>
+      <button pButton type="button" class="ui-button element-button" icon="pi pi-search-plus" (click)="selectEveryElement(dataItem.buildableElement)" pTooltip="Select every building made of {{dataItem.buildableElement.name}}" tooltipPosition="left"></button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,21 @@
+.grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: min-content 1fr;
+  grid-template-areas:
+    "one three"
+}
+
+.one {
+  grid-area: one;
+  padding-right: 20px;
+}
+
+.three {
+  grid-area: three;
+}
+
+.error-red {
+	color: darkred;
+  margin-left: 0.5em;
+}

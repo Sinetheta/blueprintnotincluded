@@ -1,0 +1,66 @@
+.element-card {
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 3px; 
+  padding: 10px;
+  width: 100%;
+  display: flex;
+  flex-flow: column;
+
+  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  -moz-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12); 
+}
+
+.element-card-header {
+  font-weight: bold;
+  font-size: larger;
+  margin-top: 10px;
+}
+
+.scroller-line {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  justify-content: space-between;
+  height:40px;
+  width: 100%;
+}
+
+.scrollable {
+  overflow-y: auto;
+  max-height: 60vh;
+  width: 100%;
+}
+
+.element-image {
+  margin: 5px;
+}
+
+.element-color {
+  margin: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border-style: solid;
+  border-width: thin;
+}
+
+.element-text {
+  margin-right: auto;
+}
+
+.element-spacer {
+  width: 10px;
+  flex: 1
+}
+
+.element-mass {
+  margin-left: auto;
+  margin-right: 5px;
+}
+
+.element-button {
+  margin-left: auto;
+  margin-right: 5px;
+}

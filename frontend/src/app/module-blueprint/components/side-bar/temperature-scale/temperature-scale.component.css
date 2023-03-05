@@ -1,0 +1,51 @@
+.temperature-card {
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 3px; 
+  padding: 10px;
+  width: 100%;
+  display: flex;
+  flex-flow: column;
+
+  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  -moz-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12); 
+}
+
+.temperature-card-header {
+  font-weight: bold;
+  font-size: larger;
+}
+
+.temperature-line {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  justify-content: space-between;
+  height:40px;
+  width: 100%;
+}
+
+.temperature-color {
+  margin: 5px;
+  margin-right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  border-style: solid;
+  border-width: thin;
+}
+
+.temperature-text {
+  margin-right: auto;
+}
+
+.temperature-spacer {
+  width: 10px;
+  flex: 1
+}
+
+.temperature-range {
+  margin-left: auto;
+  margin-right: 5px;
+}

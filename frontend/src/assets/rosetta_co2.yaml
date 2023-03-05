@@ -1,0 +1,50 @@
+name: rosetta_launch
+info:
+  size:
+    X: 58
+    Y: 17
+  area: 1289
+cells:
+- element: Vacuum
+  location_x: -28
+  location_y: -8
+buildings:
+- id: CO2Scrubber
+  location_x: -23
+  location_y: 1
+  element: Cuprite
+  temperature: 293.149994
+  storage: []
+  rottable: {}
+  amounts: []
+  other_values: []
+- id: Electrolyzer
+  location_x: -18
+  location_y: 1
+  element: Cuprite
+  temperature: 293.149994
+  storage: []
+  rottable: {}
+  amounts: []
+  other_values: []
+- id: Gantry
+  location_x: -10
+  location_y: 1
+  element: Cuprite
+  temperature: 293.149994
+  storage: []
+  rottable: {}
+  amounts: []
+  other_values: []
+- id: MeshTile
+  location_x: -10
+  location_y: 5
+  element: Cuprite
+  temperature: 293.149994
+  storage: []
+  rottable: {}
+  amounts: []
+  other_values: []
+pickupables: []
+elementalOres: []
+otherEntities: []

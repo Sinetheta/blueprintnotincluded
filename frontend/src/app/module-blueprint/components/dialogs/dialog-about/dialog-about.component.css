@@ -1,0 +1,48 @@
+.about-card {
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 3px; 
+  padding: 10px;
+  height: 100%;
+  display: flex;
+  flex-flow: column;
+
+  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  -moz-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12); 
+}
+
+.header {
+  display: flex;
+  width: 100%
+}
+
+.block-title {
+  text-decoration: underline;
+}
+
+.ui-close-button {
+  margin-left: auto;
+}
+
+.scrollable {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.logo {
+  float: left;
+}
+
+.image-float-right {
+  float: right;
+  margin-left: 20px
+}
+
+h1 {
+  display: block;
+}
+
+.content {
+  text-align: justify
+}

@@ -1,0 +1,39 @@
+.rightHandCells {
+  padding-left: 10px;
+  width: 100%;
+}
+
+.scrollable {
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.building-panel-content {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+}
+
+.element-button-width {
+  width: 100%;
+  height: 50px;
+  padding: 5px;
+}
+
+.element-button {
+  height: 50px;
+  padding: 5px;
+}
+
+.left {
+  flex: 1;
+}
+
+.right {
+  flex: 2;
+}
+
+.error-red {
+  color: darkred;
+  text-align: justify;
+}

@@ -1,0 +1,19 @@
+.button-line {
+  margin-bottom: 10px;
+}
+
+.scrollable {
+  overflow-y: scroll;
+  flex-grow: 0;
+}
+
+.test {
+  background-color: aqua;
+  flex-grow: 0;
+  flex-shrink: 1;
+  overflow-y: auto;
+}
+
+.buttonspace {
+  margin-left: 5px
+}

@@ -1,0 +1,43 @@
+.error-red {
+	color: darkred;
+  margin-left: 0.5em;
+}
+
+.scrollable {
+  overflow-y: auto;
+  max-height: 70vh;
+  margin-top: 10px;
+}
+
+.blueprint-line {
+  display: flex;
+  width: 600px;
+  margin-bottom: 10px;
+  padding: 10px;
+
+  border-radius: 3px;
+  border: 1px solid #c8c8c8;
+}
+
+.title-line {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.like-widget {
+  margin-left: auto;
+}
+
+.thumbnail {
+  margin-right: 10px;
+}
+
+.clickable-image {
+  width: 200px;
+  cursor: pointer;
+}
+
+.search {
+  margin-top: 10px;
+}

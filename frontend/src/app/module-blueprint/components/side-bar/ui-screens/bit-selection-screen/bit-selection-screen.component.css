@@ -1,0 +1,11 @@
+.bitButton {
+  width: 100%;
+  margin-top: 5px;
+}
+
+.bitButton:focus {
+  box-shadow: none;
+}
+.bitButton:enabled:focus {
+  box-shadow: none;
+}
