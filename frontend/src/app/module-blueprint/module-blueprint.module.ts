@@ -11,34 +11,34 @@ import { MouseWheelDirective } from 'src/app/module-blueprint/directives/mousewh
 import { DragAndDropDirective } from 'src/app/module-blueprint/directives/draganddrop.directive';
 
 
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {ButtonModule} from 'primeng/button';
-import {CardModule} from 'primeng/card';
-import {ScrollPanelModule} from 'primeng/scrollpanel';
-import {OverlayPanelModule} from 'primeng/overlaypanel';
-import {MenubarModule} from 'primeng/menubar';
-import {TabMenuModule} from 'primeng/tabmenu';
-import {SlideMenuModule} from 'primeng/slidemenu';
-import {DialogModule} from 'primeng/dialog';
-import {DropdownModule} from 'primeng/dropdown';
-import {AccordionModule} from 'primeng/accordion';
-import {SliderModule} from 'primeng/slider';
-import {ToastModule} from 'primeng/toast';
-import {InputTextModule} from 'primeng/inputtext';
-import {ColorPickerModule} from 'primeng/colorpicker';
-import {PasswordModule} from 'primeng/password';
-import {TooltipModule} from 'primeng/tooltip';
-import {MessageService} from 'primeng/api';
-import {PanelModule} from 'primeng/panel';
-import {CheckboxModule} from 'primeng/checkbox';
-import {InputSwitchModule} from 'primeng/inputswitch';
-import {FieldsetModule} from 'primeng/fieldset';
-import {ListboxModule} from 'primeng/listbox';
-import {VirtualScrollerModule} from 'primeng/virtualscroller';
-import {ToggleButtonModule} from 'primeng/togglebutton';
-import {SidebarModule} from 'primeng/sidebar';
-import {RadioButtonModule} from 'primeng/radiobutton';
-import {InputTextareaModule} from 'primeng/inputtextarea';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { MenubarModule } from 'primeng/menubar';
+import { TabMenuModule } from 'primeng/tabmenu';
+import { SlideMenuModule } from 'primeng/slidemenu';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { AccordionModule } from 'primeng/accordion';
+import { SliderModule } from 'primeng/slider';
+import { ToastModule } from 'primeng/toast';
+import { InputTextModule } from 'primeng/inputtext';
+import { ColorPickerModule } from 'primeng/colorpicker';
+import { PasswordModule } from 'primeng/password';
+import { TooltipModule } from 'primeng/tooltip';
+import { MessageService } from 'primeng/api';
+import { PanelModule } from 'primeng/panel';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { FieldsetModule } from 'primeng/fieldset';
+import { ListboxModule } from 'primeng/listbox';
+import { VirtualScrollerModule } from 'primeng/virtualscroller';
+import { ToggleButtonModule } from 'primeng/togglebutton';
+import { SidebarModule } from 'primeng/sidebar';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 import { UsernameValidationDirective } from './directives/username-validation.directive';
 import { ComponentSideSelectionToolComponent } from './components/side-bar/selection-tool/selection-tool.component';
 import { KeyboardDirective } from './directives/keyboard.directive';
@@ -83,16 +83,16 @@ import { PipeContentComponent } from './components/side-bar/pipe-content/pipe-co
 
 @NgModule({
   imports: [
-    CommonModule, 
+    CommonModule,
     HttpClientModule,
     FormsModule, ReactiveFormsModule,
-    InputTextareaModule, PasswordModule, ColorPickerModule, InputTextModule, SliderModule, ButtonModule, CardModule, ScrollPanelModule, OverlayPanelModule, MenubarModule, TabMenuModule, SlideMenuModule, DialogModule, DropdownModule, AccordionModule, ToastModule, TooltipModule, PanelModule, InputSwitchModule, CheckboxModule, FieldsetModule, ListboxModule, VirtualScrollerModule, ToggleButtonModule, SidebarModule, RadioButtonModule, 
+    InputTextareaModule, PasswordModule, ColorPickerModule, InputTextModule, SliderModule, ButtonModule, CardModule, ScrollPanelModule, OverlayPanelModule, MenubarModule, TabMenuModule, SlideMenuModule, DialogModule, DropdownModule, AccordionModule, ToastModule, TooltipModule, PanelModule, InputSwitchModule, CheckboxModule, FieldsetModule, ListboxModule, VirtualScrollerModule, ToggleButtonModule, SidebarModule, RadioButtonModule,
     RecaptchaV3Module,
     BrowserAnimationsModule
   ],
   declarations: [UsernameValidationDirective, BlueprintNameValidationDirective, ComponentCanvasComponent, MouseWheelDirective, DragAndDropDirective, KeyboardDirective, ComponentMenuComponent, ComponentBlueprintParentComponent, ComponentSaveDialogComponent, ComponentSideBuildToolComponent, ComponentSideSelectionToolComponent, ComponentLoginDialogComponent, RegisterFormComponent, LoginFormComponent, DialogShareUrlComponent, ItemCollectionInfoComponent, DialogBrowseComponent, DialogExportImagesComponent, LikeWidgetComponent, BuildableElementPickerComponent, ElementReportToolComponent, UiScreenContainerComponent, SingleSliderScreenComponent, ThresholdSwhitchScreenComponent, ActiveRangeScreenComponent, DialogAboutComponent, TemperaturePickerComponent, TemperatureScaleComponent, ElementIconComponent, CellElementPickerComponent, FilterElementSolidPipe, FilterElementLiquidPipe, FilterElementGasPipe, AddMassUnitPipe, BitSelectionScreenComponent, InfoInputComponent, InfoInputIconComponent, PipeContentComponent],
   providers: [CheckDuplicateService, AuthenticationService, BlueprintService, ToolService, SelectTool, BuildTool, ElementReport, DatePipe,
-    { provide: RECAPTCHA_V3_SITE_KEY, useValue: '6LdS0b8UAAAAAGb8P_L33ypsdiS41Nu8q3CwRg_M' }
+    { provide: RECAPTCHA_V3_SITE_KEY, useValue: '6Leizc0kAAAAAIZQRmbXVXZ2HvfS_cY_LrkOk8x6' }
   ],
   exports: [ComponentBlueprintParentComponent]
 })
