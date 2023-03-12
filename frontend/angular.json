@@ -19,7 +19,7 @@
       },
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@ngx-env/builder:browser",
           "options": {
             "outputPath": "dist/blueprintnotincluded",
             "index": "src/index.html",
@@ -77,21 +77,27 @@
               "optimization": false
             },
             "zh-Hans": {
-              "localize": ["zh-Hans"],
+              "localize": [
+                "zh-Hans"
+              ],
               "optimization": false
             },
             "ru": {
-              "localize": ["ru"],
+              "localize": [
+                "ru"
+              ],
               "optimization": false
             },
             "ko": {
-              "localize": ["ko"],
+              "localize": [
+                "ko"
+              ],
               "optimization": false
             }
           }
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@ngx-env/builder:dev-server",
           "options": {
             "browserTarget": "blueprintnotincluded:build",
             "proxyConfig": "proxy.conf.json"
@@ -112,13 +118,13 @@
           }
         },
         "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "builder": "@ngx-env/builder:extract-i18n",
           "options": {
             "browserTarget": "blueprintnotincluded:build"
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+          "builder": "@ngx-env/builder:karma",
           "options": {
             "main": "src/test.ts",
             "polyfills": "src/polyfills.ts",

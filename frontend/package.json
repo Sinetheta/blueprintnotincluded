@@ -47,6 +47,7 @@
     "@angular/cli": "^13.1.1",
     "@angular/compiler-cli": "^13.1.1",
     "@angular/language-service": "^13.1.1",
+    "@ngx-env/builder": "^15.1.0",
     "@types/gettext-parser": "^4.0.1",
     "@types/jasmine": "^3.10.2",
     "@types/jasminewd2": "~2.0.3",

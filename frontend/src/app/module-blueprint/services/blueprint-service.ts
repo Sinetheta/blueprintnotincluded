@@ -7,10 +7,8 @@ import { Blueprint, IObsBlueprintChange, BlueprintItem, Overlay, Display, BniBlu
 import * as yaml from 'node_modules/js-yaml/lib/js-yaml';
 
 @Injectable({ providedIn: 'root' })
-export class BlueprintService implements IObsBlueprintChange
-{
-  //static baseUrl: string = 'blueprintnotincluded.com/';
-  static baseUrl: string = 'https://blueprintnotincluded.com/';
+export class BlueprintService implements IObsBlueprintChange {
+  static baseUrl: string = process.env.NG_APP_HOST;
 
   id: string;
   name: string;
@@ -53,8 +51,7 @@ export class BlueprintService implements IObsBlueprintChange
   }
 
   openBlueprintFromUpload(fileType: BlueprintFileType, fileList: FileList) {
-    if (fileList.length > 0)
-    {
+    if (fileList.length > 0) {
       if (fileType == BlueprintFileType.YAML) this.openYamlBlueprint(fileList[0]);
       else if (fileType == BlueprintFileType.JSON) this.openJsonBlueprint(fileList[0]);
       else if (fileType == BlueprintFileType.BSON) this.openBsonBlueprint(fileList[0]);
@@ -85,8 +82,7 @@ export class BlueprintService implements IObsBlueprintChange
     reader.readAsText(file);
   }
 
-  private loadJsonBlueprint(template: string)
-  {
+  private loadJsonBlueprint(template: string) {
     let templateJson: BniBlueprint = JSON.parse(template);
 
     let newBlueprint = new Blueprint();
@@ -102,16 +98,14 @@ export class BlueprintService implements IObsBlueprintChange
     reader.readAsArrayBuffer(file);
   }
 
-  private loadBsonBlueprint(template: ArrayBuffer)
-  {
+  private loadBsonBlueprint(template: ArrayBuffer) {
     let newBlueprint = new Blueprint();
     newBlueprint.importFromBinary(template);
 
     this.observersBlueprintChanged.map((observer) => { observer.blueprintChanged(newBlueprint); })
   }
 
-  public loadUrlBlueprint(url: string)
-  {
+  public loadUrlBlueprint(url: string) {
     this.http.get(url).subscribe(value => {
       console.log(value);
     });
@@ -171,8 +165,8 @@ export class BlueprintService implements IObsBlueprintChange
     this.blueprintChanged();
   }
 
-  itemDestroyed() {}
-  itemAdded(blueprintItem: BlueprintItem) {}
+  itemDestroyed() { }
+  itemAdded(blueprintItem: BlueprintItem) { }
   blueprintChanged() {
 
     // We don't want to add a state if the changes come from the undo / redo action
@@ -204,8 +198,8 @@ export class BlueprintService implements IObsBlueprintChange
     var hash = 0, i, chr;
     if (s.length === 0) return hash;
     for (i = 0; i < s.length; i++) {
-      chr   = s.charCodeAt(i);
-      hash  = ((hash << 5) - hash) + chr;
+      chr = s.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
       hash |= 0; // Convert to 32bit integer
     }
     return hash;
@@ -219,20 +213,17 @@ export class BlueprintService implements IObsBlueprintChange
     });
   }
 
-  handleGetBlueprint(blueprint: Blueprint)
-  {
+  handleGetBlueprint(blueprint: Blueprint) {
     this.observersBlueprintChanged.map((observer) => { observer.blueprintChanged(blueprint); });
     this.resetUndoStates();
   }
 
-  handleGetBlueprintError(error: any)
-  {
+  handleGetBlueprintError(error: any) {
     // TODO toast here
     console.log(error)
   }
 
-  getBlueprint(id: string)
-  {
+  getBlueprint(id: string) {
     const request = this.http.get(`/api/getblueprint/${id}`).pipe(
       map((response: BlueprintResponse) => {
         if (response.data) {
@@ -252,22 +243,22 @@ export class BlueprintService implements IObsBlueprintChange
   }
 
   getBlueprints(olderThan: Date, filterUserId: string, filterName: string, getDuplicates: boolean) {
-    let parameterOlderThan = 'olderthan='+olderThan.getTime().toString();
+    let parameterOlderThan = 'olderthan=' + olderThan.getTime().toString();
 
     let parameterFilterUserId = '';
-    if (filterUserId != null) parameterFilterUserId = '&filterUserId='+filterUserId;
+    if (filterUserId != null) parameterFilterUserId = '&filterUserId=' + filterUserId;
 
     let parameterFilterName = '';
-    if (filterName != null) parameterFilterName = '&filterName='+filterName;
+    if (filterName != null) parameterFilterName = '&filterName=' + filterName;
 
     let parameterGetDuplicates = '';
-    if (getDuplicates) parameterGetDuplicates = '&getDuplicates='+getDuplicates;
+    if (getDuplicates) parameterGetDuplicates = '&getDuplicates=' + getDuplicates;
 
-    let parameters = parameterOlderThan+parameterFilterUserId+parameterGetDuplicates+parameterFilterName;
+    let parameters = parameterOlderThan + parameterFilterUserId + parameterGetDuplicates + parameterFilterName;
 
     let request = this.authService.isLoggedIn() ?
-      this.http.get('/api/getblueprintsSecure?'+parameters, { headers: { Authorization: `Bearer ${this.authService.getToken()}` }}) :
-      this.http.get('/api/getblueprints?'+parameters) ;
+      this.http.get('/api/getblueprintsSecure?' + parameters, { headers: { Authorization: `Bearer ${this.authService.getToken()}` } }) :
+      this.http.get('/api/getblueprints?' + parameters);
 
     request.pipe(
       map((response: any) => {
@@ -281,9 +272,9 @@ export class BlueprintService implements IObsBlueprintChange
 
   deleteBlueprint(id: string) {
 
-    let body: BlueprintDelete = {blueprintId:id};
+    let body: BlueprintDelete = { blueprintId: id };
 
-    const request = this.http.post('/api/deleteblueprint', body, { headers: { Authorization: `Bearer ${this.authService.getToken()}` }}).pipe(
+    const request = this.http.post('/api/deleteblueprint', body, { headers: { Authorization: `Bearer ${this.authService.getToken()}` } }).pipe(
       map((response: any) => {
         if (response.id) { this.id = response.id; }
         return response;
@@ -293,8 +284,7 @@ export class BlueprintService implements IObsBlueprintChange
     return request;
   }
 
-  saveBlueprint(overwrite: boolean)
-  {
+  saveBlueprint(overwrite: boolean) {
     let saveBlueprint = this.blueprint.toMdbBlueprint();
 
     let body = new SaveBlueprintMessage();
@@ -302,7 +292,7 @@ export class BlueprintService implements IObsBlueprintChange
     body.name = this.name;
     body.blueprint = saveBlueprint;
     body.thumbnail = this.thumbnail;
-    const request = this.http.post('/api/uploadblueprint', body, { headers: { Authorization: `Bearer ${this.authService.getToken()}` }}).pipe(
+    const request = this.http.post('/api/uploadblueprint', body, { headers: { Authorization: `Bearer ${this.authService.getToken()}` } }).pipe(
       map((response: any) => {
         if (response.id) { this.id = response.id; }
         return response;
@@ -322,12 +312,11 @@ export class BlueprintService implements IObsBlueprintChange
     }
 
     // We don't care about the response
-    this.http.post('/api/likeblueprint', body, { headers: { Authorization: `Bearer ${this.authService.getToken()}` }}).subscribe();
+    this.http.post('/api/likeblueprint', body, { headers: { Authorization: `Bearer ${this.authService.getToken()}` } }).subscribe();
   }
 }
 
-export class SaveBlueprintMessage
-{
+export class SaveBlueprintMessage {
   overwrite: boolean;
   name: string;
   tags?: string[];
