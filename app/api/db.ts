@@ -6,8 +6,7 @@ export class Database {
   constructor() {
     mongoose.connect(process.env.DB_URI as string, {
       useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useCreateIndex: true
+      useUnifiedTopology: true
     }).catch((reason) => {
       console.log('Mongoose connection error: ' + reason);
     });

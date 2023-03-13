@@ -1,0 +1,10 @@
+startup.bat
+startdev.ps1
+commands.txt
+.gitignore
+.editorconfig
+Dockerfile
+/node_modules
+.angular
+/dist
+*.Dockerfile
