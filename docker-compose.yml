@@ -1,0 +1,28 @@
+version: '3'
+services:
+  bpni:
+    image: bpni:latest
+    container_name: bpni
+    build: . -t bpni:latest
+    environment:
+      - ENV_NAME=development
+      - BROWSE_INCREMENT=10
+      - DB_URI=mongodb://database:27017/test
+      - JWT_SECRET=anylongstringhere
+      - CAPTCHA_SITE=YOURCATCHAKEY
+      - CAPTCHA_SECRET=YOURCAPTCHASECRET
+    links:
+      - "mongodb-bpni:database"
+    depends_on:
+      - mongodb-bpni
+    ports:
+      - "3000:3000"
+  mongodb-bpni:
+    image: mongo:4.2
+    container_name: mongodb-bpni
+    environment:
+      - "MONGO_INITDB_DATABASE=blueprintnotincluded"
+    volumes:
+      - ./mongo/docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "27017:27017"
