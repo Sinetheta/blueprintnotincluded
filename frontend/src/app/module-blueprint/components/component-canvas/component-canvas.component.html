@@ -1,24 +1,8 @@
-<canvas #blueprintCanvas
-  id="blueprintCanvas"
-
-  tabindex="0"
-
-  i18n
-
-  dragAndDrop
-    (myMouseDrag)="mouseDrag($event)"
-    (myMouseStopDrag)="mouseStopDrag($event)"
-    (myMouseMove)="mouseMove($event)"
-    (myMouseClick)="mouseClick($event)"
-    (myMouseUp)="mouseUp($event)"
-    (myMouseDown)="mouseDown($event)"
-    (myMouseOut)="mouseOut($event)"
-  mouseWheel
-    (mouseWheel)="mouseWheel($event)"
-  keyEvents
-    (keyPress)="keyPress($event)">
+<canvas #blueprintCanvas id="blueprintCanvas" tabindex="0" i18n appDragAndDrop (myMouseDrag)="mouseDrag($event)"
+  (myMouseStopDrag)="mouseStopDrag($event)" (myMouseMove)="mouseMove($event)" (myMouseClick)="mouseClick($event)"
+  (myMouseUp)="mouseUp($event)" (myMouseDown)="mouseDown($event)" (myMouseOut)="mouseOut($event)" appMouseWheel
+  (mouseWheel)="mouseWheel($event)" appKeyEvents (keyPress)="keyPress($event)">
 
   Your browser does not support canvas.
 
 </canvas>
-

@@ -14,16 +14,16 @@ import { UsernameValidationDirective } from 'src/app/module-blueprint/directives
   templateUrl: './register-form.component.html',
   styleUrls: ['./register-form.component.css']
 })
-export class RegisterFormComponent implements OnInit {
+export class RegisterFormComponent {
 
   registerForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
     username: new FormControl('', [Validators.required, UsernameValidationDirective.validate], [this.checkDuplicateService.usernameValidator()]),
     password: new FormControl('', [Validators.required]),
     confirmPassword: new FormControl('', [Validators.required])
-  }, {validators:[this.passwordConfirming]});
+  }, { validators: [this.passwordConfirming] });
 
-  @Output() onRegistrationOk = new EventEmitter();
+  @Output() registrationOk = new EventEmitter();
 
   constructor(private authService: AuthenticationService,
     private checkDuplicateService: CheckDuplicateService,
@@ -38,22 +38,19 @@ export class RegisterFormComponent implements OnInit {
   authError: boolean = false;
   duplicateError: boolean = false;
 
-  reset()
-  {
+  reset() {
     this.working = false;
     this.authError = false;
     this.duplicateError = false;
     this.registerForm.reset();
   }
 
-  passwordConfirming(c: AbstractControl): { invalid: boolean }
-  {
-    if (c.get('password').value !== c.get('confirmPassword').value) return {invalid: true};
+  passwordConfirming(c: AbstractControl): { invalid: boolean } {
+    if (c.get('password').value !== c.get('confirmPassword').value) return { invalid: true };
   }
 
   subscription: Subscription;
-  onSubmit()
-  {
+  onSubmit() {
     this.working = true;
 
     this.subscription = this.recaptchaV3Service.execute('register').subscribe((token) => {
@@ -72,29 +69,22 @@ export class RegisterFormComponent implements OnInit {
 
   }
 
-  handleSaveNext(data: any)
-  {
+  handleSaveNext(data: any) {
     if (data.duplicateError) this.duplicateError = true;
-    else if (data.token)
-    {
-      this.onRegistrationOk.emit();
+    else if (data.token) {
+      this.registrationOk.emit();
 
       const username = this.authService.getUserDetails().username
       let summary: string = $localize`Registration Successful`;
       let detail: string = $localize`Welcome ${username}`;
-      this.messageService.add({severity:'success', summary:summary , detail:detail});
+      this.messageService.add({ severity: 'success', summary: summary, detail: detail });
     }
 
     this.working = false;
   }
 
-  handleSaveError()
-  {
+  handleSaveError() {
     this.authError = true;
     this.working = false;
   }
-
-  ngOnInit() {
-  }
-
 }

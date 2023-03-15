@@ -33,7 +33,7 @@ const ALL_LANGUAGES = [
 })
 export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCameraChanged {
 
-  @Output() onMenuCommand = new EventEmitter<MenuCommand>();
+  @Output() menuCommand = new EventEmitter<MenuCommand>();
 
   menuItems: MenuItem[];
   overlayMenuItems: MenuItem[];
@@ -113,8 +113,8 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
         id: 'blueprint',
         label: $localize`Blueprint`,
         items: [
-          { label: $localize`New`, icon: 'pi pi-plus', command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.newBlueprint, data: null }); } },
-          { id: 'save', label: $localize`Save`, icon: 'pi pi-save', command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.saveBlueprint, data: null }); } },
+          { label: $localize`New`, icon: 'pi pi-plus', command: (event) => { this.menuCommand.emit({ type: MenuCommandType.newBlueprint, data: null }); } },
+          { id: 'save', label: $localize`Save`, icon: 'pi pi-save', command: (event) => { this.menuCommand.emit({ type: MenuCommandType.saveBlueprint, data: null }); } },
           {
             label: $localize`Upload`, icon: 'pi pi-upload', items: [
               { label: $localize`Game (yaml)`, command: (event) => { this.uploadYamlTemplate(); } },
@@ -124,12 +124,12 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
           },
           {
             label: $localize`Download`, icon: 'pi pi-download', items: [
-              { label: $localize`Blueprint (json)`, command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.exportBlueprint, data: null }); } }
+              { label: $localize`Blueprint (json)`, command: (event) => { this.menuCommand.emit({ type: MenuCommandType.exportBlueprint, data: null }); } }
             ]
           },
-          { label: $localize`Browse`, icon: 'pi pi-search', command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.browseBlueprints, data: null }); } },
-          { label: $localize`Get shareable Url`, icon: 'pi pi-share-alt', command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.getShareableUrl, data: null }); } },
-          { label: $localize`Export images`, icon: 'pi pi-images', command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.exportImages, data: null }); } }
+          { label: $localize`Browse`, icon: 'pi pi-search', command: (event) => { this.menuCommand.emit({ type: MenuCommandType.browseBlueprints, data: null }); } },
+          { label: $localize`Get shareable Url`, icon: 'pi pi-share-alt', command: (event) => { this.menuCommand.emit({ type: MenuCommandType.getShareableUrl, data: null }); } },
+          { label: $localize`Export images`, icon: 'pi pi-images', command: (event) => { this.menuCommand.emit({ type: MenuCommandType.exportImages, data: null }); } }
         ]
       },
       {
@@ -160,7 +160,7 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
         items: [
           {
             label: $localize`About`,
-            icon: 'pi pi-info-circle', command: (event) => { this.onMenuCommand.emit({ type: MenuCommandType.about, data: null }); }
+            icon: 'pi pi-info-circle', command: (event) => { this.menuCommand.emit({ type: MenuCommandType.about, data: null }); }
           },
           {
             label: $localize`Discord`,
@@ -182,12 +182,12 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
       ,{
         label: 'Technical',
         items: [
-          {label: 'Fetch images',          icon:'pi pi-download', command: (event) => { this.onMenuCommand.emit({type: MenuCommandType.fetchIcons, data:null}); } },
-          {label: 'Add element tiles',     icon:'pi pi-download', command: (event) => { this.onMenuCommand.emit({type: MenuCommandType.addElementsTiles, data:null}); } },
-          {label: 'Download groups',       icon:'pi pi-download', command: (event) => { this.onMenuCommand.emit({type: MenuCommandType.downloadGroups, data:null}); } },
-          {label: 'Download icons',        icon:'pi pi-download', command: (event) => { this.onMenuCommand.emit({type: MenuCommandType.downloadIcons, data:null}); } },
-          {label: 'Download white',        icon:'pi pi-download', command: (event) => { this.onMenuCommand.emit({type: MenuCommandType.downloadUtility, data:null}); } },
-          {label: 'Repack textures',       icon:'pi pi-download', command: (event) => { this.onMenuCommand.emit({type: MenuCommandType.repackTextures, data:null}); } }
+          {label: 'Fetch images',          icon:'pi pi-download', command: (event) => { this.menuCommand.emit({type: MenuCommandType.fetchIcons, data:null}); } },
+          {label: 'Add element tiles',     icon:'pi pi-download', command: (event) => { this.menuCommand.emit({type: MenuCommandType.addElementsTiles, data:null}); } },
+          {label: 'Download groups',       icon:'pi pi-download', command: (event) => { this.menuCommand.emit({type: MenuCommandType.downloadGroups, data:null}); } },
+          {label: 'Download icons',        icon:'pi pi-download', command: (event) => { this.menuCommand.emit({type: MenuCommandType.downloadIcons, data:null}); } },
+          {label: 'Download white',        icon:'pi pi-download', command: (event) => { this.menuCommand.emit({type: MenuCommandType.downloadUtility, data:null}); } },
+          {label: 'Repack textures',       icon:'pi pi-download', command: (event) => { this.menuCommand.emit({type: MenuCommandType.repackTextures, data:null}); } }
         ]
       }
       */
@@ -223,7 +223,7 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
       getDuplicates: true
     }
 
-    this.onMenuCommand.emit({ type: MenuCommandType.browseBlueprints, data: userFilter });
+    this.menuCommand.emit({ type: MenuCommandType.browseBlueprints, data: userFilter });
   }
 
   cameraChanged(camera: CameraService) {
@@ -299,7 +299,7 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
   }
 
   login() {
-    this.onMenuCommand.emit({ type: MenuCommandType.showLoginDialog, data: null });
+    this.menuCommand.emit({ type: MenuCommandType.showLoginDialog, data: null });
   }
 
   logout() {

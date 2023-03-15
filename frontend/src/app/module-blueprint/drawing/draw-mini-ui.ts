@@ -1,5 +1,5 @@
 import { CameraService, Overlay, IObsCameraChanged } from '../../../../../lib/index'
-import { } from 'pixi.js-legacy';
+import { } from 'pixi.js-legacy';
 
 export class DrawMiniUi implements IObsCameraChanged {
 
@@ -9,11 +9,8 @@ export class DrawMiniUi implements IObsCameraChanged {
   texturesInactive: PIXI.Texture[];
   buttons: PIXI.Sprite[];
 
-  constructor() {
-  }
-
   cameraChanged(camera: CameraService): void {
-    for (let i = 0; i  < this.overlays.length; i++) {
+    for (let i = 0; i < this.overlays.length; i++) {
       if (camera.overlay == this.overlays[i]) this.buttons[i].texture = this.texturesActive[i];
       else this.buttons[i].texture = this.texturesInactive[i];
     }
@@ -26,9 +23,9 @@ export class DrawMiniUi implements IObsCameraChanged {
     this.buttons = [];
 
     let buttonPositionX = 50;
-    for (let i = 0; i  < this.overlays.length; i++) {
-      this.texturesActive[i] = PIXI.Texture.from('assets/images/miniui/'+this.icons[i]+'.png');
-      this.texturesInactive[i] = PIXI.Texture.from('assets/images/miniui/'+this.icons[i]+'_disabled.png');
+    for (let i = 0; i < this.overlays.length; i++) {
+      this.texturesActive[i] = PIXI.Texture.from('assets/images/miniui/' + this.icons[i] + '.png');
+      this.texturesInactive[i] = PIXI.Texture.from('assets/images/miniui/' + this.icons[i] + '_disabled.png');
       this.buttons[i] = new PIXI.Sprite(this.texturesActive[i]);
       this.buttons[i].buttonMode = true;
       this.buttons[i].anchor.set(0.5);
@@ -42,12 +39,12 @@ export class DrawMiniUi implements IObsCameraChanged {
       this.buttons[i].interactive = true;
 
       switch (this.overlays[i]) {
-        case Overlay.Base:        {this.buttons[i].on('click', this.clickBase); break;}
-        case Overlay.Power:       {this.buttons[i].on('click', this.clickPower); break;}
-        case Overlay.Liquid:      {this.buttons[i].on('click', this.clickLiquid); break;}
-        case Overlay.Gas:         {this.buttons[i].on('click', this.clickGas); break;}
-        case Overlay.Automation:  {this.buttons[i].on('click', this.clickAutomation); break;}
-        case Overlay.Conveyor:    {this.buttons[i].on('click', this.clickConveyor); break;}
+        case Overlay.Base: { this.buttons[i].on('click', this.clickBase); break; }
+        case Overlay.Power: { this.buttons[i].on('click', this.clickPower); break; }
+        case Overlay.Liquid: { this.buttons[i].on('click', this.clickLiquid); break; }
+        case Overlay.Gas: { this.buttons[i].on('click', this.clickGas); break; }
+        case Overlay.Automation: { this.buttons[i].on('click', this.clickAutomation); break; }
+        case Overlay.Conveyor: { this.buttons[i].on('click', this.clickConveyor); break; }
       }
 
       stage.addChild(this.buttons[i]);

@@ -7,7 +7,7 @@ import { GameStringService } from '../../../services/game-string-service';
   templateUrl: './temperature-scale.component.html',
   styleUrls: ['./temperature-scale.component.css']
 })
-export class TemperatureScaleComponent implements OnInit {
+export class TemperatureScaleComponent {
 
   temperatureData: TemperatureThreshold[];
 
@@ -24,9 +24,6 @@ export class TemperatureScaleComponent implements OnInit {
       this.temperatureData.push(DrawHelpers.temperatureThresholds[i]);
   }
 
-  ngOnInit() {
-  }
-
   temperatureColor(index: number) {
     return DrawHelpers.colorToHex(this.temperatureData[index].color);
   }
@@ -35,7 +32,7 @@ export class TemperatureScaleComponent implements OnInit {
     const celsius = (this.temperatureData[index].temperature - 273.15).toFixed(0)
     if (index == 0) return $localize`(Above ${celsius}°C)`;
     else {
-      const celsiusNext = (this.temperatureData[index-1].temperature - 273.15).toFixed(0)
+      const celsiusNext = (this.temperatureData[index - 1].temperature - 273.15).toFixed(0)
       return $localize`(${celsius}°C ~ ${celsiusNext}°C)`;
     };
   }

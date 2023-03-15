@@ -6,7 +6,7 @@ import { DrawHelpers, BuildableElement } from '../../../../../../../lib/index';
   templateUrl: './element-icon.component.html',
   styleUrls: ['./element-icon.component.css']
 })
-export class ElementIconComponent implements OnInit {
+export class ElementIconComponent {
 
   @Input() element: BuildableElement;
   @Input() width: string;
@@ -18,12 +18,5 @@ export class ElementIconComponent implements OnInit {
   get isLiquid() { return this.element.hasTag('Liquid'); }
   get isGas() { return this.element.hasTag('Gas'); }
   get tint() { return DrawHelpers.colorToHex(this.element.uiColor); }
-  get style() { return 'height: '+this.height+';' }
-
-
-  constructor() { }
-
-  ngOnInit() {
-  }
-
+  get style() { return 'height: ' + this.height + ';' }
 }

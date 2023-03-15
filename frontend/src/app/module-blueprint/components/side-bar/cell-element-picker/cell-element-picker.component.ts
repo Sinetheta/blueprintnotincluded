@@ -15,7 +15,7 @@ export class CellElementPickerComponent implements OnInit {
   selectedTags: string[] = ['Gas', 'Liquid'];
   elements: BuildableElement[];
 
-  @Output() onSelectElement = new EventEmitter<BuildableElement>();
+  @Output() selectElementCell = new EventEmitter<BuildableElement>();
 
   @Input() forceTag: string;
   get isForcedTag() { return this.forceTag != undefined; }
@@ -68,6 +68,6 @@ export class CellElementPickerComponent implements OnInit {
   }
 
   selectElement(element: BuildableElement) {
-    this.onSelectElement.emit(element);
+    this.selectElementCell.emit(element);
   }
 }

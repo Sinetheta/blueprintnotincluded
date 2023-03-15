@@ -22,7 +22,7 @@ export class DialogExportImagesComponent implements OnInit {
 
   get disabled() { return !(this.exportOptions.selectedOverlays.length > 0) }
 
-  @Output() onSaveImages = new EventEmitter<ExportImageOptions>();
+  @Output() saveImages = new EventEmitter<ExportImageOptions>();
 
   get finalSize(): string { return this.blueprintSize == null ? '' : this.blueprintSize.x * this.exportOptions.pixelsPerTile + 'x' + this.blueprintSize.y * this.exportOptions.pixelsPerTile }
   get finalSizeMb(): number { return this.blueprintSize == null ? 0 : this.blueprintSize.x * this.exportOptions.pixelsPerTile * this.blueprintSize.y * this.exportOptions.pixelsPerTile * this.exportOptions.selectedOverlays.length * 0.00000068120021446078431372549 }
@@ -77,7 +77,7 @@ export class DialogExportImagesComponent implements OnInit {
   }
 
   downloadImages() {
-    this.onSaveImages.emit(this.exportOptions);
+    this.saveImages.emit(this.exportOptions);
     this.hideDialog();
   }
 

@@ -12,15 +12,15 @@ import { UsernameValidationDirective } from 'src/app/module-blueprint/directives
   templateUrl: './login-form.component.html',
   styleUrls: ['./login-form.component.css']
 })
-export class LoginFormComponent implements OnInit {
+export class LoginFormComponent {
 
   loginForm = new FormGroup({
     username: new FormControl('', [Validators.required, UsernameValidationDirective.validate]),
     password: new FormControl('', [Validators.required])
   });
 
-  @Output() onRegistration = new EventEmitter();
-  @Output() onLoginOk = new EventEmitter();
+  @Output() loginRegistration = new EventEmitter();
+  @Output() loginOk = new EventEmitter();
 
   constructor(
     private authService: AuthenticationService,
@@ -33,19 +33,14 @@ export class LoginFormComponent implements OnInit {
   working: boolean = false;
   authError: boolean = false;
 
-  ngOnInit() {
-  }
-
-  reset()
-  {
+  reset() {
     this.working = false;
     this.authError = false;
     this.loginForm.reset();
   }
 
   subscription: Subscription;
-  onSubmit()
-  {
+  onSubmit() {
     this.working = true;
     this.subscription = this.recaptchaV3Service.execute('login').subscribe((token) => {
 
@@ -66,27 +61,24 @@ export class LoginFormComponent implements OnInit {
     });
   }
 
-  handleSaveNext(response: any)
-  {
-    this.onLoginOk.emit();
+  handleSaveNext(response: any) {
+    this.loginOk.emit();
 
     const username = this.authService.getUserDetails().username
     let summary: string = $localize`Login Successful`;
     let detail: string = $localize`Welcome ${username}`;
 
-    this.messageService.add({severity:'success', summary:summary , detail:detail});
+    this.messageService.add({ severity: 'success', summary: summary, detail: detail });
     this.working = false;
   }
 
-  handleSaveError()
-  {
+  handleSaveError() {
     this.authError = true;
     this.working = false;
   }
 
-  registration()
-  {
-    this.onRegistration.emit();
+  registration() {
+    this.loginRegistration.emit();
   }
 
 }

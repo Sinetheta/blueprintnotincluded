@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api';
   templateUrl: './dialog-share-url.component.html',
   styleUrls: ['./dialog-share-url.component.css']
 })
-export class DialogShareUrlComponent implements OnInit {
+export class DialogShareUrlComponent {
 
   visible: boolean = false;
 
@@ -18,9 +18,6 @@ export class DialogShareUrlComponent implements OnInit {
   get url() {
     return this.blueprintService.id != null ?
       BlueprintService.baseUrl + '/b/' + this.blueprintService.id : ''
-  }
-
-  ngOnInit() {
   }
 
   showDialog() {

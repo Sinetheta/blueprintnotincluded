@@ -1,6 +1,6 @@
 import { Directive, Output, HostListener, EventEmitter } from '@angular/core';
 
-@Directive({ selector: '[mouseWheel]' })
+@Directive({ selector: '[appMouseWheel]' })
 export class MouseWheelDirective {
   @Output() mouseWheelUp = new EventEmitter();
   @Output() mouseWheelDown = new EventEmitter();
@@ -23,16 +23,16 @@ export class MouseWheelDirective {
     var delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
     event.delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
     if (delta != 0) this.mouseWheel.emit(event);
-    if(delta > 0) {
-        this.mouseWheelUp.emit(event);
-    } else if(delta < 0) {
-        this.mouseWheelDown.emit(event);
+    if (delta > 0) {
+      this.mouseWheelUp.emit(event);
+    } else if (delta < 0) {
+      this.mouseWheelDown.emit(event);
     }
     // for IE
     event.returnValue = false;
     // for Chrome and Firefox
-    if(event.preventDefault) {
-        event.preventDefault();
+    if (event.preventDefault) {
+      event.preventDefault();
     }
   }
 }

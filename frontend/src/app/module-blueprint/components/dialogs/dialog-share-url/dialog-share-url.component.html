@@ -1,18 +1,13 @@
-<p-dialog #saveDialog
-  i18n-header header='Get shareable url'
-  [(visible)]="visible"
-  [modal]="true"
-  [dismissableMask]="true"
-  [closable]="true"
-  [focusOnShow]="false"
-  [maximizable]="false"
-  [draggable]="false"
-  [resizable]="false"
-  >
+<p-dialog #saveDialog i18n-header header='Get shareable url' [(visible)]="visible" [modal]="true"
+  [dismissableMask]="true" [closable]="true" [focusOnShow]="false" [maximizable]="false" [draggable]="false"
+  [resizable]="false">
 
   <div i18n>Use the following url to share this blueprint : </div>
-  <input #urlInput class="float-input" type="text" size="60" [ngModel]="url" pInputText [disabled]="blueprintService.id == null">
-  <button pButton type="button" class="ui-button copy-button" icon="pi pi-clone" (click)="copyToClipboard(urlInput)" i18n-pTooltip pTooltip="Copy url to clipboard" [disabled]="blueprintService.id == null"></button>
-  <button pButton type="button" class="ui-button copy-button" icon="pi pi-external-link" (click)="newTab()" i18n-pTooltip pTooltip="Open in new tab" [disabled]="blueprintService.id == null"></button>
+  <input #urlInput class="float-input" type="text" size="60" [ngModel]="url" pInputText
+    [disabled]="blueprintService.id === null">
+  <button pButton type="button" class="ui-button copy-button" icon="pi pi-clone" (click)="copyToClipboard(urlInput)"
+    i18n-pTooltip pTooltip="Copy url to clipboard" [disabled]="blueprintService.id === null"></button>
+  <button pButton type="button" class="ui-button copy-button" icon="pi pi-external-link" (click)="newTab()"
+    i18n-pTooltip pTooltip="Open in new tab" [disabled]="blueprintService.id === null"></button>
 
 </p-dialog>

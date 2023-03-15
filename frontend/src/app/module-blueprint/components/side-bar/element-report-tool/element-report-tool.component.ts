@@ -7,7 +7,7 @@ import { CameraService, Visualization, BuildableElement } from '../../../../../.
   templateUrl: './element-report-tool.component.html',
   styleUrls: ['./element-report-tool.component.css']
 })
-export class ElementReportToolComponent implements OnInit {
+export class ElementReportToolComponent {
 
   get data() { return this.toolService.elementReport.data }
 
@@ -19,9 +19,6 @@ export class ElementReportToolComponent implements OnInit {
 
   selectEveryElement(buildableElement: BuildableElement) {
     this.toolService.selectTool.selectEveryElement(buildableElement);
-  }
-
-  ngOnInit() {
   }
 
   close() {
