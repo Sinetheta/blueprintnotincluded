@@ -1,15 +1,15 @@
 version: '3'
 services:
   bpni:
-    image: bpni:latest
+    image: racefpv/bpni:latest
     container_name: bpni
-    build: . -t bpni:latest
+    build: .
     environment:
       - ENV_NAME=development
-      - BROWSE_INCREMENT=10
-      - DB_URI=mongodb://database:27017/test
+      - BROWSE_INCREMENT=100
+      - DB_URI=mongodb://database:27017/blueprintnotincluded
       - JWT_SECRET=anylongstringhere
-      - CAPTCHA_SITE=YOURCATCHAKEY
+      - CAPTCHA_SITE=localhost
       - CAPTCHA_SECRET=YOURCAPTCHASECRET
     links:
       - "mongodb-bpni:database"
