@@ -1,7 +1,7 @@
 version: '3'
 services:
   bpni:
-    image: racefpv/bpni:latest
+    image: racefpv/bpni:0.2
     container_name: bpni
     build: .
     environment:

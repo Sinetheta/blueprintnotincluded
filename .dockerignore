@@ -7,4 +7,6 @@ Dockerfile
 /node_modules
 .angular
 /dist
+/frontend/node_modules
+/lib/node_modules
 *.Dockerfile
