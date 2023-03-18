@@ -12,12 +12,11 @@ import { Display } from '../../../../../../../lib/index'
   templateUrl: './component-save-dialog.component.html',
   styleUrls: ['./component-save-dialog.component.css']
 })
-export class ComponentSaveDialogComponent implements OnInit {
+export class ComponentSaveDialogComponent {
 
   visible: boolean = false;
 
-  @Output() onSave = new EventEmitter();
-  @Output() onUpdateThumbnail = new EventEmitter();
+  @Output() updateThumbnail = new EventEmitter();
 
   saveBlueprintForm = new FormGroup({
     thumbnailType: new FormControl('Color', [Validators.required]),
@@ -40,11 +39,7 @@ export class ComponentSaveDialogComponent implements OnInit {
     //TODO should not be public
     public authService: AuthenticationService) { }
 
-  ngOnInit() {
-  }
-
-  onSubmit()
-  {
+  onSubmit() {
     this.working = true;
 
     this.blueprintService.name = this.saveBlueprintForm.value.name;
@@ -56,30 +51,26 @@ export class ComponentSaveDialogComponent implements OnInit {
 
   // TODO this is ugly, use pipe map instead
   public id: string;
-  handleSaveNext(response: any)
-  {
+  handleSaveNext(response: any) {
 
-    if (response.overwrite)
-    {
+    if (response.overwrite) {
       this.overwrite = true;
       this.saveBlueprintForm.controls.name.disable();
       this.working = false;
     }
-    else
-    {
+    else {
       this.hideDialog();
 
       // TODO move this to the service ?
-      let summary: string = $localize`${this.blueprintService.name} saved` ;
+      let summary: string = $localize`${this.blueprintService.name} saved`;
       let detail: string = '';
 
-      this.messageService.add({severity:'success', summary:summary , detail:detail});
+      this.messageService.add({ severity: 'success', summary: summary, detail: detail });
       this.working = false;
     }
   }
 
-  handleSaveError()
-  {
+  handleSaveError() {
     this.hideDialog();
     this.messageService.add({
       severity: 'error',
@@ -90,13 +81,12 @@ export class ComponentSaveDialogComponent implements OnInit {
 
 
   intervalId: number;
-  showDialog()
-  {
+  showDialog() {
     this.reset();
     this.visible = true;
 
-    this.saveBlueprintForm.patchValue({thumbnailType: 'Color'});
-    if (this.blueprintService.name != null && this.blueprintService.name != '') this.saveBlueprintForm.patchValue({name: this.blueprintService.name});
+    this.saveBlueprintForm.patchValue({ thumbnailType: 'Color' });
+    if (this.blueprintService.name != null && this.blueprintService.name != '') this.saveBlueprintForm.patchValue({ name: this.blueprintService.name });
   }
 
   tryClearInterval() {
@@ -119,15 +109,14 @@ export class ComponentSaveDialogComponent implements OnInit {
       let newStyle = this.saveBlueprintForm.value.thumbnailType == 'Color' ? Display.solid : Display.blueprint;
       if (newStyle != this.blueprintService.thumbnailStyle) {
         this.blueprintService.thumbnailStyle = newStyle;
-        this.onUpdateThumbnail.emit();
+        this.updateThumbnail.emit();
         //this.saveBlueprintForm.controls.thumbnailType.disable();
         this.intervalId = window.setInterval(this.updateThumbnailReady.bind(this), 500);
       }
     }
   }
 
-  reset()
-  {
+  reset() {
     this.working = false;
     this.thumbnailReady = false;
     this.overwrite = false;
@@ -139,14 +128,12 @@ export class ComponentSaveDialogComponent implements OnInit {
     this.intervalId = window.setInterval(this.updateThumbnailReady.bind(this), 500);
   }
 
-  doNotOverwrite()
-  {
+  doNotOverwrite() {
     this.overwrite = false;
     this.saveBlueprintForm.controls.name.enable();
   }
 
-  doOverwrite()
-  {
+  doOverwrite() {
     this.working = true;
 
     this.blueprintService.name = this.saveBlueprintForm.getRawValue().name; // Use get raw Value because it can be disabled
@@ -156,8 +143,7 @@ export class ComponentSaveDialogComponent implements OnInit {
     });
   }
 
-  hideDialog()
-  {
+  hideDialog() {
     this.visible = false;
   }
 

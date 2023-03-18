@@ -1,6 +1,6 @@
 import { Directive, Output, HostListener, EventEmitter } from '@angular/core';
 
-@Directive({ selector: '[keyEvents]' })
+@Directive({ selector: '[appKeyEvents]' })
 export class KeyboardDirective {
   @Output() keyPress = new EventEmitter();
 

@@ -14,9 +14,6 @@ export class BitSelectionScreenComponent implements OnInit {
   value: number;
   buttonValues: boolean[];
 
-  constructor() {
-  }
-
   get title() {
     return this.bitSelectorSideScreen.title;
   }

@@ -5,17 +5,11 @@ import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
   templateUrl: './dialog-about.component.html',
   styleUrls: ['./dialog-about.component.css']
 })
-export class DialogAboutComponent implements OnInit {
+export class DialogAboutComponent {
 
   visible: boolean;
 
-  constructor() { }
-
-  ngOnInit() {
-  }
-
-  toggleDialog()
-  {
+  toggleDialog() {
     this.visible = !this.visible;
   }
 

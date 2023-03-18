@@ -13,11 +13,12 @@ export class LikeWidgetComponent implements OnInit {
   @Input() likedByMe: boolean;
   @Input() disabled: boolean;
 
-  get nbLikesString() { return $localize`like${this.nbLikes != 1 ? 's':''}`; }
+  get nbLikesString() { return $localize`like${this.nbLikes != 1 ? 's' : ''}`; }
 
   constructor(private blueprintService: BlueprintService) { }
 
   ngOnInit() {
+    1;// required for type
   }
 
   like() {

@@ -25,6 +25,7 @@ export class BuildableElementPickerComponent implements OnInit {
   }
 
   ngOnInit() {
+    1;// required for type
   }
 
   showWarning(indexElement: number) {
@@ -43,7 +44,7 @@ export class BuildableElementPickerComponent implements OnInit {
   }
 
   chooseElement(buildableElement: BuildableElement, index: number) {
-    this.changeElement.emit({newElement: buildableElement, index:index});
+    this.changeElement.emit({ newElement: buildableElement, index: index });
     this.elementPanels.forEach((elementPanel) => { elementPanel.hide(); });
 
     this.currentElement[index] = buildableElement;

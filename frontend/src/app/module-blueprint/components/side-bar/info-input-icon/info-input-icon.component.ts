@@ -5,17 +5,11 @@ import { Component, OnInit, Input } from '@angular/core';
   templateUrl: './info-input-icon.component.html',
   styleUrls: ['./info-input-icon.component.css']
 })
-export class InfoInputIconComponent implements OnInit {
+export class InfoInputIconComponent {
 
   @Input() width: number;
   @Input() height: number;
   @Input() frontColor: string;
   @Input() backColor: string;
   @Input() svgPath: string;
-
-  constructor() { }
-
-  ngOnInit(): void {
-  }
-
 }

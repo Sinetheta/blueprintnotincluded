@@ -6,7 +6,7 @@ import { BlueprintItem, CameraService, DrawHelpers, Visualization } from '../../
   templateUrl: './temperature-picker.component.html',
   styleUrls: ['./temperature-picker.component.css']
 })
-export class TemperaturePickerComponent implements OnInit {
+export class TemperaturePickerComponent {
 
   // temperature
   @Input() blueprintItem: BlueprintItem;
@@ -30,9 +30,6 @@ export class TemperaturePickerComponent implements OnInit {
 
   temperatureColor(index: number) {
     return DrawHelpers.colorToHex(DrawHelpers.temperatureThresholds[index].color);
-  }
-
-  ngOnInit() {
   }
 
   onChange() {

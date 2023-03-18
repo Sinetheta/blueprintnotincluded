@@ -7,19 +7,13 @@ import { OverlayPanel } from 'primeng/overlaypanel';
   templateUrl: './pipe-content.component.html',
   styleUrls: ['./pipe-content.component.css']
 })
-export class PipeContentComponent implements OnInit {
+export class PipeContentComponent {
 
   @Input() currentElement: BuildableElement;
   @Input() forceTag: string;
-  @Output() onSelectElement = new EventEmitter<BuildableElement>();
+  @Output() selectElementPipe = new EventEmitter<BuildableElement>();
 
-  @ViewChild('elementPanel', {static: false}) elementPanel: OverlayPanel;
-
-
-  constructor() { }
-
-  ngOnInit(): void {
-  }
+  @ViewChild('elementPanel', { static: false }) elementPanel: OverlayPanel;
 
   showElements(event: any) {
     this.elementPanel.toggle(event);
@@ -27,7 +21,7 @@ export class PipeContentComponent implements OnInit {
 
   chooseElement(element: BuildableElement) {
     this.elementPanel.hide();
-    this.onSelectElement.emit(element);
+    this.selectElementPipe.emit(element);
   }
 
 }

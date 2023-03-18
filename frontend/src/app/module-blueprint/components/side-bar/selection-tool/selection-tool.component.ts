@@ -8,20 +8,15 @@ import { Accordion } from 'primeng/accordion';
   templateUrl: './selection-tool.component.html',
   styleUrls: ['./selection-tool.component.css']
 })
-export class ComponentSideSelectionToolComponent implements OnInit {
+export class ComponentSideSelectionToolComponent {
 
-  @ViewChild('buildingsAccordion', {static: true}) buildingsAccordion: Accordion;
-  @ViewChild('selectToolCard', {static: true}) selectToolCard: ElementRef;
+  @ViewChild('buildingsAccordion', { static: true }) buildingsAccordion: Accordion;
+  @ViewChild('selectToolCard', { static: true }) selectToolCard: ElementRef;
 
   constructor(
     public toolService: ToolService,
-    private renderer: Renderer2) 
-  { 
+    private renderer: Renderer2) {
   }
-
-  ngOnInit() {
-  }
-
 
   setMaxHeight(position: number) {
     this.renderer.setStyle(this.selectToolCard.nativeElement, 'max-height', 'calc(100vh - ' + position + 'px - 20px)');

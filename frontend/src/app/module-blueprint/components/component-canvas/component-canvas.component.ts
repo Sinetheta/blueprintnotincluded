@@ -38,9 +38,9 @@ export class ComponentCanvasComponent implements OnInit, OnDestroy, IObsCameraCh
   @ViewChild('divCalcHeight', {static: true})
   divCalcHeight: ElementRef;
 
-  @Input('forceSize')
+  @Input()
   forceSize: boolean;
-  @Input('forcedSize')
+  @Input()
   forcedSize: Vector2;
 
 

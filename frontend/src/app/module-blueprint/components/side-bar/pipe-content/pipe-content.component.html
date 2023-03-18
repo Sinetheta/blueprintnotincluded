@@ -13,9 +13,7 @@
   </div>
 
   <p-overlayPanel #elementPanel [appendTo]="'body'">
-    <app-cell-element-picker
-      [forceTag]="forceTag"
-      (onSelectElement)="chooseElement($event)">
+    <app-cell-element-picker [forceTag]="forceTag" (selectElementCell)="chooseElement($event)">
     </app-cell-element-picker>
   </p-overlayPanel>
 

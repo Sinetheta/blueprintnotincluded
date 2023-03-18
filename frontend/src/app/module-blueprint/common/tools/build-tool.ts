@@ -5,26 +5,22 @@ import { ITool, IChangeTool, ToolType } from './tool';
 import { DrawPixi } from '../../drawing/draw-pixi';
 
 @Injectable()
-export class BuildTool implements ITool
-{
+export class BuildTool implements ITool {
 
   templateItemToBuild: BlueprintItem;
   private observers: IObsBuildItemChanged[];
 
   parent: IChangeTool;
 
-  constructor(private blueprintService: BlueprintService, private appRef: ApplicationRef)
-  {
+  constructor(private blueprintService: BlueprintService, private appRef: ApplicationRef) {
     this.observers = [];
   }
 
-  subscribeBuildItemChanged(observer: IObsBuildItemChanged)
-  {
+  subscribeBuildItemChanged(observer: IObsBuildItemChanged) {
     this.observers.push(observer);
   }
 
-  destroy()
-  {
+  destroy() {
     if (this.templateItemToBuild != null) {
       this.templateItemToBuild.destroy();
       this.templateItemToBuild = null;
@@ -74,15 +70,14 @@ export class BuildTool implements ITool
     }
 
     if (previousCanBuild != this.templateItemToBuild.buildCandidateResult.canBuild ||
-        previousCantBuildReason != this.templateItemToBuild.buildCandidateResult.cantBuildReason) {
+      previousCantBuildReason != this.templateItemToBuild.buildCandidateResult.cantBuildReason) {
 
-        // The mousemouse is outside the angular zone, so we have to force a full update here.
-        this.appRef.tick();
-      }
+      // The mousemouse is outside the angular zone, so we have to force a full update here.
+      this.appRef.tick();
+    }
   }
 
-  build()
-  {
+  build() {
     if (!this.templateItemToBuild.buildCandidateResult.canBuild) return;
 
     let newItem = BlueprintHelpers.cloneBlueprintItem(this.templateItemToBuild, false, true);
@@ -94,8 +89,7 @@ export class BuildTool implements ITool
     this.updateBuildCandidateResult();
   }
 
-  private connectAToB(a: BlueprintItemWire, b: BlueprintItemWire)
-  {
+  private connectAToB(a: BlueprintItemWire, b: BlueprintItemWire) {
     let bitMask = 0;
     if (a.position.x == b.position.x + 1 && a.position.y == b.position.y) bitMask = 1;
     else if (a.position.x == b.position.x - 1 && a.position.y == b.position.y) bitMask = 2;
@@ -105,8 +99,7 @@ export class BuildTool implements ITool
     a.connections = a.connections | bitMask;
   }
 
-  changeItem(item: BlueprintItem)
-  {
+  changeItem(item: BlueprintItem) {
     if (this.templateItemToBuild != null) this.templateItemToBuild.destroy();
 
     CameraService.cameraService.setOverlayForItem(item.oniItem);
@@ -119,7 +112,7 @@ export class BuildTool implements ITool
     this.templateItemToBuild.isBuildCandidate = true;
     this.templateItemToBuild.prepareBoundingBox();
     this.templateItemToBuild.updateTileables(this.blueprintService.blueprint);
-    this.observers.map((observer) => observer.itemChanged(item) );
+    this.observers.map((observer) => observer.itemChanged(item));
   }
 
   buildAndConnect(tileStart: Vector2, tileStop: Vector2) {
@@ -128,13 +121,11 @@ export class BuildTool implements ITool
     this.updateBuildCandidateResult();
     this.build();
 
-    if (this.templateItemToBuild.oniItem.isWire)
-    {
+    if (this.templateItemToBuild.oniItem.isWire) {
       let itemsPrevious = this.blueprintService.blueprint.getBlueprintItemsAt(tileStart).filter(i => i.oniItem.objectLayer == this.templateItemToBuild.oniItem.objectLayer);
       let itemsCurrent = this.blueprintService.blueprint.getBlueprintItemsAt(tileStop).filter(i => i.oniItem.objectLayer == this.templateItemToBuild.oniItem.objectLayer);
 
-      if (itemsPrevious != null && itemsPrevious.length > 0 && itemsCurrent != null && itemsCurrent.length > 0)
-      {
+      if (itemsPrevious != null && itemsPrevious.length > 0 && itemsCurrent != null && itemsCurrent.length > 0) {
         let itemPrevious = itemsPrevious[0] as BlueprintItemWire;
         let itemCurrent = itemsCurrent[0] as BlueprintItemWire;
 
@@ -154,14 +145,14 @@ export class BuildTool implements ITool
   }
 
   switchTo() {
+    // required by type
   }
 
   mouseOut() {
     if (this.templateItemToBuild != null) this.templateItemToBuild.setInvisible();
   }
 
-  leftClick(tile: Vector2)
-  {
+  leftClick(tile: Vector2) {
     this.templateItemToBuild.position = tile;
     this.build();
   }
@@ -331,6 +322,7 @@ export class BuildTool implements ITool
   }
 
   dragStop() {
+    // required for type
   }
 
   keyDown(keyCode: string) {
@@ -359,7 +351,6 @@ export class BuildTool implements ITool
   toolGroup: number = 1;
 }
 
-export interface IObsBuildItemChanged
-{
+export interface IObsBuildItemChanged {
   itemChanged(templateItem: BlueprintItem);
 }

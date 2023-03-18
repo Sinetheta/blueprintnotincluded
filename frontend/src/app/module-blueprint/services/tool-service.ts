@@ -7,8 +7,7 @@ import { BuildTool } from '../common/tools/build-tool';
 import { ElementReport } from '../common/tools/element-report';
 
 @Injectable({ providedIn: 'root' })
-export class ToolService implements ITool, IChangeTool
-{
+export class ToolService implements ITool, IChangeTool {
   private allTools: ITool[];
   private currentTool: ITool;
 
@@ -22,8 +21,7 @@ export class ToolService implements ITool, IChangeTool
   constructor(
     public selectTool: SelectTool,
     public buildTool: BuildTool,
-    public elementReport: ElementReport)
-  {
+    public elementReport: ElementReport) {
     this.observers = [];
 
     this.currentTool = this.selectTool;
@@ -35,25 +33,25 @@ export class ToolService implements ITool, IChangeTool
     this.buildTool.parent = this;
   }
 
-  subscribeToolChanged(observer: IObsToolChanged)
-  {
+  subscribeToolChanged(observer: IObsToolChanged) {
     this.observers.push(observer);
   }
 
-  changeTool(newTool: ToolType)
-  {
+  changeTool(newTool: ToolType) {
     let newToolInstance = this.getTool(newTool);
 
     // Iterate over every tool of the same group
     // Switch from and make invisible if needed
-    this.allTools.filter((t) => { return (
-      t.toolGroup == newToolInstance.toolGroup &&
-      t.toolType != newToolInstance.toolType) }).map((t) => {
-        if (t.visible) {
-          t.switchFrom();
-          t.visible = false;
-        }
-      });
+    this.allTools.filter((t) => {
+      return (
+        t.toolGroup == newToolInstance.toolGroup &&
+        t.toolType != newToolInstance.toolType)
+    }).map((t) => {
+      if (t.visible) {
+        t.switchFrom();
+        t.visible = false;
+      }
+    });
 
     if (newToolInstance.captureInput) this.currentTool = newToolInstance
 
@@ -66,13 +64,13 @@ export class ToolService implements ITool, IChangeTool
       newToolInstance.switchTo();
     }
 
-    this.observers.map((observer) => observer.toolChanged(newTool) );
+    this.observers.map((observer) => observer.toolChanged(newTool));
   }
 
   // Tool interface
-  switchFrom() {}
+  switchFrom() { }
 
-  switchTo() {}
+  switchTo() { }
 
   mouseOut() {
     this.currentTool.mouseOut();
@@ -113,13 +111,11 @@ export class ToolService implements ITool, IChangeTool
   toolGroup: number;
 }
 
-export class ToolRequest
-{
+export class ToolRequest {
   toolType: ToolType;
   templateItem: BlueprintItem;
 }
 
-export interface IObsToolChanged
-{
+export interface IObsToolChanged {
   toolChanged(toolType: ToolType);
 }

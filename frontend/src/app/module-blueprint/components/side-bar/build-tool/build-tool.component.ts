@@ -14,7 +14,7 @@ import { BlueprintItemInfo } from '../../../../../../../lib/src/blueprint/bluepr
   templateUrl: './build-tool.component.html',
   styleUrls: ['./build-tool.component.css']
 })
-export class ComponentSideBuildToolComponent implements OnInit, IObsBuildItemChanged, IObsToolChanged {
+export class ComponentSideBuildToolComponent implements IObsBuildItemChanged, IObsToolChanged {
 
   items: OniItem[][][];
 
@@ -29,8 +29,7 @@ export class ComponentSideBuildToolComponent implements OnInit, IObsBuildItemCha
   @ViewChild('categoryPanel') categoryPanel: OverlayPanel;
   @ViewChildren(OverlayPanel) itemPanels !: QueryList<OverlayPanel>;
 
-  constructor(public toolService: ToolService)
-  {
+  constructor(public toolService: ToolService) {
     this.items = [];
     this.toolService.buildTool.subscribeBuildItemChanged(this);
     this.toolService.subscribeToolChanged(this);
@@ -38,12 +37,8 @@ export class ComponentSideBuildToolComponent implements OnInit, IObsBuildItemCha
 
   // TODO the template for the dropdowns fixes the width, whereas the template for the list fixes the height
 
-  ngOnInit() {
-  }
-
   databaseLoaded: boolean = false;
-  oniItemsLoaded()
-  {
+  oniItemsLoaded() {
     //this.toolService.buildTool.changeItem(BlueprintHelpers.createInstance('SteamTurbine2'));
     this.toolService.buildTool.changeItem(BlueprintHelpers.createInstance('Tile'));
     this.databaseLoaded = true;
@@ -125,8 +120,7 @@ export class ComponentSideBuildToolComponent implements OnInit, IObsBuildItemCha
     //this.toolService.buildTool.templateItemToBuild.setElement(elementChangeInfo.newElement.id, elementChangeInfo.index);
   }
 
-  uiItemChanged()
-  {
+  uiItemChanged() {
     this.toolService.buildTool.changeItem(BlueprintHelpers.createInstance(this.currentItem.id));
   }
 

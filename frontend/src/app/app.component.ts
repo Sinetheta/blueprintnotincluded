@@ -6,11 +6,6 @@ declare var PIXI: any;
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit{
-  
-  ngOnInit(): void {
-  
-  }
-
+export class AppComponent {
   title = 'blueprintnotincluded';
 }

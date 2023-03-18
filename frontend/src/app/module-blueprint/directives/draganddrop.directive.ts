@@ -1,7 +1,7 @@
 import { Directive, Output, HostListener, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { Vector2 } from '../../../../../lib/index'
 
-@Directive({ selector: '[dragAndDrop]' })
+@Directive({ selector: '[appDragAndDrop]' })
 export class DragAndDropDirective {
 
   @Output() myMouseUp = new EventEmitter();
@@ -16,14 +16,12 @@ export class DragAndDropDirective {
   lastDragPosition: Vector2[];
   startDragPosition: Vector2[];
 
-  constructor()
-  {
+  constructor() {
     this.isMouseDown = [];
     this.lastDragPosition = [];
     this.startDragPosition = [];
 
-    for (let i = 0; i <= 2; i++)
-    {
+    for (let i = 0; i <= 2; i++) {
       this.isMouseDown[i] = false;
     }
   }
@@ -32,16 +30,15 @@ export class DragAndDropDirective {
     var event = window.event || event; // old IE support
 
     let dragButton: number = event.button;
-    if (!this.isMouseDown[dragButton])
-    {
+    if (!this.isMouseDown[dragButton]) {
       this.myMouseDown.emit(event);
       this.isMouseDown[dragButton] = true;
       this.startDragPosition[dragButton] = new Vector2(event.clientX, event.clientY);
       this.lastDragPosition[dragButton] = new Vector2(event.clientX, event.clientY);
     }
 
-    if(event.preventDefault) {
-        event.preventDefault();
+    if (event.preventDefault) {
+      event.preventDefault();
     }
   }
 
@@ -74,10 +71,8 @@ export class DragAndDropDirective {
     let isDragging = false;
     for (let i = 0; i <= 2; i++) if (this.isMouseDown[i]) isDragging = true;
 
-    if (isDragging)
-    {
-      for (let i = 0; i <= 2; i++) if (this.isMouseDown[i])
-      {
+    if (isDragging) {
+      for (let i = 0; i <= 2; i++) if (this.isMouseDown[i]) {
         event.dragX = event.clientX - this.lastDragPosition[i].x;
         event.dragY = event.clientY - this.lastDragPosition[i].y;
         event.dragButton = this.isMouseDown;
@@ -87,14 +82,12 @@ export class DragAndDropDirective {
       }
       this.myMouseDrag.emit(event);
     }
-    else
-    {
+    else {
       this.myMouseMove.emit(event);
     }
   }
 
-  stopDrag(event: any, i: number)
-  {
+  stopDrag(event: any, i: number) {
     this.isMouseDown[i] = false;
     this.startDragPosition[i] = null;
     this.lastDragPosition[i] = null;
