@@ -1,6 +1,7 @@
 import { BrowserModule, EventManager } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
+import { NgxGoogleAnalyticsModule, NgxGoogleAnalyticsRouterModule } from 'ngx-google-analytics';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -14,6 +15,8 @@ import { CustomEventManager } from './module-blueprint/directives/custom-event-m
   ],
   imports: [
     BrowserModule,
+    NgxGoogleAnalyticsModule.forRoot(process.env.NG_APP_GA_TRACKING_CODE),
+    NgxGoogleAnalyticsRouterModule.forRoot(),
     ModuleBlueprintModule,
     HttpClientModule,
     AppRoutingModule
