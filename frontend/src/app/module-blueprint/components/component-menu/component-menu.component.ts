@@ -164,11 +164,11 @@ export class ComponentMenuComponent implements OnInit, IObsToolChanged, IObsCame
           },
           {
             label: $localize`Discord`,
-            icon: 'fab fa-discord', url: 'https://discord.gg/69vRZZT', target: 'discord'
+            icon: 'fab fa-discord', url: 'https://discord.gg/9gYwKaRujK', target: 'discord'
           },
           {
             label: $localize`Github`,
-            icon: 'fab fa-github', url: 'https://github.com/simonlourson/blueprintnotincluded/', target: 'github'
+            icon: 'fab fa-github', url: 'https://github.com/Sinetheta/blueprintnotincluded', target: 'github'
           },
         ]
       },
