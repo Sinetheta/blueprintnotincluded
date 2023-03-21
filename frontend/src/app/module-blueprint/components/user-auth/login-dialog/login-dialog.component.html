@@ -2,7 +2,7 @@
   [dismissableMask]="true" [closable]="true" [focusOnShow]="false" [maximizable]="false" [draggable]="false"
   [resizable]="false">
 
-  <app-login-form #loginForm *ngIf="isLogin" (regisloginRegistrationtration)="registration()" (loginOk)="hideDialog()">
+  <app-login-form #loginForm *ngIf="isLogin" (loginRegistration)="registration()" (loginOk)="hideDialog()">
   </app-login-form>
 
   <app-register-form #registerForm *ngIf="isRegistration" (registrationOk)="hideDialog()">
