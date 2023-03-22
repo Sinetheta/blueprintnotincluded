@@ -1,0 +1,4 @@
+{
+  "*.{html,ts}": ["ng-lint-staged lint --fix --"],
+  "*.{css,html,js,json,ts,yaml,yml}": ["npx prettier --write --"]
+}
