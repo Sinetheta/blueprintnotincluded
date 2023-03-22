@@ -16,7 +16,7 @@ export class UpdateBasedOn
     dotenv.config();
     console.log(process.env.ENV_NAME);
 
-    // initialize database and authentification middleware
+    // initialize database and authentication middleware
     this.db = new Database();
 
     setTimeout(this.updateBaseOn, 3000);

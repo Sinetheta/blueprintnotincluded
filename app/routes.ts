@@ -16,7 +16,7 @@ export class Routes {
   public uploadBlueprintController = new BlueprintController();
 
   public routes(app: Application): void {
-    // Initialize authentification middleware
+    // Initialize authentication middleware
     //let auth = expressJwt({secret: process.env.JWT_SECRET as string, userProperty: 'tokenPayload' });
     let auth = expressJwt({secret: process.env.JWT_SECRET as string });
     let recaptcha = new Recaptcha(process.env.CAPTCHA_SITE as string, process.env.CAPTCHA_SECRET as string);
