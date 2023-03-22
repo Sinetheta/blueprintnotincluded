@@ -19,7 +19,7 @@
   <div *ngIf="f.password.invalid && (f.password.dirty || f.password.touched)" class="error-red">
     <div *ngIf="f.password.errors.required" i18n>Password is required.</div>
   </div>
-  <div *ngIf="authError" class="error-red" i18n>Authentification error</div>
+  <div *ngIf="authError" class="error-red" i18n>Authentication error</div>
 
   <br>
   <a [routerLink]="" (click)="registration()" i18n>First registration ?</a>

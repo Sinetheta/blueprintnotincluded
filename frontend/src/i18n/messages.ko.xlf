@@ -1193,8 +1193,8 @@
         </context-group>
       </trans-unit>
       <trans-unit id="038e19d9a187e8ecd9959a0677daefd337eb1838" datatype="html">
-        <source>Authentification error</source>
-        <target state="new">Authentification error</target>
+        <source>Authentication error</source>
+        <target state="new">Authentication error</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/module-blueprint/components/user-auth/login-form/login-form.component.html</context>
           <context context-type="linenumber">22</context>
