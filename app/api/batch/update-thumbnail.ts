@@ -48,7 +48,7 @@ export class UpdateThumbnail
     OniItem.init();
     OniItem.load(buildings);
 
-    // initialize database and authentification middleware
+    // initialize database and authentication middleware
     this.db = new Database();
 
     setTimeout(this.updateThumbnail, 3000);

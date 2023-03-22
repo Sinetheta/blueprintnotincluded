@@ -55,7 +55,7 @@ class App
     OniItem.init();
     OniItem.load(buildings);
 
-    // initialize database and authentification middleware
+    // initialize database and authentication middleware
     this.db = new Database();
     this.auth = new Auth();
 
