@@ -72,9 +72,13 @@
     />
     <label for="inputtext" i18n>Confirm Password</label>
   </span>
-  <div *ngIf="registerForm.errors?.invalid" class="error-red" i18n>Passwords must match.</div>
+  <div *ngIf="registerForm.errors?.invalid" class="error-red" i18n>
+    Passwords must match.
+  </div>
   <div *ngIf="authError" class="error-red" i18n>Authentication error</div>
-  <div *ngIf="duplicateError" class="error-red" i18n>Username or e-mail is already registered</div>
+  <div *ngIf="duplicateError" class="error-red" i18n>
+    Username or e-mail is already registered
+  </div>
 
   <br />
   <div class="recaptcha-wrap" i18n>
