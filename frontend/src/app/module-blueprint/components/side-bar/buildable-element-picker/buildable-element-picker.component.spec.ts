@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { BuildableElementPickerComponent } from './buildable-element-picker.component';
+import { BuildableElementPickerComponent } from "./buildable-element-picker.component";
 
-describe('BuildableElementDropdownComponent', () => {
+describe("BuildableElementDropdownComponent", () => {
   let component: BuildableElementPickerComponent;
   let fixture: ComponentFixture<BuildableElementPickerComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ BuildableElementPickerComponent ]
-    })
-    .compileComponents();
+      declarations: [BuildableElementPickerComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('BuildableElementDropdownComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

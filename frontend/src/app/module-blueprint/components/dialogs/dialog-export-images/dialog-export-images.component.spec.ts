@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { DialogExportImagesComponent } from './dialog-export-images.component';
+import { DialogExportImagesComponent } from "./dialog-export-images.component";
 
-describe('DialogExportImagesComponent', () => {
+describe("DialogExportImagesComponent", () => {
   let component: DialogExportImagesComponent;
   let fixture: ComponentFixture<DialogExportImagesComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ DialogExportImagesComponent ]
-    })
-    .compileComponents();
+      declarations: [DialogExportImagesComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('DialogExportImagesComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

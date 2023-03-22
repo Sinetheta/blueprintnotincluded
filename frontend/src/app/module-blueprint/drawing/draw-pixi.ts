@@ -1,13 +1,18 @@
 import { ElementRef } from "@angular/core";
 import { ComponentCanvasComponent } from "../components/component-canvas/component-canvas.component";
-import { BlueprintItem, CameraService, Vector2, PixiUtil, ZIndex } from '../../../../../lib/index'
-import { ComponentMenuComponent } from '../components/component-menu/component-menu.component';
+import {
+  BlueprintItem,
+  CameraService,
+  Vector2,
+  PixiUtil,
+  ZIndex,
+} from "../../../../../lib/index";
+import { ComponentMenuComponent } from "../components/component-menu/component-menu.component";
 
-import {  } from 'pixi.js-legacy';
-declare var PIXI: any;
+import {} from "pixi.js-legacy";
+declare var PIXI: any;
 
-export class DrawPixi implements PixiUtil
-{
+export class DrawPixi implements PixiUtil {
   getUtilityGraphicsBack() {
     return this.utilityGraphicsBack;
   }
@@ -24,7 +29,7 @@ export class DrawPixi implements PixiUtil
     return PIXI.Sprite.from(ressource);
   }
   getNewBaseTexture(url: string) {
-    return PIXI.Texture.from(url)
+    return PIXI.Texture.from(url);
   }
   getNewTexture(baseTex: any, rectangle: any) {
     return new PIXI.Texture(baseTex, rectangle);
@@ -55,24 +60,18 @@ export class DrawPixi implements PixiUtil
   blueprintContainer: PIXI.Container;
   parent: ComponentCanvasComponent;
 
-  Init(canvas: ElementRef, parent: ComponentCanvasComponent)
-  {
-
+  Init(canvas: ElementRef, parent: ComponentCanvasComponent) {
     DrawPixi.instance = this;
 
     this.parent = parent;
 
     let htmlCanvas: HTMLCanvasElement = canvas.nativeElement;
     let options: any = {};
-    options.view =  htmlCanvas;
+    options.view = htmlCanvas;
     options.width = canvas.nativeElement.width;
     options.height = canvas.nativeElement.height;
     options.autoResize = true;
     //options.forceCanvas = true;
-
-
-
-
 
     PIXI.utils.skipHello();
     this.pixiApp = new PIXI.Application(options);
@@ -93,23 +92,28 @@ export class DrawPixi implements PixiUtil
     this.pixiApp.stage.addChild(this.blueprintContainer);
 
     //this.pixiApp.stage.sortableChildren = true;
-    this.pixiApp.ticker.add(() => {this.drawAll();});
+    this.pixiApp.ticker.add(() => {
+      this.drawAll();
+    });
   }
 
   InitAnimation() {
-    this.pixiApp.ticker.add(() => {this.animateAll();});
+    this.pixiApp.ticker.add(() => {
+      this.animateAll();
+    });
   }
 
-  drawAll()
-  {
+  drawAll() {
     ComponentMenuComponent.debugFps = this.pixiApp.ticker.FPS;
 
     //console.log('drawAll');
-    if (this.pixiApp != null)
-    {
+    if (this.pixiApp != null) {
       //if (this.pixiApp.renderer.width != this.parent.canvasRef.nativeElement.width ||
-        //this.pixiApp.renderer.height != this.parent.canvasRef.nativeElement.height)
-        this.pixiApp.renderer.resize(this.parent.canvasRef.nativeElement.width, this.parent.canvasRef.nativeElement.height);
+      //this.pixiApp.renderer.height != this.parent.canvasRef.nativeElement.height)
+      this.pixiApp.renderer.resize(
+        this.parent.canvasRef.nativeElement.width,
+        this.parent.canvasRef.nativeElement.height
+      );
       //console.log('resize');
       //return;
     }
@@ -126,36 +130,46 @@ export class DrawPixi implements PixiUtil
     this.parent.animateAll();
   }
 
-  clearGraphics()
-  {
+  clearGraphics() {
     this.backGraphics.clear();
     this.frontGraphics.clear();
     this.utilityGraphicsBack.clear();
     this.utilityGraphicsFront.clear();
   }
 
-  FillRect(color: number, x: number, y: number, w: number, h: number)
-  {
+  FillRect(color: number, x: number, y: number, w: number, h: number) {
     this.backGraphics.beginFill(color);
     this.backGraphics.drawRect(x, y, w, h);
     this.backGraphics.endFill();
-
   }
 
   // TODO abstract drawline
-  drawBlueprintLine(color: string, alpha: number, start: Vector2, end: Vector2, lineWidth: number) {
-
-    this.backGraphics.lineStyle(1, 0xFFFFFF, alpha);
+  drawBlueprintLine(
+    color: string,
+    alpha: number,
+    start: Vector2,
+    end: Vector2,
+    lineWidth: number
+  ) {
+    this.backGraphics.lineStyle(1, 0xffffff, alpha);
     this.backGraphics.moveTo(start.x, start.y);
     this.backGraphics.lineTo(end.x, end.y);
-
   }
   drawTemplateItem(templateItem: BlueprintItem, camera: CameraService) {
     templateItem.drawPixi(camera, this);
   }
 
-  public drawTileRectangle(camera: CameraService, topLeft: Vector2, bottomRight: Vector2, frontGraphics: boolean, borderWidth: number, fillColor: number, borderColor: number, fillAlpha: number, borderAlpha: number)
-  {
+  public drawTileRectangle(
+    camera: CameraService,
+    topLeft: Vector2,
+    bottomRight: Vector2,
+    frontGraphics: boolean,
+    borderWidth: number,
+    fillColor: number,
+    borderColor: number,
+    fillAlpha: number,
+    borderAlpha: number
+  ) {
     let rectanglePosition = new Vector2(
       (topLeft.x + camera.cameraOffset.x) * camera.currentZoom,
       (-topLeft.y + camera.cameraOffset.y) * camera.currentZoom
@@ -165,22 +179,33 @@ export class DrawPixi implements PixiUtil
       (topLeft.y - bottomRight.y) * camera.currentZoom
     );
 
-    let graphics = frontGraphics ? this.frontGraphics : this.backGraphics
+    let graphics = frontGraphics ? this.frontGraphics : this.backGraphics;
 
     graphics.beginFill(fillColor, fillAlpha);
-    graphics.drawRect(rectanglePosition.x, rectanglePosition.y, rectangleSize.x, rectangleSize.y);
+    graphics.drawRect(
+      rectanglePosition.x,
+      rectanglePosition.y,
+      rectangleSize.x,
+      rectangleSize.y
+    );
     graphics.endFill();
 
-    if (borderWidth > 0)
-    {
+    if (borderWidth > 0) {
       graphics.lineStyle(borderWidth, borderColor, borderAlpha);
       graphics.moveTo(rectanglePosition.x, rectanglePosition.y);
-      graphics.lineTo(rectanglePosition.x + rectangleSize.x, rectanglePosition.y);
-      graphics.lineTo(rectanglePosition.x + rectangleSize.x, rectanglePosition.y + rectangleSize.y);
-      graphics.lineTo(rectanglePosition.x, rectanglePosition.y + rectangleSize.y);
+      graphics.lineTo(
+        rectanglePosition.x + rectangleSize.x,
+        rectanglePosition.y
+      );
+      graphics.lineTo(
+        rectanglePosition.x + rectangleSize.x,
+        rectanglePosition.y + rectangleSize.y
+      );
+      graphics.lineTo(
+        rectanglePosition.x,
+        rectanglePosition.y + rectangleSize.y
+      );
       graphics.lineTo(rectanglePosition.x, rectanglePosition.y);
     }
   }
-
-
 }

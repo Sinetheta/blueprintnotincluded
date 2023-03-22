@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { ComponentBlueprintParentComponent } from './component-blueprint-parent.component';
+import { ComponentBlueprintParentComponent } from "./component-blueprint-parent.component";
 
-describe('ComponentBlueprintParentComponent', () => {
+describe("ComponentBlueprintParentComponent", () => {
   let component: ComponentBlueprintParentComponent;
   let fixture: ComponentFixture<ComponentBlueprintParentComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ ComponentBlueprintParentComponent ]
-    })
-    .compileComponents();
+      declarations: [ComponentBlueprintParentComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('ComponentBlueprintParentComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

@@ -1,27 +1,33 @@
-import { Directive, Output, HostListener, EventEmitter } from '@angular/core';
+import { Directive, Output, HostListener, EventEmitter } from "@angular/core";
 
-@Directive({ selector: '[appMouseWheel]' })
+@Directive({ selector: "[appMouseWheel]" })
 export class MouseWheelDirective {
   @Output() mouseWheelUp = new EventEmitter();
   @Output() mouseWheelDown = new EventEmitter();
   @Output() mouseWheel = new EventEmitter();
 
-  @HostListener('mousewheel.out-zone', ['$event']) onMouseWheelChrome(event: any) {
+  @HostListener("mousewheel.out-zone", ["$event"]) onMouseWheelChrome(
+    event: any
+  ) {
     this.mouseWheelFunc(event);
   }
 
-  @HostListener('DOMMouseScroll.out-zone', ['$event']) onMouseWheelFirefox(event: any) {
+  @HostListener("DOMMouseScroll.out-zone", ["$event"]) onMouseWheelFirefox(
+    event: any
+  ) {
     this.mouseWheelFunc(event);
   }
 
-  @HostListener('onmousewheel.out-zone', ['$event']) onMouseWheelIE(event: any) {
+  @HostListener("onmousewheel.out-zone", ["$event"]) onMouseWheelIE(
+    event: any
+  ) {
     this.mouseWheelFunc(event);
   }
 
   mouseWheelFunc(event: any) {
     var event = window.event || event; // old IE support
-    var delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
-    event.delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
+    var delta = Math.max(-1, Math.min(1, event.wheelDelta || -event.detail));
+    event.delta = Math.max(-1, Math.min(1, event.wheelDelta || -event.detail));
     if (delta != 0) this.mouseWheel.emit(event);
     if (delta > 0) {
       this.mouseWheelUp.emit(event);

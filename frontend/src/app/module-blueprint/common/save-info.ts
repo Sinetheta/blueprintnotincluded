@@ -1,7 +1,6 @@
-import { Blueprint } from "../../../../../lib/index"
+import { Blueprint } from "../../../../../lib/index";
 
-export class SaveInfo
-{
+export class SaveInfo {
   username: string;
   blueprintName: string;
   blueprint: Blueprint;

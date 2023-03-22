@@ -1,20 +1,25 @@
-import { BlueprintService } from '../../services/blueprint-service';
-import { BlueprintItem, CameraService, DrawHelpers, OniItem, Vector2, BuildableElement } from "../../../../../../lib/index";
-import { Injectable } from '@angular/core';
-import { ITool, ToolType } from './tool';
-import { DrawPixi } from '../../drawing/draw-pixi';
-import { SameItemCollection } from './same-item-collection';
+import { BlueprintService } from "../../services/blueprint-service";
+import {
+  BlueprintItem,
+  CameraService,
+  DrawHelpers,
+  OniItem,
+  Vector2,
+  BuildableElement,
+} from "../../../../../../lib/index";
+import { Injectable } from "@angular/core";
+import { ITool, ToolType } from "./tool";
+import { DrawPixi } from "../../drawing/draw-pixi";
+import { SameItemCollection } from "./same-item-collection";
 
 @Injectable()
-export class SelectTool implements ITool
-{
+export class SelectTool implements ITool {
   public sameItemCollections: SameItemCollection[];
 
   public observersSelectionChanged: IObsSelectionChanged[] = [];
 
-  private cameraService: CameraService
+  private cameraService: CameraService;
   constructor(private blueprintService: BlueprintService) {
-
     this.cameraService = CameraService.cameraService;
     // TODO also do this on blueprint loading
     this.reset();
@@ -24,8 +29,7 @@ export class SelectTool implements ITool
     return this.sameItemCollections.length > 0;
   }
 
-  reset()
-  {
+  reset() {
     this.deselectAll();
     this.sameItemCollections = [];
   }
@@ -35,7 +39,9 @@ export class SelectTool implements ITool
   }
 
   private emitSelectionChanged() {
-    this.observersSelectionChanged.map((observer) => { observer.selectionChanged(); });
+    this.observersSelectionChanged.map((observer) => {
+      observer.selectionChanged();
+    });
   }
 
   private lastSelected: BlueprintItem;
@@ -51,26 +57,36 @@ export class SelectTool implements ITool
         tileSelected.push(new Vector2(x, y));
 
     if (tileSelected.length > 0) {
-
       for (let tile of tileSelected) {
-        let itemsInTile = this.blueprintService.blueprint.getBlueprintItemsAt(tile);
+        let itemsInTile =
+          this.blueprintService.blueprint.getBlueprintItemsAt(tile);
         for (let item of itemsInTile) this.addToCollection(item);
       }
 
-      this.sameItemCollections = this.sameItemCollections.sort((i1, i2) => { return i2.items[0].depth - i1.items[0].depth; });
+      this.sameItemCollections = this.sameItemCollections.sort((i1, i2) => {
+        return i2.items[0].depth - i1.items[0].depth;
+      });
 
       let firstSelected: BlueprintItem = null;
       let selectedOne = false;
       this.sameItemCollections.map((itemCollection) => {
-        if (!selectedOne && itemCollection.items != null && itemCollection.items.length > 0) {
+        if (
+          !selectedOne &&
+          itemCollection.items != null &&
+          itemCollection.items.length > 0
+        ) {
           selectedOne = true;
           firstSelected = itemCollection.items[0];
 
           let newDate = new Date();
-          if (firstSelected == this.lastSelected && this.lastSelectedDate != null && newDate.getTime() - this.lastSelectedDate.getTime() < 500) this.selectAllLike(firstSelected);
+          if (
+            firstSelected == this.lastSelected &&
+            this.lastSelectedDate != null &&
+            newDate.getTime() - this.lastSelectedDate.getTime() < 500
+          )
+            this.selectAllLike(firstSelected);
           else {
             itemCollection.selected = true;
-
           }
 
           this.lastSelected = firstSelected;
@@ -87,9 +103,13 @@ export class SelectTool implements ITool
   selectAll(oniItem: OniItem) {
     this.deselectAll();
 
-    this.blueprintService.blueprint.blueprintItems.filter((item) => { return item.oniItem == oniItem; }).map((item) => {
-      this.addToCollection(item);
-    });
+    this.blueprintService.blueprint.blueprintItems
+      .filter((item) => {
+        return item.oniItem == oniItem;
+      })
+      .map((item) => {
+        this.addToCollection(item);
+      });
 
     this.currentMultipleSelectionIndex = 0;
 
@@ -99,12 +119,18 @@ export class SelectTool implements ITool
   selectAllLike(original: BlueprintItem) {
     this.deselectAll();
 
-    this.blueprintService.blueprint.blueprintItems.filter((item) => {
-      if (original.oniItem.isElement) return original.oniItem == item.oniItem && original.buildableElements[0] == item.buildableElements[0];
-      else return original.oniItem == item.oniItem;
-      }).map((item) => {
-      this.addToCollection(item);
-    });
+    this.blueprintService.blueprint.blueprintItems
+      .filter((item) => {
+        if (original.oniItem.isElement)
+          return (
+            original.oniItem == item.oniItem &&
+            original.buildableElements[0] == item.buildableElements[0]
+          );
+        else return original.oniItem == item.oniItem;
+      })
+      .map((item) => {
+        this.addToCollection(item);
+      });
 
     this.currentMultipleSelectionIndex = 0;
 
@@ -114,9 +140,13 @@ export class SelectTool implements ITool
   selectEveryInfo() {
     this.deselectAll();
 
-    this.blueprintService.blueprint.blueprintItems.filter((item) => { return item.oniItem.isInfo; }).map((item) => {
-      this.addToCollection(item);
-    });
+    this.blueprintService.blueprint.blueprintItems
+      .filter((item) => {
+        return item.oniItem.isInfo;
+      })
+      .map((item) => {
+        this.addToCollection(item);
+      });
 
     this.currentMultipleSelectionIndex = 0;
 
@@ -126,9 +156,13 @@ export class SelectTool implements ITool
   selectThis(original: BlueprintItem) {
     this.deselectAll();
 
-    this.blueprintService.blueprint.blueprintItems.filter((item) => { return item == original; }).map((item) => {
-      this.addToCollection(item);
-    });
+    this.blueprintService.blueprint.blueprintItems
+      .filter((item) => {
+        return item == original;
+      })
+      .map((item) => {
+        this.addToCollection(item);
+      });
 
     this.currentMultipleSelectionIndex = 0;
 
@@ -143,7 +177,9 @@ export class SelectTool implements ITool
         this.addToCollection(blueprintItem);
 
     // TODO this does not seem to sort
-    this.sameItemCollections = this.sameItemCollections.sort((i1, i2) => { return i2.oniItem.zIndex - i1.oniItem.zIndex; });
+    this.sameItemCollections = this.sameItemCollections.sort((i1, i2) => {
+      return i2.oniItem.zIndex - i1.oniItem.zIndex;
+    });
 
     this.currentMultipleSelectionIndex = 0;
 
@@ -151,11 +187,14 @@ export class SelectTool implements ITool
   }
 
   addToCollection(blueprintItem: BlueprintItem) {
-
     // Find if there is already an item collection for this oniItem
     let itemCollectionArray = this.sameItemCollections.filter((sameItem) => {
       if (blueprintItem.oniItem.isElement)
-        return blueprintItem.oniItem.id == sameItem.oniItem.id && blueprintItem.buildableElements[0].id == sameItem.items[0].buildableElements[0].id
+        return (
+          blueprintItem.oniItem.id == sameItem.oniItem.id &&
+          blueprintItem.buildableElements[0].id ==
+            sameItem.items[0].buildableElements[0].id
+        );
       else return blueprintItem.oniItem.id == sameItem.oniItem.id;
     });
     if (itemCollectionArray.length == 0) {
@@ -163,25 +202,29 @@ export class SelectTool implements ITool
       newItemCollection.addItem(blueprintItem);
 
       this.sameItemCollections.push(newItemCollection);
-    }
-    else itemCollectionArray[0].addItem(blueprintItem);
+    } else itemCollectionArray[0].addItem(blueprintItem);
   }
 
   deselectAll() {
-    if (this.sameItemCollections != null) this.sameItemCollections.map((itemCollection) => { itemCollection.selected = false; });
-    this.sameItemCollections= [];
+    if (this.sameItemCollections != null)
+      this.sameItemCollections.map((itemCollection) => {
+        itemCollection.selected = false;
+      });
+    this.sameItemCollections = [];
 
     this.emitSelectionChanged();
   }
 
   buildingsDestroy(itemCollection: SameItemCollection) {
-
     this.blueprintService.blueprint.pauseChangeEvents();
     for (let item of itemCollection.items)
       this.blueprintService.blueprint.destroyBlueprintItem(item);
     this.blueprintService.blueprint.resumeChangeEvents();
 
-    this.sameItemCollections.splice(this.sameItemCollections.indexOf(itemCollection), 1);
+    this.sameItemCollections.splice(
+      this.sameItemCollections.indexOf(itemCollection),
+      1
+    );
 
     this.emitSelectionChanged();
   }
@@ -189,7 +232,11 @@ export class SelectTool implements ITool
   get currentMultipleSelectionIndex() {
     let activeIndex = -1;
 
-    for (let indexSelected = 0; indexSelected < this.sameItemCollections.length; indexSelected++)
+    for (
+      let indexSelected = 0;
+      indexSelected < this.sameItemCollections.length;
+      indexSelected++
+    )
       if (this.sameItemCollections[indexSelected].selected)
         activeIndex = indexSelected;
 
@@ -197,8 +244,12 @@ export class SelectTool implements ITool
   }
 
   set currentMultipleSelectionIndex(value: number) {
-    for (let indexSelected = 0; indexSelected < this.sameItemCollections.length; indexSelected++)
-      this.sameItemCollections[indexSelected].selected = (value == indexSelected);
+    for (
+      let indexSelected = 0;
+      indexSelected < this.sameItemCollections.length;
+      indexSelected++
+    )
+      this.sameItemCollections[indexSelected].selected = value == indexSelected;
   }
 
   itemGroupeNext() {
@@ -252,23 +303,20 @@ export class SelectTool implements ITool
     this.selectFromBox(tile, tile);
   }
 
-  rightClick(tile: Vector2) {
-  }
+  rightClick(tile: Vector2) {}
 
-  hover(tile: Vector2) {
-  }
+  hover(tile: Vector2) {}
 
   beginSelection: Vector2 = null;
   endSelection: Vector2;
   drag(tileStart: Vector2, tileStop: Vector2) {
-    if (this.beginSelection == null) this.beginSelection = Vector2.clone(tileStart);
+    if (this.beginSelection == null)
+      this.beginSelection = Vector2.clone(tileStart);
     this.endSelection = Vector2.clone(tileStop);
   }
 
   dragStop() {
-
-    if (this.beginSelection != null && this.endSelection != null)
-    {
+    if (this.beginSelection != null && this.endSelection != null) {
       let beginTile = DrawHelpers.getIntegerTile(this.beginSelection);
       let endTile = DrawHelpers.getIntegerTile(this.endSelection);
 
@@ -289,14 +337,16 @@ export class SelectTool implements ITool
   }
 
   keyDown(keyCode: string) {
-    if (keyCode == 'Delete') {
+    if (keyCode == "Delete") {
       let itemGroupToDestroyIndex = this.currentMultipleSelectionIndex;
-      if (itemGroupToDestroyIndex != -1) this.buildingsDestroy(this.sameItemCollections[itemGroupToDestroyIndex]);
+      if (itemGroupToDestroyIndex != -1)
+        this.buildingsDestroy(
+          this.sameItemCollections[itemGroupToDestroyIndex]
+        );
     }
   }
 
   draw(drawPixi: DrawPixi, camera: CameraService) {
-
     // Return
     if (this.beginSelection == null) return;
 
@@ -310,7 +360,17 @@ export class SelectTool implements ITool
       Math.min(this.beginSelection.y, this.endSelection.y)
     );
 
-    drawPixi.drawTileRectangle(camera, topLeft, bottomRight, true, 2, 0x4CFF00, 0x2D9600, 0.25, 0.8);
+    drawPixi.drawTileRectangle(
+      camera,
+      topLeft,
+      bottomRight,
+      true,
+      2,
+      0x4cff00,
+      0x2d9600,
+      0.25,
+      0.8
+    );
   }
 
   toggleable: boolean = false;
@@ -320,7 +380,6 @@ export class SelectTool implements ITool
   toolGroup: number = 1;
 }
 
-export interface IObsSelectionChanged
-{
+export interface IObsSelectionChanged {
   selectionChanged();
 }

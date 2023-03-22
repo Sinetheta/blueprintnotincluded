@@ -1,31 +1,44 @@
 <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-
-  <br>
+  <br />
   <span class="p-float-label">
-    <input type="text" size="30" formControlName="username" pInputText>
+    <input type="text" size="30" formControlName="username" pInputText />
     <label for="inputtext" i18n>Username</label>
   </span>
-  <div *ngIf="f.username.invalid && (f.username.dirty || f.username.touched)" class="error-red">
+  <div
+    *ngIf="f.username.invalid && (f.username.dirty || f.username.touched)"
+    class="error-red"
+  >
     <div *ngIf="f.username.errors.required" i18n>Username is required.</div>
-    <div *ngIf="f.username.errors.invalidChars" i18n>Invalid characters in username</div>
+    <div *ngIf="f.username.errors.invalidChars" i18n>
+      Invalid characters in username
+    </div>
     <div *ngIf="f.username.errors.tooLong" i18n>Username is too long</div>
   </div>
 
-  <br>
+  <br />
   <span class="p-float-label">
-    <input pPassword type="password" size="30" formControlName="password" [feedback]="false" />
+    <input
+      pPassword
+      type="password"
+      size="30"
+      formControlName="password"
+      [feedback]="false"
+    />
     <label for="inputtext" i18n>Password</label>
   </span>
-  <div *ngIf="f.password.invalid && (f.password.dirty || f.password.touched)" class="error-red">
+  <div
+    *ngIf="f.password.invalid && (f.password.dirty || f.password.touched)"
+    class="error-red"
+  >
     <div *ngIf="f.password.errors.required" i18n>Password is required.</div>
   </div>
   <div *ngIf="authError" class="error-red" i18n>Authentification error</div>
 
-  <br>
+  <br />
   <a [routerLink]="" (click)="registration()" i18n>First registration ?</a>
 
-  <br>
-  <br>
+  <br />
+  <br />
   <div class="recaptcha-wrap" i18n>
     This site is protected by reCAPTCHA and the Google
     <a href="https://policies.google.com/privacy">Privacy Policy</a> and
@@ -33,5 +46,5 @@
   </div>
 
   <!--This is just here so that enter submits the form-->
-  <button type="submit" style='visibility:hidden'></button>
+  <button type="submit" style="visibility: hidden"></button>
 </form>

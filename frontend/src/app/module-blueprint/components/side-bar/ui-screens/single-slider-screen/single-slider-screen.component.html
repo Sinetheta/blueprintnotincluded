@@ -1,9 +1,12 @@
-<div class="text-title">{{singleSliderSideScreen.title}}: <b>{{title}}</b></div>
-<p-slider 
+<div class="text-title">
+  {{ singleSliderSideScreen.title }}: <b>{{ title }}</b>
+</div>
+<p-slider
   [(ngModel)]="value"
   [min]="singleSliderSideScreen.min"
   [max]="singleSliderSideScreen.max"
   [step]="step"
-  (onChange)="onChange()">
+  (onChange)="onChange()"
+>
 </p-slider>
-<div class="text-tooltip">{{tooltip}}</div>
+<div class="text-tooltip">{{ tooltip }}</div>

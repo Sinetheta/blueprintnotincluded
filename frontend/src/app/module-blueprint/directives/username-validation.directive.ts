@@ -1,16 +1,18 @@
-import { Directive } from '@angular/core';
-import { Validator, AbstractControl, NG_VALIDATORS } from '@angular/forms';
-
+import { Directive } from "@angular/core";
+import { Validator, AbstractControl, NG_VALIDATORS } from "@angular/forms";
 
 @Directive({
-  selector: '[appUsernameValidation]',
+  selector: "[appUsernameValidation]",
   providers: [
-    { provide: NG_VALIDATORS, useExisting: UsernameValidationDirective, multi: true }
-  ]
+    {
+      provide: NG_VALIDATORS,
+      useExisting: UsernameValidationDirective,
+      multi: true,
+    },
+  ],
 })
 export class UsernameValidationDirective implements Validator {
-
-  constructor() { }
+  constructor() {}
 
   static regexp = /^[a-zA-Z0-9-_]+$/;
   validate(control: AbstractControl): { [key: string]: any } {
@@ -18,22 +20,20 @@ export class UsernameValidationDirective implements Validator {
   }
 
   static validate(control: AbstractControl): { [key: string]: any } {
-
     let returnValue = null;
     if (control.value == null) return returnValue;
     if (control.value.length == 0) return returnValue;
 
     if (control.value.search(UsernameValidationDirective.regexp) == -1) {
-      if (returnValue == null) returnValue = {}
+      if (returnValue == null) returnValue = {};
       returnValue.invalidChars = true;
-    } 
+    }
 
     if (control.value.length > 30) {
-      if (returnValue == null) returnValue = {}
+      if (returnValue == null) returnValue = {};
       returnValue.tooLong = true;
-    } 
+    }
 
     return returnValue;
   }
-  
 }

@@ -1,15 +1,13 @@
 import { CameraService, Vector2 } from "../../../../../../lib/index";
-import { DrawPixi } from '../../drawing/draw-pixi';
+import { DrawPixi } from "../../drawing/draw-pixi";
 
-export enum ToolType
-{
-    select,
-    build,
-    elementReport
+export enum ToolType {
+  select,
+  build,
+  elementReport,
 }
 
-export interface ITool
-{
+export interface ITool {
   switchFrom();
   switchTo();
 
@@ -30,10 +28,8 @@ export interface ITool
   captureInput: boolean; // Can this tool capture canvas mouse and keyboard input
   toolType: ToolType; // Each tool is aware of its nature
   toolGroup: number; // All tools with the same number are exclusive
-
 }
 
-export interface IChangeTool
-{
+export interface IChangeTool {
   changeTool(toolType: ToolType);
 }

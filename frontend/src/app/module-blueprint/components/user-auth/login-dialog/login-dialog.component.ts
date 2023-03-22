@@ -1,52 +1,67 @@
-import { Component, OnInit, Output, EventEmitter, ViewChild, ChangeDetectorRef } from '@angular/core';
-import { Dialog } from 'primeng/dialog';
-import { LoginFormComponent } from '../login-form/login-form.component';
-import { RegisterFormComponent } from '../register-form/register-form.component';
-import { disableDebugTools } from '@angular/platform-browser';
+import {
+  Component,
+  OnInit,
+  Output,
+  EventEmitter,
+  ViewChild,
+  ChangeDetectorRef,
+} from "@angular/core";
+import { Dialog } from "primeng/dialog";
+import { LoginFormComponent } from "../login-form/login-form.component";
+import { RegisterFormComponent } from "../register-form/register-form.component";
+import { disableDebugTools } from "@angular/platform-browser";
 
 @Component({
-  selector: 'app-login-dialog',
-  templateUrl: './login-dialog.component.html',
-  styleUrls: ['./login-dialog.component.css']
+  selector: "app-login-dialog",
+  templateUrl: "./login-dialog.component.html",
+  styleUrls: ["./login-dialog.component.css"],
 })
 export class ComponentLoginDialogComponent implements OnInit {
-
   visible: boolean = false;
   loginType: LoginType = LoginType.Login;
 
-  @ViewChild('loginDialog', {static: true}) loginDialog: Dialog
-  @ViewChild('loginForm') loginForm: LoginFormComponent
-  @ViewChild('registerForm') registerForm: RegisterFormComponent
+  @ViewChild("loginDialog", { static: true }) loginDialog: Dialog;
+  @ViewChild("loginForm") loginForm: LoginFormComponent;
+  @ViewChild("registerForm") registerForm: RegisterFormComponent;
 
-
-  get label() { return this.isLogin ? $localize`Login` : $localize`Register` } //!loginForm.valid || loginForm.pending || working
+  get label() {
+    return this.isLogin ? $localize`Login` : $localize`Register`;
+  } //!loginForm.valid || loginForm.pending || working
   get icon() {
-    if (this.isLogin && this.loginForm != null) return this.loginForm.working ? 'pi pi-spin pi-spinner' : '';
-    else if (this.isRegistration && this.registerForm != null) return this.registerForm.working ? 'pi pi-spin pi-spinner' : '';
-    else return '';
+    if (this.isLogin && this.loginForm != null)
+      return this.loginForm.working ? "pi pi-spin pi-spinner" : "";
+    else if (this.isRegistration && this.registerForm != null)
+      return this.registerForm.working ? "pi pi-spin pi-spinner" : "";
+    else return "";
   }
   get disabled() {
-    if (this.isLogin && this.loginForm != null) return !this.loginForm.loginForm.valid || this.loginForm.loginForm.pending || this.loginForm.working ;
-    else if (this.isRegistration && this.registerForm != null) return !this.registerForm.registerForm.valid || this.registerForm.registerForm.pending || this.registerForm.working ;
+    if (this.isLogin && this.loginForm != null)
+      return (
+        !this.loginForm.loginForm.valid ||
+        this.loginForm.loginForm.pending ||
+        this.loginForm.working
+      );
+    else if (this.isRegistration && this.registerForm != null)
+      return (
+        !this.registerForm.registerForm.valid ||
+        this.registerForm.registerForm.pending ||
+        this.registerForm.working
+      );
     else return false;
   }
 
-  constructor(private cdRef: ChangeDetectorRef) {
-  }
+  constructor(private cdRef: ChangeDetectorRef) {}
 
   ngOnInit() {
-
     // This is here because we have getters with static=false ViewChild
     this.cdRef.detectChanges();
   }
 
-  cancel(event: any)
-  {
+  cancel(event: any) {
     this.hideDialog();
   }
 
-  showDialog()
-  {
+  showDialog() {
     this.loginType = LoginType.Login;
     this.cdRef.detectChanges();
 
@@ -55,22 +70,23 @@ export class ComponentLoginDialogComponent implements OnInit {
     this.recenter();
   }
 
-  submit()
-  {
+  submit() {
     if (this.isLogin) this.loginForm.onSubmit();
     else if (this.isRegistration) this.registerForm.onSubmit();
   }
 
-  hideDialog()
-  {
+  hideDialog() {
     this.visible = false;
   }
 
-  get isLogin(): boolean { return this.loginType == LoginType.Login; }
-  get isRegistration(): boolean { return this.loginType == LoginType.Registration; }
+  get isLogin(): boolean {
+    return this.loginType == LoginType.Login;
+  }
+  get isRegistration(): boolean {
+    return this.loginType == LoginType.Registration;
+  }
 
-  registration()
-  {
+  registration() {
     this.loginType = LoginType.Registration;
     this.cdRef.detectChanges();
 
@@ -78,16 +94,13 @@ export class ComponentLoginDialogComponent implements OnInit {
     this.recenter();
   }
 
-  recenter()
-  {
+  recenter() {
     //setTimeout(() => {this.loginDialog.positionOverlay();}, 0)
   }
-
 }
 
-enum LoginType
-{
+enum LoginType {
   Login,
   Registration,
-  ForgotPassword
+  ForgotPassword,
 }

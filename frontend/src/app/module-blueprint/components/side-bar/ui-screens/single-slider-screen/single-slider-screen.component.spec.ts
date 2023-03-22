@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { SingleSliderScreenComponent } from './single-slider-screen.component';
+import { SingleSliderScreenComponent } from "./single-slider-screen.component";
 
-describe('SingleSliderScreenComponent', () => {
+describe("SingleSliderScreenComponent", () => {
   let component: SingleSliderScreenComponent;
   let fixture: ComponentFixture<SingleSliderScreenComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ SingleSliderScreenComponent ]
-    })
-    .compileComponents();
+      declarations: [SingleSliderScreenComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('SingleSliderScreenComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

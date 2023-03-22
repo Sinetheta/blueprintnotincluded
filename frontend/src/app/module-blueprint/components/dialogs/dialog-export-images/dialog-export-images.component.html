@@ -1,5 +1,7 @@
-<p-dialog #exportImagesDialog
-  i18n-header header='Export options'
+<p-dialog
+  #exportImagesDialog
+  i18n-header
+  header="Export options"
   [(visible)]="visible"
   [modal]="true"
   [dismissableMask]="true"
@@ -8,34 +10,62 @@
   [maximizable]="false"
   [draggable]="false"
   [resizable]="false"
-  >
+>
   <div class="grid">
     <div class="one">
-        <p-checkbox binary="true" i18n-label label="Export with grid lines"  [(ngModel)]="exportOptions.gridLines"></p-checkbox><br><br>
-        <p-dropdown [options]="pixelPerTile" [(ngModel)]="exportOptions.pixelsPerTile" [style]="{width: '15em'}"></p-dropdown><br>
-        <ng-container i18n>Image size: {{finalSize}}</ng-container>
-        <br>
-        <ng-container i18n>About {{finalSizeMb | number:'1.2-2'}}Mb</ng-container>
+      <p-checkbox
+        binary="true"
+        i18n-label
+        label="Export with grid lines"
+        [(ngModel)]="exportOptions.gridLines"
+      ></p-checkbox
+      ><br /><br />
+      <p-dropdown
+        [options]="pixelPerTile"
+        [(ngModel)]="exportOptions.pixelsPerTile"
+        [style]="{ width: '15em' }"
+      ></p-dropdown
+      ><br />
+      <ng-container i18n>Image size: {{ finalSize }}</ng-container>
+      <br />
+      <ng-container i18n
+        >About {{ finalSizeMb | number : "1.2-2" }}Mb</ng-container
+      >
     </div>
     <div class="three">
-        <div>
-          <!--
+      <div>
+        <!--
           <p-fieldset legend="Overlays to export :">
             <div *ngFor="let overlayToExport of overlaysToExport"><p-checkbox binary="true" [label]="overlayToExport.name"  [(ngModel)]="overlayToExport.checked"></p-checkbox></div>
           </p-fieldset>
           -->
-          <p-listbox [options]="overlayOptions" [multiple]="true" [metaKeySelection]="false" [(ngModel)]="exportOptions.selectedOverlays" >
-            <ng-template let-overlay pTemplate="item">
-                <img [src]="getOverlayUrl(overlay.value)" style="display:inline-block;margin:0px 0 0 0px" height="20px">
-                <span style="float:right;margin:0px 0px 0 0">{{overlayString(overlay.value)}}</span>
-            </ng-template>
-          </p-listbox>
-        </div>
+        <p-listbox
+          [options]="overlayOptions"
+          [multiple]="true"
+          [metaKeySelection]="false"
+          [(ngModel)]="exportOptions.selectedOverlays"
+        >
+          <ng-template let-overlay pTemplate="item">
+            <img
+              [src]="getOverlayUrl(overlay.value)"
+              style="display: inline-block; margin: 0px 0 0 0px"
+              height="20px"
+            />
+            <span style="float: right; margin: 0px 0px 0 0">{{
+              overlayString(overlay.value)
+            }}</span>
+          </ng-template>
+        </p-listbox>
+      </div>
     </div>
   </div>
 
   <p-footer>
-    <p-button i18n-label label="Download images" [disabled]="disabled" (click)="downloadImages()"></p-button>
+    <p-button
+      i18n-label
+      label="Download images"
+      [disabled]="disabled"
+      (click)="downloadImages()"
+    ></p-button>
   </p-footer>
-
 </p-dialog>

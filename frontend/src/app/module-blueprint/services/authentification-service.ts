@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Router } from "@angular/router";
+import { Observable } from "rxjs";
+import { map } from "rxjs/operators";
 
 export interface UserDetails {
   _id: string;
@@ -16,7 +16,7 @@ interface TokenResponse {
 }
 
 export interface TokenPayload {
-  'g-recaptcha-response': string;
+  "g-recaptcha-response": string;
   email: string;
   username: string;
   password: string;
@@ -24,7 +24,7 @@ export interface TokenPayload {
 
 @Injectable()
 export class AuthenticationService {
-  private static localStorage: string = 'blueprintnotincluded-token';
+  private static localStorage: string = "blueprintnotincluded-token";
 
   private token: string;
 
@@ -46,7 +46,7 @@ export class AuthenticationService {
     const token = this.getToken();
     let payload;
     if (token) {
-      payload = token.split('.')[1];
+      payload = token.split(".")[1];
       payload = window.atob(payload);
       return JSON.parse(payload);
     } else {
@@ -63,13 +63,19 @@ export class AuthenticationService {
     }
   }
 
-  private request(method: 'post'|'get', type: 'login'|'register'|'profile', user?: TokenPayload): Observable<any> {
+  private request(
+    method: "post" | "get",
+    type: "login" | "register" | "profile",
+    user?: TokenPayload
+  ): Observable<any> {
     let base;
 
-    if (method === 'post') {
+    if (method === "post") {
       base = this.http.post(`/api/${type}`, user);
     } else {
-      base = this.http.get(`/api/${type}`, { headers: { Authorization: `Bearer ${this.getToken()}` }});
+      base = this.http.get(`/api/${type}`, {
+        headers: { Authorization: `Bearer ${this.getToken()}` },
+      });
     }
 
     const request = base.pipe(
@@ -85,19 +91,19 @@ export class AuthenticationService {
   }
 
   public register(user: TokenPayload): Observable<any> {
-    return this.request('post', 'register', user);
+    return this.request("post", "register", user);
   }
 
   public login(user: TokenPayload): Observable<any> {
-    return this.request('post', 'login', user);
+    return this.request("post", "login", user);
   }
 
   public profile(): Observable<any> {
-    return this.request('get', 'profile');
+    return this.request("get", "profile");
   }
 
   public logout(): void {
-    this.token = '';
+    this.token = "";
     window.localStorage.removeItem(AuthenticationService.localStorage);
   }
 }

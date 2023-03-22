@@ -1,13 +1,13 @@
-import { ModuleBlueprintModule } from './module-blueprint.module';
+import { ModuleBlueprintModule } from "./module-blueprint.module";
 
-describe('ModuleBlueprintModule', () => {
+describe("ModuleBlueprintModule", () => {
   let moduleBlueprintModule: ModuleBlueprintModule;
 
   beforeEach(() => {
     moduleBlueprintModule = new ModuleBlueprintModule();
   });
 
-  it('should create an instance', () => {
+  it("should create an instance", () => {
     expect(moduleBlueprintModule).toBeTruthy();
   });
 });

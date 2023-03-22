@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { CellElementPickerComponent } from './cell-element-picker.component';
+import { CellElementPickerComponent } from "./cell-element-picker.component";
 
-describe('CellElementPickerComponent', () => {
+describe("CellElementPickerComponent", () => {
   let component: CellElementPickerComponent;
   let fixture: ComponentFixture<CellElementPickerComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ CellElementPickerComponent ]
-    })
-    .compileComponents();
+      declarations: [CellElementPickerComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('CellElementPickerComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

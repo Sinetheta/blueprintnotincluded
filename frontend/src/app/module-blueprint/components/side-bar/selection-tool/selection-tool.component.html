@@ -1,14 +1,45 @@
 <div #selectToolCard class="box-card ui-widget">
   <div class="box-card-title" i18n>Select Tool</div>
   <div class="button-line">
-    <button pButton type="button" class="ui-button"             icon="pi pi-chevron-down" (click)="itemGroupeNext()" i18n-pTooltip pTooltip="Select next item group"></button>
-    <button pButton type="button" class="ui-button buttonspace" icon="pi pi-chevron-up"   (click)="itemGroupePrevious()" i18n-pTooltip pTooltip="Select previous item group"></button>
-    <button pButton type="button" class="ui-button buttonspace" icon="pi pi-trash"        (click)="destroyAll()" i18n-pTooltip pTooltip="Destroy every item group"></button>
+    <button
+      pButton
+      type="button"
+      class="ui-button"
+      icon="pi pi-chevron-down"
+      (click)="itemGroupeNext()"
+      i18n-pTooltip
+      pTooltip="Select next item group"
+    ></button>
+    <button
+      pButton
+      type="button"
+      class="ui-button buttonspace"
+      icon="pi pi-chevron-up"
+      (click)="itemGroupePrevious()"
+      i18n-pTooltip
+      pTooltip="Select previous item group"
+    ></button>
+    <button
+      pButton
+      type="button"
+      class="ui-button buttonspace"
+      icon="pi pi-trash"
+      (click)="destroyAll()"
+      i18n-pTooltip
+      pTooltip="Destroy every item group"
+    ></button>
   </div>
   <div class="scrollable">
     <p-accordion #buildingsAccordion>
-      <p-accordionTab *ngFor="let itemCollection of toolService.selectTool.sameItemCollections" [(selected)]="itemCollection.selected" [header]="itemCollection.header" [transitionOptions]="'0ms'">
-        <app-item-collection-info [itemCollection]=itemCollection>
+      <p-accordionTab
+        *ngFor="
+          let itemCollection of toolService.selectTool.sameItemCollections
+        "
+        [(selected)]="itemCollection.selected"
+        [header]="itemCollection.header"
+        [transitionOptions]="'0ms'"
+      >
+        <app-item-collection-info [itemCollection]="itemCollection">
         </app-item-collection-info>
       </p-accordionTab>
     </p-accordion>

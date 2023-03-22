@@ -4,19 +4,33 @@
 
 <div *ngIf="!itemCollection.oniItem.isInfo">
   <div class="icon-nb-items">
-    <img *ngIf="itemCollection.oniItem.iconUrl !== null" [src]="itemCollection.oniItem.iconUrl" height="70px">
-    <div class="text-nb-items">{{nbItems}}</div>
+    <img
+      *ngIf="itemCollection.oniItem.iconUrl !== null"
+      [src]="itemCollection.oniItem.iconUrl"
+      height="70px"
+    />
+    <div class="text-nb-items">{{ nbItems }}</div>
   </div>
-  <app-buildable-element-picker [currentElement]="itemCollection.items[0].buildableElements"
-    [buildableElementsArray]="itemCollection.oniItem.buildableElementsArray" [nbElements]="itemCollection.nbElements"
-    [isGasLiquid]="isGasLiquid" (changeElement)="changeElement($event)">
+  <app-buildable-element-picker
+    [currentElement]="itemCollection.items[0].buildableElements"
+    [buildableElementsArray]="itemCollection.oniItem.buildableElementsArray"
+    [nbElements]="itemCollection.nbElements"
+    [isGasLiquid]="isGasLiquid"
+    (changeElement)="changeElement($event)"
+  >
   </app-buildable-element-picker>
 
-  <app-temperature-picker [blueprintItem]=itemCollection.items[0]
-    [temperatureWarning]="itemCollection.temperatureWarning" (changeTemperature)="changeTemperature($event)">
+  <app-temperature-picker
+    [blueprintItem]="itemCollection.items[0]"
+    [temperatureWarning]="itemCollection.temperatureWarning"
+    (changeTemperature)="changeTemperature($event)"
+  >
   </app-temperature-picker>
 
-  <app-ui-screen-container *ngIf="itemCollection.items.length === 1" [blueprintItem]="itemCollection.items[0]">
+  <app-ui-screen-container
+    *ngIf="itemCollection.items.length === 1"
+    [blueprintItem]="itemCollection.items[0]"
+  >
   </app-ui-screen-container>
 </div>
 
@@ -28,26 +42,55 @@
   <div *ngFor="let info of itemCollection.items">
     <div class="ui-clickable-icon info-button" (click)="selectThisInfo(info)">
       <div class="info-panel-content">
-        <app-info-input-icon [width]="40" [height]="40" [frontColor]="info.htmlFrontColor"
-          [backColor]="info.htmlBackColor" [svgPath]="info.htmlSvgPath"></app-info-input-icon>
+        <app-info-input-icon
+          [width]="40"
+          [height]="40"
+          [frontColor]="info.htmlFrontColor"
+          [backColor]="info.htmlBackColor"
+          [svgPath]="info.htmlSvgPath"
+        ></app-info-input-icon>
         <div class="left"></div>
-        <div>{{info.title}}</div>
+        <div>{{ info.title }}</div>
         <div class="right"></div>
       </div>
     </div>
   </div>
 </div>
 <div *ngIf="showPipeContent">
-  <app-pipe-content [currentElement]="getPipeElement()" [forceTag]="forceTag"
-    (selectElementPipe)="changePipeElement($event)"></app-pipe-content>
+  <app-pipe-content
+    [currentElement]="getPipeElement()"
+    [forceTag]="forceTag"
+    (selectElementPipe)="changePipeElement($event)"
+  ></app-pipe-content>
 </div>
-<br>
-<button *ngIf="!itemCollection.oniItem.isInfo || itemCollection.items.length === 1" pButton type="button"
-  class="ui-button buttonspace" icon="pi pi-clone" (click)="buildingsCopy()" i18n-pTooltip
-  pTooltip="Build this type of building"></button>
-<button *ngIf="!itemCollection.oniItem.isInfo || itemCollection.items.length === 1" pButton type="button"
-  class="ui-button buttonspace" icon="pi pi-search-plus" (click)="selectEvery()" i18n-pTooltip
-  pTooltip="Select every {{itemCollection.oniItem.name}}"></button>
-<button *ngIf="!itemCollection.oniItem.isInfo || itemCollection.items.length === 1" pButton type="button"
-  class="ui-button buttonspace" icon="pi pi-trash" (click)="buildingsDestroy()" i18n-pTooltip
-  pTooltip="Destroy these buildings (Delete key)"></button>
+<br />
+<button
+  *ngIf="!itemCollection.oniItem.isInfo || itemCollection.items.length === 1"
+  pButton
+  type="button"
+  class="ui-button buttonspace"
+  icon="pi pi-clone"
+  (click)="buildingsCopy()"
+  i18n-pTooltip
+  pTooltip="Build this type of building"
+></button>
+<button
+  *ngIf="!itemCollection.oniItem.isInfo || itemCollection.items.length === 1"
+  pButton
+  type="button"
+  class="ui-button buttonspace"
+  icon="pi pi-search-plus"
+  (click)="selectEvery()"
+  i18n-pTooltip
+  pTooltip="Select every {{ itemCollection.oniItem.name }}"
+></button>
+<button
+  *ngIf="!itemCollection.oniItem.isInfo || itemCollection.items.length === 1"
+  pButton
+  type="button"
+  class="ui-button buttonspace"
+  icon="pi pi-trash"
+  (click)="buildingsDestroy()"
+  i18n-pTooltip
+  pTooltip="Destroy these buildings (Delete key)"
+></button>

@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { ActiveRangeScreenComponent } from './active-range-screen.component';
+import { ActiveRangeScreenComponent } from "./active-range-screen.component";
 
-describe('ActiveRangeScreenComponent', () => {
+describe("ActiveRangeScreenComponent", () => {
   let component: ActiveRangeScreenComponent;
   let fixture: ComponentFixture<ActiveRangeScreenComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ ActiveRangeScreenComponent ]
-    })
-    .compileComponents();
+      declarations: [ActiveRangeScreenComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('ActiveRangeScreenComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

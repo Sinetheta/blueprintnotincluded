@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { LikeWidgetComponent } from './like-widget.component';
+import { LikeWidgetComponent } from "./like-widget.component";
 
-describe('LikeWidgetComponent', () => {
+describe("LikeWidgetComponent", () => {
   let component: LikeWidgetComponent;
   let fixture: ComponentFixture<LikeWidgetComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ LikeWidgetComponent ]
-    })
-    .compileComponents();
+      declarations: [LikeWidgetComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('LikeWidgetComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

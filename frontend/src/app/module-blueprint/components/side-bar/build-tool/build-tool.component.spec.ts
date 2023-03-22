@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { ComponentSideBuildToolComponent } from './build-tool.component';
+import { ComponentSideBuildToolComponent } from "./build-tool.component";
 
-describe('ComponentSideBuildToolComponent', () => {
+describe("ComponentSideBuildToolComponent", () => {
   let component: ComponentSideBuildToolComponent;
   let fixture: ComponentFixture<ComponentSideBuildToolComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ ComponentSideBuildToolComponent ]
-    })
-    .compileComponents();
+      declarations: [ComponentSideBuildToolComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('ComponentSideBuildToolComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });
