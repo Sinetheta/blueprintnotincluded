@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { ComponentSideSelectionToolComponent } from './selection-tool.component';
+import { ComponentSideSelectionToolComponent } from "./selection-tool.component";
 
-describe('ComponentSideSelectionToolComponent', () => {
+describe("ComponentSideSelectionToolComponent", () => {
   let component: ComponentSideSelectionToolComponent;
   let fixture: ComponentFixture<ComponentSideSelectionToolComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ ComponentSideSelectionToolComponent ]
-    })
-    .compileComponents();
+      declarations: [ComponentSideSelectionToolComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('ComponentSideSelectionToolComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

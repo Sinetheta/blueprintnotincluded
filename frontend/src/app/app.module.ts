@@ -1,27 +1,28 @@
-import { BrowserModule, EventManager } from '@angular/platform-browser';
-import { NgModule, ErrorHandler } from '@angular/core';
+import { BrowserModule, EventManager } from "@angular/platform-browser";
+import { NgModule, ErrorHandler } from "@angular/core";
 import { Router } from "@angular/router";
-import { HttpClientModule } from '@angular/common/http';
-import { NgxGoogleAnalyticsModule, NgxGoogleAnalyticsRouterModule } from 'ngx-google-analytics';
+import { HttpClientModule } from "@angular/common/http";
+import {
+  NgxGoogleAnalyticsModule,
+  NgxGoogleAnalyticsRouterModule,
+} from "ngx-google-analytics";
 import * as Sentry from "@sentry/angular-ivy";
 
-import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
+import { AppRoutingModule } from "./app-routing.module";
+import { AppComponent } from "./app.component";
 
-import { ModuleBlueprintModule } from './module-blueprint/module-blueprint.module';
-import { CustomEventManager } from './module-blueprint/directives/custom-event-manager';
+import { ModuleBlueprintModule } from "./module-blueprint/module-blueprint.module";
+import { CustomEventManager } from "./module-blueprint/directives/custom-event-manager";
 
 @NgModule({
-  declarations: [
-    AppComponent
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     NgxGoogleAnalyticsModule.forRoot(process.env.NG_APP_GA_TRACKING_CODE),
     NgxGoogleAnalyticsRouterModule.forRoot(),
     ModuleBlueprintModule,
     HttpClientModule,
-    AppRoutingModule
+    AppRoutingModule,
   ],
   providers: [
     { provide: EventManager, useClass: CustomEventManager },
@@ -36,8 +37,8 @@ import { CustomEventManager } from './module-blueprint/directives/custom-event-m
       deps: [Router],
     },
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
 export class AppModule {
-  constructor(trace: Sentry.TraceService) { }
+  constructor(trace: Sentry.TraceService) {}
 }

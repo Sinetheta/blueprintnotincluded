@@ -27,10 +27,7 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
             "aot": true,
-            "assets": [
-              "src/favicon_blueprint_oxygen-32x32.png",
-              "src/assets"
-            ],
+            "assets": ["src/favicon_blueprint_oxygen-32x32.png", "src/assets"],
             "styles": [
               "src/styles.css",
               "node_modules/primeicons/primeicons.css",
@@ -39,9 +36,7 @@
               "node_modules/primeflex/primeflex.css",
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
             ],
-            "scripts": [
-              "node_modules/pixi.js-legacy/dist/pixi-legacy.min.js"
-            ]
+            "scripts": ["node_modules/pixi.js-legacy/dist/pixi-legacy.min.js"]
           },
           "configurations": {
             "production": {
@@ -77,21 +72,15 @@
               "optimization": false
             },
             "zh-Hans": {
-              "localize": [
-                "zh-Hans"
-              ],
+              "localize": ["zh-Hans"],
               "optimization": false
             },
             "ru": {
-              "localize": [
-                "ru"
-              ],
+              "localize": ["ru"],
               "optimization": false
             },
             "ko": {
-              "localize": [
-                "ko"
-              ],
+              "localize": ["ko"],
               "optimization": false
             }
           }
@@ -130,10 +119,7 @@
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
-            "assets": [
-              "src/favicon_blueprint_oxygen.png",
-              "src/assets"
-            ],
+            "assets": ["src/favicon_blueprint_oxygen.png", "src/assets"],
             "styles": [
               "src/styles.css",
               "node_modules/primeicons/primeicons.css",
@@ -142,18 +128,13 @@
               "node_modules/primeflex/primeflex.css",
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
             ],
-            "scripts": [
-              "node_modules/pixi.js-legacy/dist/pixi-legacy.min.js"
-            ]
+            "scripts": ["node_modules/pixi.js-legacy/dist/pixi-legacy.min.js"]
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": [
-              "src/**/*.ts",
-              "src/**/*.html"
-            ]
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
           }
         },
         "e2e": {

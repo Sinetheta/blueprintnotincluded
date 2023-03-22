@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { UiScreenContainerComponent } from './ui-screen-container.component';
+import { UiScreenContainerComponent } from "./ui-screen-container.component";
 
-describe('UiScreenContainerComponent', () => {
+describe("UiScreenContainerComponent", () => {
   let component: UiScreenContainerComponent;
   let fixture: ComponentFixture<UiScreenContainerComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ UiScreenContainerComponent ]
-    })
-    .compileComponents();
+      declarations: [UiScreenContainerComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('UiScreenContainerComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

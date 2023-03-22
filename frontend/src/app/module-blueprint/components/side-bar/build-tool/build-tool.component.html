@@ -1,40 +1,60 @@
 <div #selectToolCard class="box-card ui-widget">
   <div class="box-card-title" i18n>Build Tool</div>
   <div *ngIf="databaseLoaded">
-    <div class="ui-clickable-icon element-button-width" (click)="showCategories($event)" style="margin-bottom: 5px;">
+    <div
+      class="ui-clickable-icon element-button-width"
+      (click)="showCategories($event)"
+      style="margin-bottom: 5px"
+    >
       <div class="building-panel-content">
-        <img *ngIf="!currentItem.isElement" src="{{currentItem.iconUrl}}" height="40px" />
-        <app-element-icon *ngIf="currentItem.isElement"
+        <img
+          *ngIf="!currentItem.isElement"
+          src="{{ currentItem.iconUrl }}"
+          height="40px"
+        />
+        <app-element-icon
+          *ngIf="currentItem.isElement"
           [element]="currentItemToBuild.buildableElements[0]"
           [width]="'40px'"
-          [height]="'40px'">
+          [height]="'40px'"
+        >
         </app-element-icon>
         <div class="left"></div>
-        <div>{{currentItem.name}}</div>
+        <div>{{ currentItem.name }}</div>
         <div class="right"></div>
       </div>
     </div>
 
-    <div *ngIf="currentItem.orientations.length > 1" i18n>Press "O" to change item orientation</div>
-    <div *ngIf="!currentItemToBuild.buildCandidateResult.canBuild" class = "error-red">{{currentItemToBuild.buildCandidateResult.cantBuildReason}}</div>
+    <div *ngIf="currentItem.orientations.length > 1" i18n>
+      Press "O" to change item orientation
+    </div>
+    <div
+      *ngIf="!currentItemToBuild.buildCandidateResult.canBuild"
+      class="error-red"
+    >
+      {{ currentItemToBuild.buildCandidateResult.cantBuildReason }}
+    </div>
 
     <app-buildable-element-picker
       *ngIf="!currentItem.isInfo"
       [currentElement]="currentItemToBuild.buildableElements"
       [buildableElementsArray]="currentItem.buildableElementsArray"
       [isGasLiquid]="isGasLiquid"
-      (changeElement)="changeElement($event)">
+      (changeElement)="changeElement($event)"
+    >
     </app-buildable-element-picker>
 
     <app-temperature-picker
       *ngIf="!currentItem.isInfo"
-      [blueprintItem]=currentItemToBuild
-      [temperatureWarning]="false">
+      [blueprintItem]="currentItemToBuild"
+      [temperatureWarning]="false"
+    >
     </app-temperature-picker>
 
     <app-ui-screen-container
       *ngIf="!currentItem.isInfo"
-      [blueprintItem]="currentItemToBuild">
+      [blueprintItem]="currentItemToBuild"
+    >
     </app-ui-screen-container>
 
     <div *ngIf="currentItem.isInfo">
@@ -43,33 +63,72 @@
     </div>
 
     <!-- These go first so we don't have to add one to the index when querying them -->
-    <p-overlayPanel [appendTo]="'body'" *ngFor="let buildMenuCategory of buildMenuCategories; let indexCategory = index">
-      <div *ngFor="let itemArray of items[indexCategory]" class="building-panel-content">
-        <div *ngFor="let item of itemArray" class="ui-clickable-icon element-button" (click)="chooseItem(item)" [pTooltip]="item.name" tooltipPosition="bottom" life="5000">
-            <img src="{{item.iconUrl}}" height="40px" />
+    <p-overlayPanel
+      [appendTo]="'body'"
+      *ngFor="
+        let buildMenuCategory of buildMenuCategories;
+        let indexCategory = index
+      "
+    >
+      <div
+        *ngFor="let itemArray of items[indexCategory]"
+        class="building-panel-content"
+      >
+        <div
+          *ngFor="let item of itemArray"
+          class="ui-clickable-icon element-button"
+          (click)="chooseItem(item)"
+          [pTooltip]="item.name"
+          tooltipPosition="bottom"
+          life="5000"
+        >
+          <img src="{{ item.iconUrl }}" height="40px" />
         </div>
       </div>
     </p-overlayPanel>
-
-
-
-
   </div>
 </div>
 
 <p-overlayPanel #categoryPanel [appendTo]="'body'">
   <div class="building-panel-content">
-    <div class="ui-clickable-icon element-button" (click)="addInfo()" i18n-pTooltip pTooltip="Add info tip" tooltipPosition="bottom" life="5000">
-      <img src="assets/images/ui/manual/info-indicator-icon.png" height="40px" />
+    <div
+      class="ui-clickable-icon element-button"
+      (click)="addInfo()"
+      i18n-pTooltip
+      pTooltip="Add info tip"
+      tooltipPosition="bottom"
+      life="5000"
+    >
+      <img
+        src="assets/images/ui/manual/info-indicator-icon.png"
+        height="40px"
+      />
     </div>
-    <div class="ui-clickable-icon element-button" (click)="paintElement()" i18n-pTooltip pTooltip="Paint Element" tooltipPosition="bottom" life="5000">
+    <div
+      class="ui-clickable-icon element-button"
+      (click)="paintElement()"
+      i18n-pTooltip
+      pTooltip="Paint Element"
+      tooltipPosition="bottom"
+      life="5000"
+    >
       <img src="assets/images/ui/manual/liquid_icon.png" height="40px" />
     </div>
-    <div *ngFor="let buildMenuCategory of buildMenuCategories; let indexCategory = index">
-      <div class="ui-clickable-icon element-button" (click)="showItems($event, buildMenuCategory, indexCategory)" [pTooltip]="buildMenuCategory.categoryShowName" tooltipPosition="bottom" life="5000">
-        <img src="{{buildMenuCategory.categoryIconUrl}}" height="40px" />
+    <div
+      *ngFor="
+        let buildMenuCategory of buildMenuCategories;
+        let indexCategory = index
+      "
+    >
+      <div
+        class="ui-clickable-icon element-button"
+        (click)="showItems($event, buildMenuCategory, indexCategory)"
+        [pTooltip]="buildMenuCategory.categoryShowName"
+        tooltipPosition="bottom"
+        life="5000"
+      >
+        <img src="{{ buildMenuCategory.categoryIconUrl }}" height="40px" />
       </div>
     </div>
   </div>
 </p-overlayPanel>
-

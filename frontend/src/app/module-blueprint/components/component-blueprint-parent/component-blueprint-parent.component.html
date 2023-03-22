@@ -1,21 +1,40 @@
-<p-toast *ngIf="!forceSize" position="top-center" [style]="{marginTop: '40px'}"></p-toast>
+<p-toast
+  *ngIf="!forceSize"
+  position="top-center"
+  [style]="{ marginTop: '40px' }"
+></p-toast>
 
 <app-component-canvas #canvas [forceSize]="forceSize" [forcedSize]="forcedSize">
 </app-component-canvas>
 <div *ngIf="!forceSize" class="outer">
-  <app-component-menu *ngIf="!forceSize" #menu (menuCommand)="menuCommand($event)">
+  <app-component-menu
+    *ngIf="!forceSize"
+    #menu
+    (menuCommand)="menuCommand($event)"
+  >
   </app-component-menu>
   <div>
     <div #sidePanelLeft class="side-panel">
-      <app-selection-tool #selectionTool [hidden]="!toolService.selectTool.visible || !toolService.selectTool.showTool">
+      <app-selection-tool
+        #selectionTool
+        [hidden]="
+          !toolService.selectTool.visible || !toolService.selectTool.showTool
+        "
+      >
       </app-selection-tool>
       <app-build-tool #buildTool [hidden]="!toolService.buildTool.visible">
       </app-build-tool>
     </div>
     <div class="side-panel-right">
-      <app-element-report-tool *ngIf="showElementReport && !aboutDialog.visible" #elementReportTool>
+      <app-element-report-tool
+        *ngIf="showElementReport && !aboutDialog.visible"
+        #elementReportTool
+      >
       </app-element-report-tool>
-      <app-temperature-scale *ngIf="showTemperatureScale && !aboutDialog.visible" #temperatureScale>
+      <app-temperature-scale
+        *ngIf="showTemperatureScale && !aboutDialog.visible"
+        #temperatureScale
+      >
       </app-temperature-scale>
     </div>
     <div class="side-panel-about">
@@ -25,11 +44,16 @@
   </div>
 </div>
 
-
-<app-component-save-dialog *ngIf="!forceSize" #saveDialog
-  (updateThumbnail)='updateThumbnail()'></app-component-save-dialog>
+<app-component-save-dialog
+  *ngIf="!forceSize"
+  #saveDialog
+  (updateThumbnail)="updateThumbnail()"
+></app-component-save-dialog>
 <app-login-dialog *ngIf="!forceSize" #loginDialog></app-login-dialog>
 <app-dialog-share-url *ngIf="!forceSize" #shareUrlDialog></app-dialog-share-url>
 <app-dialog-browse *ngIf="!forceSize" #browseDialog></app-dialog-browse>
-<app-dialog-export-images *ngIf="!forceSize" #exportImagesDialog
-  (saveImages)="saveImages($event)"></app-dialog-export-images>
+<app-dialog-export-images
+  *ngIf="!forceSize"
+  #exportImagesDialog
+  (saveImages)="saveImages($event)"
+></app-dialog-export-images>

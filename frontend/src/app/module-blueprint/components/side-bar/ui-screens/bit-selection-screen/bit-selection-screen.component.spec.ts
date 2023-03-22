@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { BitSelectionScreenComponent } from './bit-selection-screen.component';
+import { BitSelectionScreenComponent } from "./bit-selection-screen.component";
 
-describe('BitSelectionScreenComponent', () => {
+describe("BitSelectionScreenComponent", () => {
   let component: BitSelectionScreenComponent;
   let fixture: ComponentFixture<BitSelectionScreenComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ BitSelectionScreenComponent ]
-    })
-    .compileComponents();
+      declarations: [BitSelectionScreenComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('BitSelectionScreenComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

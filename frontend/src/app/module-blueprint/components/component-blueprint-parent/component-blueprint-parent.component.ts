@@ -1,26 +1,55 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, ElementRef, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { HttpClient } from "@angular/common/http";
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  Renderer2,
+  ViewChild,
+} from "@angular/core";
 // Library imports
-import { ActivatedRoute, Params, UrlSegment } from '@angular/router';
-import * as JSZip from 'jszip';
-import { MessageService } from 'primeng/api';
-import { } from 'sanitize-filename';
-import { BBuilding, Blueprint, BSpriteInfo, BSpriteModifier, BuildableElement, BuildMenuCategory, BuildMenuItem, CameraService, ImageSource, OniItem, Overlay, SpriteInfo, SpriteModifier, Vector2 } from '../../../../../../lib/index';
-import { ToolType } from '../../common/tools/tool';
-import { AuthenticationService } from '../../services/authentification-service';
-import { BlueprintService, ExportImageOptions, IObsBlueprintChanged } from '../../services/blueprint-service';
-import { GameStringService } from '../../services/game-string-service';
-import { ToolService } from '../../services/tool-service';
-import { ComponentCanvasComponent } from '../component-canvas/component-canvas.component';
-import { BrowseData, MenuCommand, MenuCommandType } from '../component-menu/component-menu.component';
-import { ComponentSaveDialogComponent } from '../dialogs/component-save-dialog/component-save-dialog.component';
-import { DialogAboutComponent } from '../dialogs/dialog-about/dialog-about.component';
-import { DialogBrowseComponent } from '../dialogs/dialog-browse/dialog-browse.component';
-import { DialogExportImagesComponent } from '../dialogs/dialog-export-images/dialog-export-images.component';
-import { DialogShareUrlComponent } from '../dialogs/dialog-share-url/dialog-share-url.component';
-import { ComponentSideBuildToolComponent } from '../side-bar/build-tool/build-tool.component';
-import { ComponentSideSelectionToolComponent } from '../side-bar/selection-tool/selection-tool.component';
-import { ComponentLoginDialogComponent } from '../user-auth/login-dialog/login-dialog.component';
+import { ActivatedRoute, Params, UrlSegment } from "@angular/router";
+import * as JSZip from "jszip";
+import { MessageService } from "primeng/api";
+import {} from "sanitize-filename";
+import {
+  BBuilding,
+  Blueprint,
+  BSpriteInfo,
+  BSpriteModifier,
+  BuildableElement,
+  BuildMenuCategory,
+  BuildMenuItem,
+  CameraService,
+  ImageSource,
+  OniItem,
+  Overlay,
+  SpriteInfo,
+  SpriteModifier,
+  Vector2,
+} from "../../../../../../lib/index";
+import { ToolType } from "../../common/tools/tool";
+import { AuthenticationService } from "../../services/authentification-service";
+import {
+  BlueprintService,
+  ExportImageOptions,
+  IObsBlueprintChanged,
+} from "../../services/blueprint-service";
+import { GameStringService } from "../../services/game-string-service";
+import { ToolService } from "../../services/tool-service";
+import { ComponentCanvasComponent } from "../component-canvas/component-canvas.component";
+import {
+  BrowseData,
+  MenuCommand,
+  MenuCommandType,
+} from "../component-menu/component-menu.component";
+import { ComponentSaveDialogComponent } from "../dialogs/component-save-dialog/component-save-dialog.component";
+import { DialogAboutComponent } from "../dialogs/dialog-about/dialog-about.component";
+import { DialogBrowseComponent } from "../dialogs/dialog-browse/dialog-browse.component";
+import { DialogExportImagesComponent } from "../dialogs/dialog-export-images/dialog-export-images.component";
+import { DialogShareUrlComponent } from "../dialogs/dialog-share-url/dialog-share-url.component";
+import { ComponentSideBuildToolComponent } from "../side-bar/build-tool/build-tool.component";
+import { ComponentSideSelectionToolComponent } from "../side-bar/selection-tool/selection-tool.component";
+import { ComponentLoginDialogComponent } from "../user-auth/login-dialog/login-dialog.component";
 var sanitize = require("sanitize-filename");
 
 /*
@@ -40,44 +69,44 @@ TODO Feature List before release :
 
 */
 
-
 @Component({
-  selector: 'app-component-blueprint-parent',
-  templateUrl: './component-blueprint-parent.component.html',
-  styleUrls: ['./component-blueprint-parent.component.css'],
-  providers: [MessageService]
+  selector: "app-component-blueprint-parent",
+  templateUrl: "./component-blueprint-parent.component.html",
+  styleUrls: ["./component-blueprint-parent.component.css"],
+  providers: [MessageService],
 })
-export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintChanged {
-
-  @ViewChild('canvas', { static: true })
+export class ComponentBlueprintParentComponent
+  implements OnInit, IObsBlueprintChanged
+{
+  @ViewChild("canvas", { static: true })
   canvas: ComponentCanvasComponent;
 
-  @ViewChild('buildTool', { static: false })
+  @ViewChild("buildTool", { static: false })
   buildTool: ComponentSideBuildToolComponent;
 
-  @ViewChild('saveDialog', { static: false })
+  @ViewChild("saveDialog", { static: false })
   saveDialog: ComponentSaveDialogComponent;
 
-  @ViewChild('browseDialog', { static: false })
+  @ViewChild("browseDialog", { static: false })
   browseDialog: DialogBrowseComponent;
 
-  @ViewChild('loginDialog', { static: false })
+  @ViewChild("loginDialog", { static: false })
   loginDialog: ComponentLoginDialogComponent;
 
-  @ViewChild('exportImagesDialog', { static: false })
+  @ViewChild("exportImagesDialog", { static: false })
   exportImagesDialog: DialogExportImagesComponent;
 
-  @ViewChild('shareUrlDialog', { static: false })
+  @ViewChild("shareUrlDialog", { static: false })
   shareUrlDialog: DialogShareUrlComponent;
 
-  @ViewChild('aboutDialog')
+  @ViewChild("aboutDialog")
   aboutDialog: DialogAboutComponent;
 
   // The left ui panel is not static, because when in a iframe we don't load it
-  @ViewChild('sidePanelLeft', { static: false })
+  @ViewChild("sidePanelLeft", { static: false })
   sidePanelLeft: ElementRef;
 
-  @ViewChild('selectionTool', { static: false })
+  @ViewChild("selectionTool", { static: false })
   selectionTool: ComponentSideSelectionToolComponent;
 
   constructor(
@@ -89,32 +118,29 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
     private renderer: Renderer2,
     private http: HttpClient,
     public gameStringService: GameStringService
-  ) {
-  }
+  ) {}
 
   get showElementReport() {
     if (CameraService.cameraService == null) return false;
-    else return CameraService.cameraService.showElementReport
+    else return CameraService.cameraService.showElementReport;
   }
 
   get showTemperatureScale() {
     if (CameraService.cameraService == null) return false;
-    else return CameraService.cameraService.showTemperatureScale
+    else return CameraService.cameraService.showTemperatureScale;
   }
 
   forceSize: boolean = false;
   forcedSize: Vector2 = Vector2.zero();
 
   ngOnInit() {
-
     this.route.params.subscribe((params: Params): void => {
       let width = Number(params.width);
       let height = Number(params.height);
       if (Number.isInteger(width) && Number.isInteger(height)) {
         this.forceSize = true;
         this.forcedSize = new Vector2(width, height);
-      }
-      else this.forceSize = false;
+      } else this.forceSize = false;
     });
 
     SpriteModifier.init();
@@ -128,27 +154,29 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
     this.blueprintService.subscribeBlueprintChanged(this);
 
     this.fetchDatabase().then(() => {
-
       if (!this.forceSize) {
         this.buildTool.oniItemsLoaded();
       }
 
       this.route.url.subscribe((url: UrlSegment[]) => {
-        if (url != null && url.length > 0 && url[0].path == 'browse') {
+        if (url != null && url.length > 0 && url[0].path == "browse") {
           this.browseDialog.showDialog();
-        }
-        else if (url != null && url.length > 0 && url[0].path == 'about') {
+        } else if (url != null && url.length > 0 && url[0].path == "about") {
           this.aboutDialog.visible = true;
+        } else if (
+          url != null &&
+          url.length > 1 &&
+          url[0].path == "openfromurl"
+        ) {
+          this.blueprintService.loadUrlBlueprint(url[1].path);
         }
-        else if (url != null && url.length > 1 && url[0].path == 'openfromurl') {
-          this.blueprintService.loadUrlBlueprint(url[1].path)
-        }
-      })
+      });
 
       this.route.params.subscribe((params: Params): void => {
-        if (params.id != null) this.blueprintService.openBlueprintFromId(params.id);
+        if (params.id != null)
+          this.blueprintService.openBlueprintFromId(params.id);
       });
-    })/*
+    }); /*
       .catch((error) => {
         this.messageService.add({
           severity: 'error',
@@ -158,17 +186,18 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
         });
       });
     */
-    this.renderer.listen('window', 'load', () => {
+    this.renderer.listen("window", "load", () => {
       this.resizeTools();
     });
-    this.renderer.listen('window', 'resize', () => {
+    this.renderer.listen("window", "resize", () => {
       this.resizeTools();
     });
   }
 
   resizeTools() {
     if (!this.forceSize) {
-      let sidePanelPosition: number = this.sidePanelLeft.nativeElement.getBoundingClientRect().y;
+      let sidePanelPosition: number =
+        this.sidePanelLeft.nativeElement.getBoundingClientRect().y;
       this.selectionTool.setMaxHeight(sidePanelPosition);
     }
   }
@@ -180,59 +209,68 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
   database: any;
   fetchDatabase(): Promise<any> {
     let promise = new Promise((resolve, reject) => {
-
-
       // Start comment here
-      this.http.get("assets/database/database.zip", { responseType: "arraybuffer" }).subscribe(data => {
-        JSZip.loadAsync(data).then((zipped) => {
-          zipped.files['database.json'].async('text').then(async (text) => {
-            let json = JSON.parse(text);
+      this.http
+        .get("assets/database/database.zip", { responseType: "arraybuffer" })
+        .subscribe((data) => {
+          JSZip.loadAsync(data)
+            .then((zipped) => {
+              zipped.files["database.json"].async("text").then(async (text) => {
+                let json = JSON.parse(text);
 
-            this.database = json;
+                this.database = json;
 
-            let elements: BuildableElement[] = json.elements;
-            for (const e of elements) {
-              const localizedName = await this.gameStringService.getStr(`STRINGS.ELEMENTS.${e.id.toUpperCase()}.NAME`);
-              if (!localizedName) console.warn(`Missing element translation`, e);
-              e.name = localizedName || e.name
-            }
-            BuildableElement.load(elements);
+                let elements: BuildableElement[] = json.elements;
+                for (const e of elements) {
+                  const localizedName = await this.gameStringService.getStr(
+                    `STRINGS.ELEMENTS.${e.id.toUpperCase()}.NAME`
+                  );
+                  if (!localizedName)
+                    console.warn(`Missing element translation`, e);
+                  e.name = localizedName || e.name;
+                }
+                BuildableElement.load(elements);
 
-            let buildMenuCategories: BuildMenuCategory[] = json.buildMenuCategories;
-            for (const bm of buildMenuCategories) {
-              const localizedName = await this.gameStringService.getStr(`STRINGS.UI.BUILDCATEGORIES.${bm.categoryName.toUpperCase()}.NAME`);
-              if (!localizedName) console.warn(`Missing buildMenuCategory translation`, bm);
-              bm.categoryShowName = localizedName || bm.categoryName
-            }
-            BuildMenuCategory.load(buildMenuCategories);
+                let buildMenuCategories: BuildMenuCategory[] =
+                  json.buildMenuCategories;
+                for (const bm of buildMenuCategories) {
+                  const localizedName = await this.gameStringService.getStr(
+                    `STRINGS.UI.BUILDCATEGORIES.${bm.categoryName.toUpperCase()}.NAME`
+                  );
+                  if (!localizedName)
+                    console.warn(`Missing buildMenuCategory translation`, bm);
+                  bm.categoryShowName = localizedName || bm.categoryName;
+                }
+                BuildMenuCategory.load(buildMenuCategories);
 
-            let buildMenuItems: BuildMenuItem[] = json.buildMenuItems;
-            BuildMenuItem.load(buildMenuItems);
+                let buildMenuItems: BuildMenuItem[] = json.buildMenuItems;
+                BuildMenuItem.load(buildMenuItems);
 
-            let uiSprites: BSpriteInfo[] = json.uiSprites;
-            SpriteInfo.load(uiSprites)
+                let uiSprites: BSpriteInfo[] = json.uiSprites;
+                SpriteInfo.load(uiSprites);
 
-            let spriteModifiers: BSpriteModifier[] = json.spriteModifiers;
-            SpriteModifier.load(spriteModifiers);
+                let spriteModifiers: BSpriteModifier[] = json.spriteModifiers;
+                SpriteModifier.load(spriteModifiers);
 
-            let buildings: BBuilding[] = json.buildings;
-            for (const b of buildings) {
-              const localizedName = await this.gameStringService.getStr(`STRINGS.BUILDINGS.PREFABS.${b.prefabId.toUpperCase()}.NAME`);
-              if (!localizedName) console.warn(`Missing building translation`, b);
-              b.name = localizedName
-            }
-            OniItem.load(buildings);
+                let buildings: BBuilding[] = json.buildings;
+                for (const b of buildings) {
+                  const localizedName = await this.gameStringService.getStr(
+                    `STRINGS.BUILDINGS.PREFABS.${b.prefabId.toUpperCase()}.NAME`
+                  );
+                  if (!localizedName)
+                    console.warn(`Missing building translation`, b);
+                  b.name = localizedName;
+                }
+                OniItem.load(buildings);
 
-            resolve(0);
-          })
-
-        })
-          .catch((error) => {
-            reject(error);
-          });
-      })
+                resolve(0);
+              });
+            })
+            .catch((error) => {
+              reject(error);
+            });
+        });
       // End comment here
-
 
       /*
       // Start comment here
@@ -267,30 +305,41 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
       });
       // End comment here
       */
-
     });
 
     return promise;
   }
 
   menuCommand(menuCommand: MenuCommand) {
-    if (menuCommand.type == MenuCommandType.newBlueprint) this.blueprintService.newBlueprint();
-    else if (menuCommand.type == MenuCommandType.showLoginDialog) this.loginDialog.showDialog();
-    else if (menuCommand.type == MenuCommandType.browseBlueprints) this.browseBlueprints(menuCommand.data);
-    else if (menuCommand.type == MenuCommandType.about) this.aboutDialog.toggleDialog();
-    else if (menuCommand.type == MenuCommandType.getShareableUrl) this.shareUrl();
-    else if (menuCommand.type == MenuCommandType.exportImages) this.exportImages();
-    else if (menuCommand.type == MenuCommandType.saveBlueprint) this.saveBlueprint();
-    else if (menuCommand.type == MenuCommandType.exportBlueprint) this.exportBlueprint();
-
+    if (menuCommand.type == MenuCommandType.newBlueprint)
+      this.blueprintService.newBlueprint();
+    else if (menuCommand.type == MenuCommandType.showLoginDialog)
+      this.loginDialog.showDialog();
+    else if (menuCommand.type == MenuCommandType.browseBlueprints)
+      this.browseBlueprints(menuCommand.data);
+    else if (menuCommand.type == MenuCommandType.about)
+      this.aboutDialog.toggleDialog();
+    else if (menuCommand.type == MenuCommandType.getShareableUrl)
+      this.shareUrl();
+    else if (menuCommand.type == MenuCommandType.exportImages)
+      this.exportImages();
+    else if (menuCommand.type == MenuCommandType.saveBlueprint)
+      this.saveBlueprint();
+    else if (menuCommand.type == MenuCommandType.exportBlueprint)
+      this.exportBlueprint();
     // Technical (repack, generate solid sprites, etc)
-    else if (menuCommand.type == MenuCommandType.fetchIcons) this.canvas.fetchIcons();
-    else if (menuCommand.type == MenuCommandType.downloadIcons) this.canvas.downloadIcons();
-    else if (menuCommand.type == MenuCommandType.downloadGroups) this.canvas.downloadGroups(this.database);
-    else if (menuCommand.type == MenuCommandType.downloadUtility) this.canvas.downloadUtility(this.database);
-    else if (menuCommand.type == MenuCommandType.repackTextures) this.canvas.repackTextures(this.database);
-    else if (menuCommand.type == MenuCommandType.addElementsTiles) this.addElementsTiles();
-
+    else if (menuCommand.type == MenuCommandType.fetchIcons)
+      this.canvas.fetchIcons();
+    else if (menuCommand.type == MenuCommandType.downloadIcons)
+      this.canvas.downloadIcons();
+    else if (menuCommand.type == MenuCommandType.downloadGroups)
+      this.canvas.downloadGroups(this.database);
+    else if (menuCommand.type == MenuCommandType.downloadUtility)
+      this.canvas.downloadUtility(this.database);
+    else if (menuCommand.type == MenuCommandType.repackTextures)
+      this.canvas.repackTextures(this.database);
+    else if (menuCommand.type == MenuCommandType.addElementsTiles)
+      this.addElementsTiles();
   }
 
   saveImages(exportOptions: ExportImageOptions) {
@@ -304,23 +353,25 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
 
     // TODO error handling
     this.messageService.add({
-      severity: 'success',
+      severity: "success",
       summary: $localize`Loaded blueprint: ${this.blueprintService.name}`,
       detail: $localize`${template.blueprintItems.length} items loaded`,
     });
   }
 
   saveBlueprint() {
-    if (!this.authService.isLoggedIn()) this.messageService.add({
-      severity: 'error',
-      summary: $localize`Not logged in`,
-      detail: $localize`You must be logged in to be able to save blueprints`,
-    });
-    else if (this.blueprintService.blueprint.blueprintItems.length == 0) this.messageService.add({
-      severity: 'error',
-      summary: $localize`Empty blueprint`,
-      detail: $localize`Add some buildings before trying to save`,
-    });
+    if (!this.authService.isLoggedIn())
+      this.messageService.add({
+        severity: "error",
+        summary: $localize`Not logged in`,
+        detail: $localize`You must be logged in to be able to save blueprints`,
+      });
+    else if (this.blueprintService.blueprint.blueprintItems.length == 0)
+      this.messageService.add({
+        severity: "error",
+        summary: $localize`Empty blueprint`,
+        detail: $localize`Add some buildings before trying to save`,
+      });
     else {
       this.updateThumbnail();
       this.saveDialog.showDialog();
@@ -328,21 +379,26 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
   }
 
   exportBlueprint() {
-    if (this.blueprintService.blueprint.blueprintItems.length == 0) this.messageService.add({
-      severity: 'error',
-      summary: $localize`Empty blueprint`,
-      detail: $localize`Add some buildings before trying to save`,
-    });
+    if (this.blueprintService.blueprint.blueprintItems.length == 0)
+      this.messageService.add({
+        severity: "error",
+        summary: $localize`Empty blueprint`,
+        detail: $localize`Add some buildings before trying to save`,
+      });
     else {
       let friendlyname = "new blueprint";
-      if (this.blueprintService.name != undefined) friendlyname = this.blueprintService.name;
+      if (this.blueprintService.name != undefined)
+        friendlyname = this.blueprintService.name;
 
-      let bniBlueprint = this.blueprintService.blueprint.toBniBlueprint(friendlyname);
+      let bniBlueprint =
+        this.blueprintService.blueprint.toBniBlueprint(friendlyname);
 
-      let a = document.createElement('a');
+      let a = document.createElement("a");
       document.body.append(a);
-      a.download = sanitize(friendlyname) + '.blueprint';
-      a.href = URL.createObjectURL(new Blob([JSON.stringify(bniBlueprint)], {}));
+      a.download = sanitize(friendlyname) + ".blueprint";
+      a.href = URL.createObjectURL(
+        new Blob([JSON.stringify(bniBlueprint)], {})
+      );
       a.click();
       a.remove();
     }
@@ -353,27 +409,34 @@ export class ComponentBlueprintParentComponent implements OnInit, IObsBlueprintC
   }
 
   shareUrl() {
-    if (this.blueprintService.id == null) this.messageService.add({
-      severity: 'error',
-      summary: $localize`Blueprint not saved`,
-      detail: $localize`Save this blueprint to share it with others`
-    });
+    if (this.blueprintService.id == null)
+      this.messageService.add({
+        severity: "error",
+        summary: $localize`Blueprint not saved`,
+        detail: $localize`Save this blueprint to share it with others`,
+      });
     else this.shareUrlDialog.showDialog();
   }
 
   browseBlueprints(data: any) {
     let browseData = data as BrowseData;
-    if (browseData != null) this.browseDialog.showDialog(browseData.filterUserId, browseData.filterUserName, browseData.getDuplicates);
+    if (browseData != null)
+      this.browseDialog.showDialog(
+        browseData.filterUserId,
+        browseData.filterUserName,
+        browseData.getDuplicates
+      );
     else this.browseDialog.showDialog();
   }
 
   // TODO toast on save and generate url also
   exportImages() {
-    if (this.blueprintService.blueprint.blueprintItems.length == 0) this.messageService.add({
-      severity: 'error',
-      summary: $localize`Empty blueprint`,
-      detail: $localize`Add some buildings before trying to export images`
-    });
+    if (this.blueprintService.blueprint.blueprintItems.length == 0)
+      this.messageService.add({
+        severity: "error",
+        summary: $localize`Empty blueprint`,
+        detail: $localize`Add some buildings before trying to export images`,
+      });
     else this.exportImagesDialog.showDialog();
   }
 

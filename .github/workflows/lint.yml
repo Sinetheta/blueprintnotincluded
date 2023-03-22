@@ -33,3 +33,7 @@ jobs:
       - name: Run frontend linters
         working-directory: frontend
         run: npm run lint
+
+      - name: Verify code style
+        working-directory: frontend
+        run: npx prettier --check .

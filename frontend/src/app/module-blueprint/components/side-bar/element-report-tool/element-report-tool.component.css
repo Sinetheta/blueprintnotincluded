@@ -1,15 +1,18 @@
 .element-card {
   background-color: #ffffff;
   color: #333333;
-  border-radius: 3px; 
+  border-radius: 3px;
   padding: 10px;
   width: 100%;
   display: flex;
   flex-flow: column;
 
-  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
-  -moz-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12); 
+  -webkit-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2),
+    0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  -moz-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2),
+    0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 2px 1px -1px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14),
+    0 2px 1px -1px rgba(0, 0, 0, 0.12);
 }
 
 .element-card-header {
@@ -23,7 +26,7 @@
   flex-flow: row;
   align-items: center;
   justify-content: space-between;
-  height:40px;
+  height: 40px;
   width: 100%;
 }
 
@@ -52,7 +55,7 @@
 
 .element-spacer {
   width: 10px;
-  flex: 1
+  flex: 1;
 }
 
 .element-mass {

@@ -2,8 +2,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: min-content 1fr;
-  grid-template-areas:
-    "one three"
+  grid-template-areas: "one three";
 }
 
 .one {
@@ -16,6 +15,6 @@
 }
 
 .error-red {
-	color: darkred;
+  color: darkred;
   margin-left: 0.5em;
 }

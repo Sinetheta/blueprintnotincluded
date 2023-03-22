@@ -1,34 +1,69 @@
 <fieldset class="ui-fieldset ui-widget ui-widget-content ui-corner-all">
-  <legend class="ui-fieldset-legend ui-corner-all ui-state-default ui-unselectable-text">
-    <span class="ui-fieldset-legend-text ui-fieldset-false-link" (click)="elementsVisualization()" i18n>Elements</span>
+  <legend
+    class="ui-fieldset-legend ui-corner-all ui-state-default ui-unselectable-text"
+  >
+    <span
+      class="ui-fieldset-legend-text ui-fieldset-false-link"
+      (click)="elementsVisualization()"
+      i18n
+      >Elements</span
+    >
   </legend>
   <div class="ui-fieldset-content-wrapper">
     <div class="ui-fieldset-content">
-      <div *ngFor="let buildableElements of buildableElementsArray; let indexElement = index">
-        <div class="ui-clickable-icon element-button" (click)="showElements($event, indexElement)"
-          style="margin-bottom: 5px;">
+      <div
+        *ngFor="
+          let buildableElements of buildableElementsArray;
+          let indexElement = index
+        "
+      >
+        <div
+          class="ui-clickable-icon element-button"
+          (click)="showElements($event, indexElement)"
+          style="margin-bottom: 5px"
+        >
           <div class="element-panel-content">
-            <app-element-icon [element]="currentElement[indexElement]" [width]="'40px'"
-              [height]="'40px'"></app-element-icon>
+            <app-element-icon
+              [element]="currentElement[indexElement]"
+              [width]="'40px'"
+              [height]="'40px'"
+            ></app-element-icon>
             <div class="left"></div>
-            <div>{{currentElement[indexElement].name}}</div>
+            <div>{{ currentElement[indexElement].name }}</div>
             <div class="right"></div>
           </div>
         </div>
         <div *ngIf="showWarning(indexElement)" class="error-red">
-          Warning : Not every selected building is made of {{currentElement[indexElement].name}}
+          Warning : Not every selected building is made of
+          {{ currentElement[indexElement].name }}
         </div>
 
         <p-overlayPanel [appendTo]="'body'">
           <div *ngIf="!isGasLiquid" class="element-panel-content">
-            <div *ngFor="let buildableElement of buildableElementsArray[indexElement]">
-              <div class="ui-clickable-icon element-button" (click)="chooseElement(buildableElement, indexElement)"
-                [pTooltip]="buildableElement.name" tooltipPosition="bottom" life="5000">
-                <app-element-icon [element]="buildableElement" [width]="'40px'" [height]="'40px'"></app-element-icon>
+            <div
+              *ngFor="
+                let buildableElement of buildableElementsArray[indexElement]
+              "
+            >
+              <div
+                class="ui-clickable-icon element-button"
+                (click)="chooseElement(buildableElement, indexElement)"
+                [pTooltip]="buildableElement.name"
+                tooltipPosition="bottom"
+                life="5000"
+              >
+                <app-element-icon
+                  [element]="buildableElement"
+                  [width]="'40px'"
+                  [height]="'40px'"
+                ></app-element-icon>
               </div>
             </div>
           </div>
-          <app-cell-element-picker *ngIf="isGasLiquid" (selectElementCell)="chooseElement($event, 0)">
+          <app-cell-element-picker
+            *ngIf="isGasLiquid"
+            (selectElementCell)="chooseElement($event, 0)"
+          >
           </app-cell-element-picker>
         </p-overlayPanel>
       </div>

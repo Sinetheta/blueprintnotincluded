@@ -1,24 +1,25 @@
-import { Component, OnInit, Input } from '@angular/core';
-import { BlueprintService } from '../../services/blueprint-service';
+import { Component, OnInit, Input } from "@angular/core";
+import { BlueprintService } from "../../services/blueprint-service";
 
 @Component({
-  selector: 'app-like-widget',
-  templateUrl: './like-widget.component.html',
-  styleUrls: ['./like-widget.component.css']
+  selector: "app-like-widget",
+  templateUrl: "./like-widget.component.html",
+  styleUrls: ["./like-widget.component.css"],
 })
 export class LikeWidgetComponent implements OnInit {
-
   @Input() blueprintId: string;
   @Input() nbLikes: number = 0;
   @Input() likedByMe: boolean;
   @Input() disabled: boolean;
 
-  get nbLikesString() { return $localize`like${this.nbLikes != 1 ? 's' : ''}`; }
+  get nbLikesString() {
+    return $localize`like${this.nbLikes != 1 ? "s" : ""}`;
+  }
 
-  constructor(private blueprintService: BlueprintService) { }
+  constructor(private blueprintService: BlueprintService) {}
 
   ngOnInit() {
-    1;// required for type
+    1; // required for type
   }
 
   like() {
@@ -27,5 +28,4 @@ export class LikeWidgetComponent implements OnInit {
 
     this.blueprintService.likeBlueprint(this.blueprintId, this.likedByMe);
   }
-
 }

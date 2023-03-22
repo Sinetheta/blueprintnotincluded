@@ -1,19 +1,21 @@
-import { Component, OnInit, Input, ViewChild } from '@angular/core';
-import { BlueprintItemInfo, InfoIcon } from '../../../../../../../lib/src/blueprint/blueprint-item-info';
-import { OverlayPanel } from 'primeng/overlaypanel';
-import { ColorPicker } from 'primeng/colorpicker';
-import { DrawHelpers } from '../../../../../../../lib';
+import { Component, OnInit, Input, ViewChild } from "@angular/core";
+import {
+  BlueprintItemInfo,
+  InfoIcon,
+} from "../../../../../../../lib/src/blueprint/blueprint-item-info";
+import { OverlayPanel } from "primeng/overlaypanel";
+import { ColorPicker } from "primeng/colorpicker";
+import { DrawHelpers } from "../../../../../../../lib";
 
 @Component({
-  selector: 'app-info-input',
-  templateUrl: './info-input.component.html',
-  styleUrls: ['./info-input.component.css']
+  selector: "app-info-input",
+  templateUrl: "./info-input.component.html",
+  styleUrls: ["./info-input.component.css"],
 })
 export class InfoInputComponent implements OnInit {
-
   @Input() blueprintIteminfo: BlueprintItemInfo;
 
-  @ViewChild('iconPanel') iconPanel: OverlayPanel;
+  @ViewChild("iconPanel") iconPanel: OverlayPanel;
 
   iconList: InfoIcon[] = [
     InfoIcon.icon_inf,
@@ -27,18 +29,29 @@ export class InfoInputComponent implements OnInit {
     InfoIcon.icon_no6,
     InfoIcon.icon_no7,
     InfoIcon.icon_no8,
-    InfoIcon.icon_no9];
+    InfoIcon.icon_no9,
+  ];
 
-  get infoString(): string { return this.blueprintIteminfo.infoString; }
-  set infoString(value: string) { this.blueprintIteminfo.infoString = value; }
-  get title(): string { return this.blueprintIteminfo.title; }
-  set title(value: string) { this.blueprintIteminfo.title = value; }
-  get iconSvgPath() { return this.blueprintIteminfo.htmlSvgPath; }
+  get infoString(): string {
+    return this.blueprintIteminfo.infoString;
+  }
+  set infoString(value: string) {
+    this.blueprintIteminfo.infoString = value;
+  }
+  get title(): string {
+    return this.blueprintIteminfo.title;
+  }
+  set title(value: string) {
+    this.blueprintIteminfo.title = value;
+  }
+  get iconSvgPath() {
+    return this.blueprintIteminfo.htmlSvgPath;
+  }
 
-  frontColor: string = '#ffffff';
-  backColor: string = '#007AD9';
+  frontColor: string = "#ffffff";
+  backColor: string = "#007AD9";
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.frontColor = this.blueprintIteminfo.htmlFrontColor;
@@ -56,9 +69,9 @@ export class InfoInputComponent implements OnInit {
   }
 
   colorChange() {
-    let frontColorString = this.frontColor.replace('#', '0x');
+    let frontColorString = this.frontColor.replace("#", "0x");
     this.blueprintIteminfo.frontColor = parseInt(frontColorString, 16);
-    let backColorString = this.backColor.replace('#', '0x');
+    let backColorString = this.backColor.replace("#", "0x");
     this.blueprintIteminfo.backColor = parseInt(backColorString, 16);
     this.blueprintIteminfo.reloadCamera = true;
   }

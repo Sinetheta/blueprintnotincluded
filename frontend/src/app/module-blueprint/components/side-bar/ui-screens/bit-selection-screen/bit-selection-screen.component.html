@@ -1,5 +1,12 @@
-<div>{{title}} :</div>
-<div>{{description}}</div>
-<div *ngFor='let buttonValue of buttonValues; let index = index'>
-  <button pButton i18n-label label="Bit {{index + 1}}" [ngClass]="classButton(index)" (click)="clickBit(index)" [style]="{'width':'100%', 'margin-top':'5px'}"></button>
+<div>{{ title }} :</div>
+<div>{{ description }}</div>
+<div *ngFor="let buttonValue of buttonValues; let index = index">
+  <button
+    pButton
+    i18n-label
+    label="Bit {{ index + 1 }}"
+    [ngClass]="classButton(index)"
+    (click)="clickBit(index)"
+    [style]="{ width: '100%', 'margin-top': '5px' }"
+  ></button>
 </div>

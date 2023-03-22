@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { TemperaturePickerComponent } from './temperature-picker.component';
+import { TemperaturePickerComponent } from "./temperature-picker.component";
 
-describe('TemperaturePickerComponent', () => {
+describe("TemperaturePickerComponent", () => {
   let component: TemperaturePickerComponent;
   let fixture: ComponentFixture<TemperaturePickerComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ TemperaturePickerComponent ]
-    })
-    .compileComponents();
+      declarations: [TemperaturePickerComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('TemperaturePickerComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

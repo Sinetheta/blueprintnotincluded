@@ -1,18 +1,31 @@
-import { BlueprintService } from '../../services/blueprint-service';
-import { BlueprintHelpers, BlueprintItemWire, BlueprintItem, CameraService, DrawHelpers, Vector2, PixiUtil, BuildCandidateResult, BuildLocationRule, ConnectionHelper } from "../../../../../../lib/index";
-import { Injectable, ApplicationRef } from '@angular/core';
-import { ITool, IChangeTool, ToolType } from './tool';
-import { DrawPixi } from '../../drawing/draw-pixi';
+import { BlueprintService } from "../../services/blueprint-service";
+import {
+  BlueprintHelpers,
+  BlueprintItemWire,
+  BlueprintItem,
+  CameraService,
+  DrawHelpers,
+  Vector2,
+  PixiUtil,
+  BuildCandidateResult,
+  BuildLocationRule,
+  ConnectionHelper,
+} from "../../../../../../lib/index";
+import { Injectable, ApplicationRef } from "@angular/core";
+import { ITool, IChangeTool, ToolType } from "./tool";
+import { DrawPixi } from "../../drawing/draw-pixi";
 
 @Injectable()
 export class BuildTool implements ITool {
-
   templateItemToBuild: BlueprintItem;
   private observers: IObsBuildItemChanged[];
 
   parent: IChangeTool;
 
-  constructor(private blueprintService: BlueprintService, private appRef: ApplicationRef) {
+  constructor(
+    private blueprintService: BlueprintService,
+    private appRef: ApplicationRef
+  ) {
     this.observers = [];
   }
 
@@ -28,50 +41,87 @@ export class BuildTool implements ITool {
   }
 
   private updateBuildCandidateResult() {
-    let previousCanBuild = this.templateItemToBuild.buildCandidateResult.canBuild.valueOf();
-    let previousCantBuildReason = this.templateItemToBuild.buildCandidateResult.cantBuildReason.valueOf();
+    let previousCanBuild =
+      this.templateItemToBuild.buildCandidateResult.canBuild.valueOf();
+    let previousCantBuildReason =
+      this.templateItemToBuild.buildCandidateResult.cantBuildReason.valueOf();
 
     this.templateItemToBuild.buildCandidateResult.canBuild = true;
-    this.templateItemToBuild.buildCandidateResult.cantBuildReason = '';
+    this.templateItemToBuild.buildCandidateResult.cantBuildReason = "";
 
     // First : iterate all the buildings on each tile of this building
 
-    let isBridge = this.templateItemToBuild.oniItem.buildLocationRule == BuildLocationRule.Conduit || this.templateItemToBuild.oniItem.buildLocationRule == BuildLocationRule.WireBridge || this.templateItemToBuild.oniItem.buildLocationRule == BuildLocationRule.LogicBridge;
+    let isBridge =
+      this.templateItemToBuild.oniItem.buildLocationRule ==
+        BuildLocationRule.Conduit ||
+      this.templateItemToBuild.oniItem.buildLocationRule ==
+        BuildLocationRule.WireBridge ||
+      this.templateItemToBuild.oniItem.buildLocationRule ==
+        BuildLocationRule.LogicBridge;
 
     for (let tileIndex of this.templateItemToBuild.tileIndexes) {
-      for (let templateItem of this.blueprintService.blueprint.getBlueprintItemsAtIndex(tileIndex)) {
+      for (let templateItem of this.blueprintService.blueprint.getBlueprintItemsAtIndex(
+        tileIndex
+      )) {
         // If at least one of them is in the same object layer, we can't build
         // We skip this step for bridges, who only care about their utility ports
-        if (!isBridge && this.templateItemToBuild.oniItem.objectLayer == templateItem.oniItem.objectLayer) {
+        if (
+          !isBridge &&
+          this.templateItemToBuild.oniItem.objectLayer ==
+            templateItem.oniItem.objectLayer
+        ) {
           this.templateItemToBuild.buildCandidateResult.canBuild = false;
           this.templateItemToBuild.buildCandidateResult.cantBuildReason = $localize`Can\'t build here : ${templateItem.oniItem.name} is in the way`;
         }
       }
     }
 
-    for (let connectionToBuild of this.templateItemToBuild.oniItem.utilityConnections) {
+    for (let connectionToBuild of this.templateItemToBuild.oniItem
+      .utilityConnections) {
       // We rotate and scale the offset, and add to the position
-      let connectionToBuildPosition = Vector2.cloneNullToZero(connectionToBuild.offset);
-      connectionToBuildPosition = DrawHelpers.rotateVector2(connectionToBuildPosition, Vector2.Zero, this.templateItemToBuild.rotation);
-      connectionToBuildPosition = DrawHelpers.scaleVector2(connectionToBuildPosition, Vector2.Zero, this.templateItemToBuild.scale);
+      let connectionToBuildPosition = Vector2.cloneNullToZero(
+        connectionToBuild.offset
+      );
+      connectionToBuildPosition = DrawHelpers.rotateVector2(
+        connectionToBuildPosition,
+        Vector2.Zero,
+        this.templateItemToBuild.rotation
+      );
+      connectionToBuildPosition = DrawHelpers.scaleVector2(
+        connectionToBuildPosition,
+        Vector2.Zero,
+        this.templateItemToBuild.scale
+      );
       connectionToBuildPosition.x += this.templateItemToBuild.position.x;
       connectionToBuildPosition.y += this.templateItemToBuild.position.y;
 
-      let utilitiesAtIndex = this.blueprintService.blueprint.getUtilityConnectionsAtIndex(DrawHelpers.getTileIndex(connectionToBuildPosition));
+      let utilitiesAtIndex =
+        this.blueprintService.blueprint.getUtilityConnectionsAtIndex(
+          DrawHelpers.getTileIndex(connectionToBuildPosition)
+        );
       for (let trackedUtilities of utilitiesAtIndex) {
-
-        if (ConnectionHelper.getConnectionOverlay(connectionToBuild.type) == ConnectionHelper.getConnectionOverlay(trackedUtilities.utilityConnection.type)) {
+        if (
+          ConnectionHelper.getConnectionOverlay(connectionToBuild.type) ==
+          ConnectionHelper.getConnectionOverlay(
+            trackedUtilities.utilityConnection.type
+          )
+        ) {
           this.templateItemToBuild.buildCandidateResult.canBuild = false;
-          const connection = ConnectionHelper.getConnectionName(trackedUtilities.utilityConnection.type);
+          const connection = ConnectionHelper.getConnectionName(
+            trackedUtilities.utilityConnection.type
+          );
           const itemName = trackedUtilities.blueprintItem.oniItem.name;
           this.templateItemToBuild.buildCandidateResult.cantBuildReason = $localize`Can\'t build here : The ${connection} from ${itemName} is in the way`;
         }
       }
     }
 
-    if (previousCanBuild != this.templateItemToBuild.buildCandidateResult.canBuild ||
-      previousCantBuildReason != this.templateItemToBuild.buildCandidateResult.cantBuildReason) {
-
+    if (
+      previousCanBuild !=
+        this.templateItemToBuild.buildCandidateResult.canBuild ||
+      previousCantBuildReason !=
+        this.templateItemToBuild.buildCandidateResult.cantBuildReason
+    ) {
       // The mousemouse is outside the angular zone, so we have to force a full update here.
       this.appRef.tick();
     }
@@ -80,7 +130,11 @@ export class BuildTool implements ITool {
   build() {
     if (!this.templateItemToBuild.buildCandidateResult.canBuild) return;
 
-    let newItem = BlueprintHelpers.cloneBlueprintItem(this.templateItemToBuild, false, true);
+    let newItem = BlueprintHelpers.cloneBlueprintItem(
+      this.templateItemToBuild,
+      false,
+      true
+    );
 
     newItem.prepareBoundingBox();
     newItem.updateTileables(this.blueprintService.blueprint);
@@ -91,10 +145,14 @@ export class BuildTool implements ITool {
 
   private connectAToB(a: BlueprintItemWire, b: BlueprintItemWire) {
     let bitMask = 0;
-    if (a.position.x == b.position.x + 1 && a.position.y == b.position.y) bitMask = 1;
-    else if (a.position.x == b.position.x - 1 && a.position.y == b.position.y) bitMask = 2;
-    else if (a.position.x == b.position.x && a.position.y == b.position.y - 1) bitMask = 4;
-    else if (a.position.x == b.position.x && a.position.y == b.position.y + 1) bitMask = 8;
+    if (a.position.x == b.position.x + 1 && a.position.y == b.position.y)
+      bitMask = 1;
+    else if (a.position.x == b.position.x - 1 && a.position.y == b.position.y)
+      bitMask = 2;
+    else if (a.position.x == b.position.x && a.position.y == b.position.y - 1)
+      bitMask = 4;
+    else if (a.position.x == b.position.x && a.position.y == b.position.y + 1)
+      bitMask = 8;
 
     a.connections = a.connections | bitMask;
   }
@@ -122,10 +180,27 @@ export class BuildTool implements ITool {
     this.build();
 
     if (this.templateItemToBuild.oniItem.isWire) {
-      let itemsPrevious = this.blueprintService.blueprint.getBlueprintItemsAt(tileStart).filter(i => i.oniItem.objectLayer == this.templateItemToBuild.oniItem.objectLayer);
-      let itemsCurrent = this.blueprintService.blueprint.getBlueprintItemsAt(tileStop).filter(i => i.oniItem.objectLayer == this.templateItemToBuild.oniItem.objectLayer);
+      let itemsPrevious = this.blueprintService.blueprint
+        .getBlueprintItemsAt(tileStart)
+        .filter(
+          (i) =>
+            i.oniItem.objectLayer ==
+            this.templateItemToBuild.oniItem.objectLayer
+        );
+      let itemsCurrent = this.blueprintService.blueprint
+        .getBlueprintItemsAt(tileStop)
+        .filter(
+          (i) =>
+            i.oniItem.objectLayer ==
+            this.templateItemToBuild.oniItem.objectLayer
+        );
 
-      if (itemsPrevious != null && itemsPrevious.length > 0 && itemsCurrent != null && itemsCurrent.length > 0) {
+      if (
+        itemsPrevious != null &&
+        itemsPrevious.length > 0 &&
+        itemsCurrent != null &&
+        itemsCurrent.length > 0
+      ) {
         let itemPrevious = itemsPrevious[0] as BlueprintItemWire;
         let itemCurrent = itemsCurrent[0] as BlueprintItemWire;
 
@@ -149,7 +224,8 @@ export class BuildTool implements ITool {
   }
 
   mouseOut() {
-    if (this.templateItemToBuild != null) this.templateItemToBuild.setInvisible();
+    if (this.templateItemToBuild != null)
+      this.templateItemToBuild.setInvisible();
   }
 
   leftClick(tile: Vector2) {
@@ -169,15 +245,14 @@ export class BuildTool implements ITool {
   }
 
   drag(tileStart: Vector2, tileStop: Vector2) {
-
     if (tileStart == null || tileStop == null) return;
 
     let tileStartInt = DrawHelpers.getIntegerTile(tileStart);
     let tileStopInt = DrawHelpers.getIntegerTile(tileStop);
 
     // Only drag if we are changing tiles
-    if (!tileStartInt.equals(tileStopInt)) this.dragStepByStep(tileStart, tileStop);
-
+    if (!tileStartInt.equals(tileStopInt))
+      this.dragStepByStep(tileStart, tileStop);
   }
 
   mouseDown(tile: Vector2) {
@@ -186,23 +261,22 @@ export class BuildTool implements ITool {
   }
 
   dragStepByStep(tileStart: Vector2, tileStop: Vector2) {
-
-
-
     //console.log('start')
     //console.log(tileStart);
     //console.log(tileStop);
 
     // This is the unit taxicab vector representing the general direction of movement
     let delta = new Vector2(
-      DrawHelpers.getFloorTile(tileStop).x - DrawHelpers.getFloorTile(tileStart).x,
-      DrawHelpers.getFloorTile(tileStop).y - DrawHelpers.getFloorTile(tileStart).y
+      DrawHelpers.getFloorTile(tileStop).x -
+        DrawHelpers.getFloorTile(tileStart).x,
+      DrawHelpers.getFloorTile(tileStop).y -
+        DrawHelpers.getFloorTile(tileStart).y
     );
 
     delta = new Vector2(
       delta.x == 0 ? 0 : 1 * (delta.x / Math.abs(delta.x)),
       delta.y == 0 ? 0 : 1 * (delta.y / Math.abs(delta.y))
-    )
+    );
 
     // Special cases : if tileStart or tileStop is an integer, we run into problems, so let's change that
     if (tileStart.x == Math.floor(tileStart.x)) tileStart.x -= delta.x * 0.005;
@@ -233,12 +307,14 @@ export class BuildTool implements ITool {
 
       // nextTile is currentTile advanced by delta
       // and then floored of ceilingedto be closest to currentTile
-      let nextTile = new Vector2(currentTile.x + delta.x, currentTile.y + delta.y);
+      let nextTile = new Vector2(
+        currentTile.x + delta.x,
+        currentTile.y + delta.y
+      );
       if (delta.x > 0) nextTile.x = Math.floor(nextTile.x);
       else if (delta.x < 0) nextTile.x = Math.ceil(nextTile.x);
       if (delta.y > 0) nextTile.y = Math.floor(nextTile.y);
       else if (delta.y < 0) nextTile.y = Math.ceil(nextTile.y);
-
 
       //console.log('nextTile');
       //console.log(nextTile);
@@ -263,10 +339,12 @@ export class BuildTool implements ITool {
       //console.log(dp)
 
       let distX: number = 999;
-      if (delta.x != 0) distX = (new Vector2(dp.x, d.y * (dp.x / d.x))).lengthSquared;
+      if (delta.x != 0)
+        distX = new Vector2(dp.x, d.y * (dp.x / d.x)).lengthSquared;
 
       let distY: number = 999;
-      if (delta.y != 0) distY = (new Vector2(d.x * (dp.y / d.y), dp.y)).lengthSquared;
+      if (delta.y != 0)
+        distY = new Vector2(d.x * (dp.y / d.y), dp.y).lengthSquared;
 
       //console.log('dist')
       //console.log(new Vector2(distX, distY))
@@ -288,8 +366,7 @@ export class BuildTool implements ITool {
 
         currentTile.x += dp.x;
         currentTile.y += d.y * (dp.x / d.x);
-      }
-      else if (distX <= distY && distX < dLengthSquared) {
+      } else if (distX <= distY && distX < dLengthSquared) {
         //console.log('build');
         currentTile.x += dp.x;
         currentTile.y += d.y * (dp.x / d.x);
@@ -298,8 +375,7 @@ export class BuildTool implements ITool {
         this.buildAndConnect(startTile, newTile);
         startTile.x += delta.x;
         //console.log(startTile);
-      }
-      else if (distY < distX && distY < dLengthSquared) {
+      } else if (distY < distX && distY < dLengthSquared) {
         //console.log('build');
         currentTile.x += d.x * (dp.y / d.y);
         currentTile.y += dp.y;
@@ -308,17 +384,14 @@ export class BuildTool implements ITool {
         this.buildAndConnect(startTile, newTile);
         startTile.y += delta.y;
         //console.log(startTile);
-      }
-      else {
+      } else {
         //console.log('stop')
         advance = false;
       }
 
       i++;
       if (i > 999) throw new Error("The tile dragger was too long");
-
     }
-
   }
 
   dragStop() {
@@ -326,7 +399,7 @@ export class BuildTool implements ITool {
   }
 
   keyDown(keyCode: string) {
-    if (keyCode == 'o') {
+    if (keyCode == "o") {
       if (this.templateItemToBuild != null) {
         this.templateItemToBuild.nextOrientation();
         this.updateBuildCandidateResult();
@@ -335,7 +408,6 @@ export class BuildTool implements ITool {
   }
 
   draw(drawPixi: DrawPixi, camera: CameraService) {
-
     // TODO SOLID
     //if (this.canBuild()) this.templateItemToBuild.drawPart.tint = DrawHelpers.whiteColor;
     //else this.templateItemToBuild.drawPart.tint = 0xD40000;

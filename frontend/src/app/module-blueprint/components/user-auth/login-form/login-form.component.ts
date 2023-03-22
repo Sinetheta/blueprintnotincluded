@@ -1,22 +1,24 @@
-import { Component, OnInit, EventEmitter, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { AuthenticationService } from '../../../services/authentification-service';
-import { MessageService } from 'primeng/api';
-import { ReCaptchaV3Service } from 'ng-recaptcha';
-import { Observable, Subscription } from 'rxjs';
-import { UsernameValidationDirective } from 'src/app/module-blueprint/directives/username-validation.directive';
+import { Component, OnInit, EventEmitter, Output } from "@angular/core";
+import { FormControl, FormGroup, Validators } from "@angular/forms";
+import { HttpClient } from "@angular/common/http";
+import { AuthenticationService } from "../../../services/authentification-service";
+import { MessageService } from "primeng/api";
+import { ReCaptchaV3Service } from "ng-recaptcha";
+import { Observable, Subscription } from "rxjs";
+import { UsernameValidationDirective } from "src/app/module-blueprint/directives/username-validation.directive";
 
 @Component({
-  selector: 'app-login-form',
-  templateUrl: './login-form.component.html',
-  styleUrls: ['./login-form.component.css']
+  selector: "app-login-form",
+  templateUrl: "./login-form.component.html",
+  styleUrls: ["./login-form.component.css"],
 })
 export class LoginFormComponent {
-
   loginForm = new FormGroup({
-    username: new FormControl('', [Validators.required, UsernameValidationDirective.validate]),
-    password: new FormControl('', [Validators.required])
+    username: new FormControl("", [
+      Validators.required,
+      UsernameValidationDirective.validate,
+    ]),
+    password: new FormControl("", [Validators.required]),
   });
 
   @Output() loginRegistration = new EventEmitter();
@@ -25,10 +27,15 @@ export class LoginFormComponent {
   constructor(
     private authService: AuthenticationService,
     private recaptchaV3Service: ReCaptchaV3Service,
-    private messageService: MessageService) { }
+    private messageService: MessageService
+  ) {}
 
-  get f() { return this.loginForm.controls; }
-  get icon() { return this.working ? 'pi pi-spin pi-spinner' : ''; }
+  get f() {
+    return this.loginForm.controls;
+  }
+  get icon() {
+    return this.working ? "pi pi-spin pi-spinner" : "";
+  }
 
   working: boolean = false;
   authError: boolean = false;
@@ -42,33 +49,37 @@ export class LoginFormComponent {
   subscription: Subscription;
   onSubmit() {
     this.working = true;
-    this.subscription = this.recaptchaV3Service.execute('login').subscribe((token) => {
+    this.subscription = this.recaptchaV3Service
+      .execute("login")
+      .subscribe((token) => {
+        let tokenPayload = {
+          "g-recaptcha-response": token,
+          email: "",
+          username: this.loginForm.value.username as string,
+          password: this.loginForm.value.password as string,
+        };
 
-      let tokenPayload = {
-        'g-recaptcha-response': token,
-        email: '',
-        username: this.loginForm.value.username as string,
-        password: this.loginForm.value.password as string
-      }
+        this.authService.login(tokenPayload).subscribe({
+          next: this.handleSaveNext.bind(this),
+          error: this.handleSaveError.bind(this),
+        });
 
-      this.authService.login(tokenPayload).subscribe({
-        next: this.handleSaveNext.bind(this),
-        error: this.handleSaveError.bind(this)
+        this.subscription.unsubscribe();
       });
-
-      this.subscription.unsubscribe();
-
-    });
   }
 
   handleSaveNext(response: any) {
     this.loginOk.emit();
 
-    const username = this.authService.getUserDetails().username
+    const username = this.authService.getUserDetails().username;
     let summary: string = $localize`Login Successful`;
     let detail: string = $localize`Welcome ${username}`;
 
-    this.messageService.add({ severity: 'success', summary: summary, detail: detail });
+    this.messageService.add({
+      severity: "success",
+      summary: summary,
+      detail: detail,
+    });
     this.working = false;
   }
 
@@ -80,5 +91,4 @@ export class LoginFormComponent {
   registration() {
     this.loginRegistration.emit();
   }
-
 }

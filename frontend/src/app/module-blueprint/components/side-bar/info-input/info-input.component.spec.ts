@@ -1,16 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { async, ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { InfoInputComponent } from './info-input.component';
+import { InfoInputComponent } from "./info-input.component";
 
-describe('InfoInputComponent', () => {
+describe("InfoInputComponent", () => {
   let component: InfoInputComponent;
   let fixture: ComponentFixture<InfoInputComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ InfoInputComponent ]
-    })
-    .compileComponents();
+      declarations: [InfoInputComponent],
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -19,7 +18,7 @@ describe('InfoInputComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

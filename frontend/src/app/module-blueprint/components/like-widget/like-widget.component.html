@@ -1,6 +1,21 @@
-
 <div class="p-inputgroup">
-  <span class="p-inputgroup-addon">{{nbLikes}}&nbsp;{{nbLikesString}}</span>  
-  <button *ngIf="!likedByMe" pButton type="button" icon="pi thumbs-up" [disabled]="disabled" class="p-button-danger" (click)="like()"></button>
-  <button *ngIf="likedByMe"  pButton type="button" icon="pi thumbs-up" [disabled]="disabled" class="p-button-warning" (click)="like()"></button>
+  <span class="p-inputgroup-addon">{{ nbLikes }}&nbsp;{{ nbLikesString }}</span>
+  <button
+    *ngIf="!likedByMe"
+    pButton
+    type="button"
+    icon="pi thumbs-up"
+    [disabled]="disabled"
+    class="p-button-danger"
+    (click)="like()"
+  ></button>
+  <button
+    *ngIf="likedByMe"
+    pButton
+    type="button"
+    icon="pi thumbs-up"
+    [disabled]="disabled"
+    class="p-button-warning"
+    (click)="like()"
+  ></button>
 </div>

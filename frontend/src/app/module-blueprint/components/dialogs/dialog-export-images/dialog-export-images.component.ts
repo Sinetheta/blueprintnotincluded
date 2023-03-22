@@ -1,16 +1,29 @@
-import { Component, OnInit, ViewChild, Output, EventEmitter } from '@angular/core';
-import { BlueprintService, ExportImageOptions } from 'src/app/module-blueprint/services/blueprint-service';
-import { SelectItem } from 'primeng/api';
-import { Dropdown } from 'primeng/dropdown';
-import { CameraService, DrawHelpers, Vector2, Overlay } from '../../../../../../../lib/index'
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  Output,
+  EventEmitter,
+} from "@angular/core";
+import {
+  BlueprintService,
+  ExportImageOptions,
+} from "src/app/module-blueprint/services/blueprint-service";
+import { SelectItem } from "primeng/api";
+import { Dropdown } from "primeng/dropdown";
+import {
+  CameraService,
+  DrawHelpers,
+  Vector2,
+  Overlay,
+} from "../../../../../../../lib/index";
 
 @Component({
-  selector: 'app-dialog-export-images',
-  templateUrl: './dialog-export-images.component.html',
-  styleUrls: ['./dialog-export-images.component.css']
+  selector: "app-dialog-export-images",
+  templateUrl: "./dialog-export-images.component.html",
+  styleUrls: ["./dialog-export-images.component.css"],
 })
 export class DialogExportImagesComponent implements OnInit {
-
   blueprintSize: Vector2;
 
   visible: boolean = false;
@@ -20,20 +33,38 @@ export class DialogExportImagesComponent implements OnInit {
 
   exportOptions: ExportImageOptions;
 
-  get disabled() { return !(this.exportOptions.selectedOverlays.length > 0) }
+  get disabled() {
+    return !(this.exportOptions.selectedOverlays.length > 0);
+  }
 
   @Output() saveImages = new EventEmitter<ExportImageOptions>();
 
-  get finalSize(): string { return this.blueprintSize == null ? '' : this.blueprintSize.x * this.exportOptions.pixelsPerTile + 'x' + this.blueprintSize.y * this.exportOptions.pixelsPerTile }
-  get finalSizeMb(): number { return this.blueprintSize == null ? 0 : this.blueprintSize.x * this.exportOptions.pixelsPerTile * this.blueprintSize.y * this.exportOptions.pixelsPerTile * this.exportOptions.selectedOverlays.length * 0.00000068120021446078431372549 }
+  get finalSize(): string {
+    return this.blueprintSize == null
+      ? ""
+      : this.blueprintSize.x * this.exportOptions.pixelsPerTile +
+          "x" +
+          this.blueprintSize.y * this.exportOptions.pixelsPerTile;
+  }
+  get finalSizeMb(): number {
+    return this.blueprintSize == null
+      ? 0
+      : this.blueprintSize.x *
+          this.exportOptions.pixelsPerTile *
+          this.blueprintSize.y *
+          this.exportOptions.pixelsPerTile *
+          this.exportOptions.selectedOverlays.length *
+          0.00000068120021446078431372549;
+  }
 
-  private cameraService: CameraService
+  private cameraService: CameraService;
 
   constructor(private blueprintService: BlueprintService) {
-
     this.cameraService = CameraService.cameraService;
-    this.pixelPerTile = [16, 24, 32, 48, 64, 96, 128,]
-      .map(px => ({ label: $localize`${px} pixels per tile`, value: px }))
+    this.pixelPerTile = [16, 24, 32, 48, 64, 96, 128].map((px) => ({
+      label: $localize`${px} pixels per tile`,
+      value: px,
+    }));
 
     this.exportOptions = {
       //selectedOverlays: [Overlay.Base],
@@ -43,11 +74,11 @@ export class DialogExportImagesComponent implements OnInit {
         Overlay.Liquid,
         Overlay.Gas,
         Overlay.Automation,
-        Overlay.Conveyor
+        Overlay.Conveyor,
       ],
       pixelsPerTile: this.pixelPerTile[2].value,
-      gridLines: false
-    }
+      gridLines: false,
+    };
   }
 
   ngOnInit() {
@@ -57,15 +88,16 @@ export class DialogExportImagesComponent implements OnInit {
       Overlay.Liquid,
       Overlay.Gas,
       Overlay.Automation,
-      Overlay.Conveyor
-    ]
+      Overlay.Conveyor,
+    ];
 
     this.overlayOptions = [];
     overlayList.map((overlay) => {
-      this.overlayOptions.push({ label: DrawHelpers.overlayString[overlay], value: overlay });
+      this.overlayOptions.push({
+        label: DrawHelpers.overlayString[overlay],
+        value: overlay,
+      });
     });
-
-
   }
 
   getOverlayUrl(overlay: Overlay) {
@@ -73,7 +105,7 @@ export class DialogExportImagesComponent implements OnInit {
   }
 
   overlayString(overlay: Overlay) {
-    return DrawHelpers.overlayString[overlay]
+    return DrawHelpers.overlayString[overlay];
   }
 
   downloadImages() {
@@ -91,7 +123,9 @@ export class DialogExportImagesComponent implements OnInit {
     let boundingBox = this.blueprintService.blueprint.getBoundingBox();
     let topLeft = boundingBox[0];
     let bottomRight = boundingBox[1];
-    this.blueprintSize = new Vector2(bottomRight.x - topLeft.x + 3, bottomRight.y - topLeft.y + 3);
+    this.blueprintSize = new Vector2(
+      bottomRight.x - topLeft.x + 3,
+      bottomRight.y - topLeft.y + 3
+    );
   }
-
 }

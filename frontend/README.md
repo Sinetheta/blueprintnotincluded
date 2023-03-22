@@ -23,7 +23,9 @@ Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.
 Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
 
 ## Localization
+
 If you want to contribute translations to Blueprintnotincluded, you can edit files of your language in [i18n](./src/i18n). You can use Poedit to edit those XLF files. If the file for your language is not there, please create an issus. Alternatively you can add it by yourself in the following steps:
+
 1. add your language in the `languages` field of [xliffmerge.json](./xliffmerge.json)
 2. Run `npm run extract-i18n`
 3. Add your language in [angular.json](./angular.json)(`projects.blueprintnotincluded.i18n.locales`)

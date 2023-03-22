@@ -6,12 +6,12 @@
 
 .side-panel-right {
   position: absolute;
-  right:0;
+  right: 0;
   padding: 10px;
 }
 .side-panel-about {
   position: absolute;
-  right:0;
+  right: 0;
   padding: 10px;
   height: 90vh;
 }
