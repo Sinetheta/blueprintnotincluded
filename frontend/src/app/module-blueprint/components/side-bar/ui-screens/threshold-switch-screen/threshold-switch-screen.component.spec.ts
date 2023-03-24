@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { ThresholdSwhitchScreenComponent } from "./threshold-switch-screen.component";
 
@@ -6,7 +6,7 @@ describe("ThresholdSwhitchScreenComponent", () => {
   let component: ThresholdSwhitchScreenComponent;
   let fixture: ComponentFixture<ThresholdSwhitchScreenComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ThresholdSwhitchScreenComponent],
     }).compileComponents();

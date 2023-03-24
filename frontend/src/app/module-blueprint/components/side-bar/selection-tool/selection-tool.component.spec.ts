@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { ComponentSideSelectionToolComponent } from "./selection-tool.component";
 
@@ -6,7 +6,7 @@ describe("ComponentSideSelectionToolComponent", () => {
   let component: ComponentSideSelectionToolComponent;
   let fixture: ComponentFixture<ComponentSideSelectionToolComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ComponentSideSelectionToolComponent],
     }).compileComponents();

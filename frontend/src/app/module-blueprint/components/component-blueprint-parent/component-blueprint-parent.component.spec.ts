@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { ComponentBlueprintParentComponent } from "./component-blueprint-parent.component";
 
@@ -6,7 +6,7 @@ describe("ComponentBlueprintParentComponent", () => {
   let component: ComponentBlueprintParentComponent;
   let fixture: ComponentFixture<ComponentBlueprintParentComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ComponentBlueprintParentComponent],
     }).compileComponents();

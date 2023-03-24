@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { ActiveRangeScreenComponent } from "./active-range-screen.component";
 
@@ -6,7 +6,7 @@ describe("ActiveRangeScreenComponent", () => {
   let component: ActiveRangeScreenComponent;
   let fixture: ComponentFixture<ActiveRangeScreenComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ActiveRangeScreenComponent],
     }).compileComponents();

@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { DialogShareUrlComponent } from "./dialog-share-url.component";
 
@@ -6,7 +6,7 @@ describe("DialogShareUrlComponent", () => {
   let component: DialogShareUrlComponent;
   let fixture: ComponentFixture<DialogShareUrlComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [DialogShareUrlComponent],
     }).compileComponents();
