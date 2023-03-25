@@ -1,6 +1,10 @@
+import { DatePipe } from "@angular/common";
 import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
+import { HttpClientModule } from "@angular/common/http";
+import { RouterTestingModule } from "@angular/router/testing";
 
 import { DialogBrowseComponent } from "./dialog-browse.component";
+import { AuthenticationService } from "src/app/module-blueprint/services/authentification-service";
 
 describe("DialogBrowseComponent", () => {
   let component: DialogBrowseComponent;
@@ -8,7 +12,9 @@ describe("DialogBrowseComponent", () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
+      imports: [HttpClientModule, RouterTestingModule.withRoutes([])],
       declarations: [DialogBrowseComponent],
+      providers: [AuthenticationService, DatePipe],
     }).compileComponents();
   }));
 
