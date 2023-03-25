@@ -1,5 +1,12 @@
 import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
+import {
+  BActiveRangeSideScreen,
+  BlueprintItem,
+  OniItem,
+  UiSaveSettings,
+} from "../../../../../../../../lib/index";
+
 import { ActiveRangeScreenComponent } from "./active-range-screen.component";
 
 describe("ActiveRangeScreenComponent", () => {
@@ -15,6 +22,13 @@ describe("ActiveRangeScreenComponent", () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(ActiveRangeScreenComponent);
     component = fixture.componentInstance;
+    // TODO: replace these garbage stubs which are needed to boot this component for a non-test
+    OniItem.getOniItem = () => undefined;
+    component.blueprintItem = new BlueprintItem();
+    component.blueprintItem.getUiSettings = () =>
+      ({ values: [0, 1] } as UiSaveSettings);
+    component.activeRangeSideScreen = new BActiveRangeSideScreen("test");
+    // end TODO
     fixture.detectChanges();
   });
 
