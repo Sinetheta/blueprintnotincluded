@@ -29,3 +29,11 @@ jobs:
       - name: Verify code style
         working-directory: frontend
         run: npx prettier --check .
+  unit_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/workflows/frontend_install
+      - name: Run unit tests
+        working-directory: frontend
+        run: npm run ci:karma
