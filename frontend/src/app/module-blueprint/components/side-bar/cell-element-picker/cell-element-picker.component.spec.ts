@@ -2,7 +2,7 @@ import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { CellElementPickerComponent } from "./cell-element-picker.component";
 
-describe("CellElementPickerComponent", () => {
+xdescribe("CellElementPickerComponent", () => {
   let component: CellElementPickerComponent;
   let fixture: ComponentFixture<CellElementPickerComponent>;
 

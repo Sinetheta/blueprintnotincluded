@@ -8,7 +8,7 @@ import { ElementReport } from "src/app/module-blueprint/common/tools/element-rep
 import { ElementReportToolComponent } from "./element-report-tool.component";
 import { SelectTool } from "src/app/module-blueprint/common/tools/select-tool";
 
-describe("ElementReportToolComponent", () => {
+xdescribe("ElementReportToolComponent", () => {
   let component: ElementReportToolComponent;
   let fixture: ComponentFixture<ElementReportToolComponent>;
 

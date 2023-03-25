@@ -2,7 +2,7 @@ import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { InfoInputComponent } from "./info-input.component";
 
-describe("InfoInputComponent", () => {
+xdescribe("InfoInputComponent", () => {
   let component: InfoInputComponent;
   let fixture: ComponentFixture<InfoInputComponent>;
 

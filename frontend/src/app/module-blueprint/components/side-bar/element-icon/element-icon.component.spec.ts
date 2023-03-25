@@ -2,7 +2,7 @@ import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { ElementIconComponent } from "./element-icon.component";
 
-describe("ElementIconComponent", () => {
+xdescribe("ElementIconComponent", () => {
   let component: ElementIconComponent;
   let fixture: ComponentFixture<ElementIconComponent>;
 

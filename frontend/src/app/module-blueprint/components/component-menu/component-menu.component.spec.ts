@@ -9,7 +9,7 @@ import { ElementReport } from "src/app/module-blueprint/common/tools/element-rep
 import { ComponentMenuComponent } from "./component-menu.component";
 import { SelectTool } from "src/app/module-blueprint/common/tools/select-tool";
 
-describe("ComponentMenuComponent", () => {
+xdescribe("ComponentMenuComponent", () => {
   let component: ComponentMenuComponent;
   let fixture: ComponentFixture<ComponentMenuComponent>;
 

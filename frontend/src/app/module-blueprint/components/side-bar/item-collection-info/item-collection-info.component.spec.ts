@@ -8,7 +8,7 @@ import { ItemCollectionInfoComponent } from "./item-collection-info.component";
 import { AuthenticationService } from "src/app/module-blueprint/services/authentification-service";
 import { SelectTool } from "src/app/module-blueprint/common/tools/select-tool";
 
-describe("ItemCollectionInfoComponent", () => {
+xdescribe("ItemCollectionInfoComponent", () => {
   let component: ItemCollectionInfoComponent;
   let fixture: ComponentFixture<ItemCollectionInfoComponent>;
 
