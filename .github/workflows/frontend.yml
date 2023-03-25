@@ -1,0 +1,39 @@
+name: Lint frontend
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  checks: write
+  contents: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/workflows/frontend_install
+      - name: Run frontend linters
+        working-directory: frontend
+        run: npm run lint
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/workflows/frontend_install
+      - name: Verify code style
+        working-directory: frontend
+        run: npx prettier --check .
+  unit_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/workflows/frontend_install
+      - name: Run unit tests
+        working-directory: frontend
+        run: npm run ci:karma

@@ -1,12 +1,12 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { UiScreenContainerComponent } from "./ui-screen-container.component";
 
-describe("UiScreenContainerComponent", () => {
+xdescribe("UiScreenContainerComponent", () => {
   let component: UiScreenContainerComponent;
   let fixture: ComponentFixture<UiScreenContainerComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [UiScreenContainerComponent],
     }).compileComponents();

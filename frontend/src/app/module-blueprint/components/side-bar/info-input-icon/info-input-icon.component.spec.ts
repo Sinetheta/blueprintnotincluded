@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from "@angular/core/testing";
+import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { InfoInputIconComponent } from "./info-input-icon.component";
 
@@ -6,7 +6,7 @@ describe("InfoInputIconComponent", () => {
   let component: InfoInputIconComponent;
   let fixture: ComponentFixture<InfoInputIconComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [InfoInputIconComponent],
     }).compileComponents();
