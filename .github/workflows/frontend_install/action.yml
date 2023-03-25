@@ -13,3 +13,6 @@ runs:
       working-directory: frontend
       shell: bash
       run: npm ci
+    - name: Install backend Node.js dependencies
+      shell: bash
+      run: npm ci
