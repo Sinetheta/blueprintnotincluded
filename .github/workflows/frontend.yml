@@ -1,4 +1,4 @@
-name: Lint
+name: Lint frontend
 
 on:
   push:
@@ -13,27 +13,19 @@ permissions:
   contents: write
 
 jobs:
-  run-linters:
-    name: Run linters
+  lint:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.18
-
-      - name: Install frontend Node.js dependencies
-        working-directory: frontend
-        run: npm ci
-
+      - uses: actions/checkout@v2
+      - uses: ./.github/workflows/frontend_install
       - name: Run frontend linters
         working-directory: frontend
         run: npm run lint
-
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/workflows/frontend_install
       - name: Verify code style
         working-directory: frontend
         run: npx prettier --check .
