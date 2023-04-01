@@ -13,7 +13,7 @@ export class AddInfoIcons
     console.log('Running batch FixHtmlLabels')
 
     // Read database
-    let databaseToFix = './assets/database/' + process.argv[2];
+    let databaseToFix = './assets/database/database.json';
     console.log('Adding info icons srpite infos and sprite modifiers to ' + databaseToFix);
 
 

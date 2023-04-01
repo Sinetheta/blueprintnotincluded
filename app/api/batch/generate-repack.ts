@@ -133,12 +133,16 @@ export class GenerateRepack
       let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
       let repack = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
       let repackPath = './assets/images/' + textureBaseString + trayIndex + '.png'
+      let repackFrontendPath = './frontend/src/assets/images/' + textureBaseString + trayIndex + '.png'
       console.log('saving repack to ' + repackPath);
       repack.write(repackPath);
+      console.log('saving repack to ' + repackFrontendPath);
+      repack.write(repackFrontendPath);
     }
 
     let data = JSON.stringify(database, null, 2);
     fs.writeFileSync('./assets/database/database-repack.json', data);
+    fs.writeFileSync('./frontend/src/assets/database/database-repack.json', data);
     console.log('done generating repack');
 
   }

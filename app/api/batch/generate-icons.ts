@@ -91,8 +91,11 @@ export class GenerateIcons
 
       let icon = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
       let iconPath = './assets/images/ui/' + k + '.png';
+      let iconFrontendPath = './frontend/src/assets/images/ui/' + k + '.png';
       console.log('saving icon to ' + iconPath);
       icon.write(iconPath);
+      console.log('saving icon to ' + iconFrontendPath);
+      icon.write(iconFrontendPath);
 
       // Free memory
       brt.destroy();
