@@ -9,7 +9,7 @@ export class DrawHelpers
 
   public static createUrl(ressource: string, ui: boolean): string
   {
-    return 'assets/images/'+(ui?'ui/':'')+ressource+'.png';
+    return '/assets/images/'+(ui?'ui/':'')+ressource+'.png';
   }
 
   public static getOverlayUrl(overlay: Overlay): string {

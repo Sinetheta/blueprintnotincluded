@@ -16,7 +16,7 @@ export class FixHtmlLabels
     this.dom = new JSDOM('<!DOCTYPE html>');
 
     // Read database
-    let databaseToFix = './assets/database/database.json';
+    let databaseToFix = './frontend/src/assets/database/database.json';
     console.log('Removing html tags from ' + databaseToFix);
 
 

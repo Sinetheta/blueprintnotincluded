@@ -16,7 +16,7 @@ export class GenerateWhite
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database-groups.json').toString();
+    let rawdata = fs.readFileSync('./frontend/src/assets/database/database-groups.json').toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -105,17 +105,17 @@ export class GenerateWhite
       pixiNodeUtil.pixiApp.renderer.render(sprite, rt);
       let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
       let white = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
-      let whitePath = './assets/images/' + sourceTexture + '_white.png';
+      // let whitePath = './assets/images/' + sourceTexture + '_white.png';
       let whiteFrontendPath = './frontend/src/assets/images/' + sourceTexture + '_white.png';
-      console.log('saving white to ' + whitePath);
-      white.write(whitePath);
+      // console.log('saving white to ' + whitePath);
+      // white.write(whitePath);
       console.log('saving white to ' + whiteFrontendPath);
       white.write(whiteFrontendPath);
 
     }
 
     let data = JSON.stringify(database, null, 2);
-    fs.writeFileSync('./assets/database/database-white.json', data);
+    // fs.writeFileSync('./assets/database/database-white.json', data);
     fs.writeFileSync('./frontend/src/assets/database/database-white.json', data);
     console.log('done generating white');
   }
