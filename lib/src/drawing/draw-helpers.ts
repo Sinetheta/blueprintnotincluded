@@ -7,9 +7,9 @@ export class DrawHelpers
 {
   public static whiteColor: number = 0xFFFFFF;
 
-  public static createUrl(ressource: string, ui: boolean): string
+  public static createUrl(resource: string, ui: boolean): string
   {
-    return 'assets/images/'+(ui?'ui/':'')+ressource+'.png';
+    return 'assets/images/'+(ui?'ui/':'')+resource+'.png';
   }
 
   public static getOverlayUrl(overlay: Overlay): string {
