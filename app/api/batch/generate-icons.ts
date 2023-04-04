@@ -17,7 +17,7 @@ export class GenerateIcons
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database.json').toString();
+    let rawdata = fs.readFileSync('./frontend/src/assets/database/database.json').toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -90,7 +90,7 @@ export class GenerateIcons
       let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
 
       let icon = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
-      let iconPath = './assets/images/ui/' + k + '.png';
+      let iconPath = './frontend/src/assets/images/ui/' + k + '.png';
       console.log('saving icon to ' + iconPath);
       icon.write(iconPath);
 
