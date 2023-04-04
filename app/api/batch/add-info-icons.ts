@@ -13,7 +13,7 @@ export class AddInfoIcons
     console.log('Running batch FixHtmlLabels')
 
     // Read database
-    let databaseToFix = './assets/database/' + process.argv[2];
+    let databaseToFix = './frontend/src/assets/database/' + process.argv[2];
     console.log('Adding info icons srpite infos and sprite modifiers to ' + databaseToFix);
 
 
@@ -25,6 +25,8 @@ export class AddInfoIcons
     let rawdata = fs.readFileSync(path).toString();
     let database = JSON.parse(rawdata) as BExport;
 
+    //these can be found in the 'manual' folder under 'ui' in assets/images
+    //they may need to be copied from that location into the main images folder
     let spriteModifiersNames: string[] = [
       'element_tile_back',
       'gas_tile_front',

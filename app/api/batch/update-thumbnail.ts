@@ -19,7 +19,7 @@ export class UpdateThumbnail
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database-repack.json').toString();
+    let rawdata = fs.readFileSync('./frontend/src/assets/database/database-repack.json').toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
