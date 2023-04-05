@@ -6,6 +6,10 @@
   "scripts": {
     "tsc": "tsc -b",
     "dev": "ts-node-dev --respawn --transpileOnly ./app/server.ts",
+    "prebuild": "rm -rf build/",
+    "build": "tsc -b && (cd lib && tsc -b)",
+    "postbuild": "npm run copy:libjs",
+    "copy:libjs": "rsync -amv --include='*.js' --include='*/' --exclude='*' lib/ build/lib",
     "prod": "tsc -b && node ./build/server.js",
     "updateBasedOn": "tsc && node ./build/api/batch/update-based-on.js",
     "updatePositionCorrection": "tsc && node ./build/api/batch/update-position-correction.js",
