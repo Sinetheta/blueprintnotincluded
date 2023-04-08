@@ -240,7 +240,7 @@ export class OniItem
 
     let infoOniItem = new OniItem(OniItem.infoId);
     infoOniItem.name = OniItem.infoId;
-    infoOniItem.iconUrl = 'frontend/src/assets/images/ui/manual/info-indicator-icon.png';
+    infoOniItem.iconUrl = 'assets/images/ui/manual/info-indicator-icon.png';
     infoOniItem.zIndex = ZIndex.BuildingUse;
     infoOniItem.spriteGroup = new SpriteModifierGroup();
     infoOniItem.spriteGroup.spriteModifiers.push(SpriteModifier.getSpriteModifer('info_back'));

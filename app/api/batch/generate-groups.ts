@@ -20,7 +20,7 @@ export class GenerateGroups
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./frontend/src/assets/database/database.json').toString();
+    let rawdata = fs.readFileSync('./assets/database/database.json').toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -171,9 +171,9 @@ export class GenerateGroups
         let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
 
         let group = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
-        let groupPath = './frontend/src/assets/images/' + textureName + '.png';
-        console.log('saving group to ' + groupPath);
-        group.write(groupPath);
+        let groupePath = './assets/images/' + textureName + '.png';
+        console.log('saving group to ' + groupePath);
+        group.write(groupePath);
 
         // Free memory
         brt.destroy();
@@ -189,7 +189,7 @@ export class GenerateGroups
     }
 
     let data = JSON.stringify(database, null, 2);
-    fs.writeFileSync('./frontend/src/assets/database/database-groups.json', data);
+    fs.writeFileSync('./assets/database/database-groups.json', data);
     console.log('done generating groups');
   }
 
