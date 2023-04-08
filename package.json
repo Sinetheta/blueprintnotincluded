@@ -16,7 +16,7 @@
     "copy:views": "rsync -zarv --prune-empty-dirs --include '*/' --include='*.ejs' --exclude='*' 'app' 'build'",
     "copy:frontend": "rsync -amv frontend/dist/blueprintnotincluded/ build/app/public",
     "copy:public": "rsync -amv app/public/ build/app/public",
-    "prod": "tsc -b && node ./build/server.js",
+    "serve:prod": "node ./build/app/server.js",
     "updateBasedOn": "tsc && node ./build/api/batch/update-based-on.js",
     "updatePositionCorrection": "tsc && node ./build/api/batch/update-position-correction.js",
     "updateThumbnail": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpileOnly ./app/api/batch/update-thumbnail.ts",
