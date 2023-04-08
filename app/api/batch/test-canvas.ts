@@ -23,7 +23,7 @@ export class TestCanvas //implements PixiUtil
   constructor() {
 
     // Read database
-    let rawdata = fs.readFileSync('./frontend/src/assets/database/database-white.json').toString();
+    let rawdata = fs.readFileSync('./assets/database/database-white.json').toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
