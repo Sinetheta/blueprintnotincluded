@@ -14,7 +14,7 @@ export class StaticController {
     const id = req.params.blueprintId;
     const blueprintUrl = `${process.env.HOST}/b/${id}`
     const thumbnailUrl = `${process.env.HOST}/b/${id}/thumbnail`
-    BlueprintModel.model.findById(id)
+    BlueprintModel.model.findById(id).select("name")
       .then((blueprint) => {
         if (!blueprint) return res.status(404).send();
         const blueprintMeta = {
