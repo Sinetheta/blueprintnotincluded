@@ -1,4 +1,9 @@
 // lib/server.ts
+// initialize configuration
+import dotenv from 'dotenv';
+dotenv.config();
+console.log(process.env.ENV_NAME);
+
 import app from "./app";
 
 const PORT = 3000;
