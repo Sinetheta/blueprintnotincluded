@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
@@ -19,11 +18,6 @@ class App {
 
 
   constructor() {
-
-    // initialize configuration
-    dotenv.config();
-    console.log(process.env.ENV_NAME);
-
     // Read database
     let rawdata = fs.readFileSync('assets/database/database.json').toString();
     let json = JSON.parse(rawdata);
