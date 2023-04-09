@@ -12,13 +12,15 @@ export class StaticController {
 
   public getBlueprint(req: Request, res: Response) {
     const id = req.params.blueprintId;
-    const thumbnailUrl = `/b/${id}/thumbnail`
+    const blueprintUrl = `${process.env.HOST}/b/${id}`
+    const thumbnailUrl = `${process.env.HOST}/b/${id}/thumbnail`
     BlueprintModel.model.findById(id)
       .then((blueprint) => {
         if (!blueprint) return res.status(404).send();
         const blueprintMeta = {
           'og:title': blueprint.name,
           'og:description': 'A blueprint for use in Oxygen Not Included.',
+          'og:url': blueprintUrl,
           images: [{
             'og:image:url': thumbnailUrl,
             'og:image': thumbnailUrl,
