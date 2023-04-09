@@ -12,7 +12,7 @@ export class StaticController {
 
   public getBlueprint(req: Request, res: Response) {
     const id = req.params.blueprintId;
-    const thumbnailUrl = `/api/getblueprintthumbnail/${id}`
+    const thumbnailUrl = `/b/${id}/thumbnail`
     BlueprintModel.model.findById(id)
       .then((blueprint) => {
         if (!blueprint) return res.status(404).send();
