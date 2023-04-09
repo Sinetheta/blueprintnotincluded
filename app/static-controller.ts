@@ -6,7 +6,31 @@ import { WebsiteMeta } from './websiteMeta'
 import { BlueprintModel } from './api/models/blueprint'
 export class StaticController {
   constructor() {
+    this.getBlueprint = this.getBlueprint.bind(this);
     this.getHome = this.getHome.bind(this);
+  }
+
+  public getBlueprint(req: Request, res: Response) {
+    const id = req.params.blueprintId;
+    const thumbnailUrl = `/api/getblueprintthumbnail/${id}`
+    BlueprintModel.model.findById(id)
+      .then((blueprint) => {
+        if (!blueprint) return res.status(404).send();
+        const blueprintMeta = {
+          'og:title': blueprint.name,
+          'og:description': 'A blueprint for use in Oxygen Not Included.',
+          images: [{
+            'og:image:url': thumbnailUrl,
+            'og:image': thumbnailUrl,
+            'og:image:alt': blueprint.name,
+            'og:image:type': 'image/png',
+            'og:image:width': '200',
+            'og:image:height': '200'
+          }]
+        };
+        const metaTags = new WebsiteMeta(blueprintMeta).getHtmlTags()
+        this.serveHtml(req, res, { metaTags })
+      })
   }
 
   public getBlueprintThumbnail(req: Request, res: Response) {
