@@ -47,7 +47,7 @@ export class Routes {
     app.route("/api/likeblueprint").post(auth, this.uploadBlueprintController.likeBlueprint);
     app.route("/api/deleteblueprint").post(auth, this.uploadBlueprintController.deleteBlueprint);
 
-    app.get('/', this.staticController.serveHtml);
+    app.get('/', this.staticController.getHome);
     app.use(express.static(path.join(__dirname, "public")));
     app.get('*', this.staticController.serveHtml);
   }
