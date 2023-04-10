@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
@@ -19,11 +18,6 @@ class App {
 
 
   constructor() {
-
-    // initialize configuration
-    dotenv.config();
-    console.log(process.env.ENV_NAME);
-
     // Read database
     let rawdata = fs.readFileSync('assets/database/database.json').toString();
     let json = JSON.parse(rawdata);
@@ -60,6 +54,8 @@ class App {
 
     // Create a new express application instance and add middleware
     this.app = express();
+    this.app.set('views', path.join(__dirname, 'views'));
+    this.app.set('view engine', 'ejs');
 
     this.app.use(helmet.contentSecurityPolicy({
       directives: {
