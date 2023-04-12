@@ -93,6 +93,9 @@ export class GenerateIcons
       let iconPath = './assets/images/ui/' + k + '.png';
       console.log('saving icon to ' + iconPath);
       icon.write(iconPath);
+      let frontendIconPath = './frontend/src/assets/images/ui/' + k + '.png';
+      console.log('saving icon to ' + frontendIconPath);
+      icon.write(frontendIconPath);
 
       // Free memory
       brt.destroy();
