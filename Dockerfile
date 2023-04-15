@@ -9,12 +9,12 @@ COPY ./lib /app/lib
 
 # Generate the lib packages
 WORKDIR /app/lib
-RUN npm install --legacy-deps
+RUN npm install
 
 WORKDIR /app/bpni
 
 # Install all the backend dependencies
-RUN npm install --legacy-deps
+RUN npm install
 
 # Generate the build of the application
 RUN npm run build
@@ -37,11 +37,11 @@ WORKDIR /app/bpni
 
 # Generate the lib packages
 WORKDIR /app/bpni/lib
-RUN npm install --legacy-deps
+RUN npm install
 
 # Install all the backend dependencies
 WORKDIR /app/bpni
-RUN npm install --legacy-deps
+RUN npm install
 
 # Generate the build of the application
 RUN npm run tsc
