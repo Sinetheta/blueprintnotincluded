@@ -24,7 +24,7 @@ RUN npm run build
 # Stage 1: Compile and Build angular codebase
 
 # Use official node image as the base image
-FROM --platform=amd64 node:13 as build
+FROM --platform=amd64 node:14 as build
 
 # Set the working directory
 WORKDIR /app
