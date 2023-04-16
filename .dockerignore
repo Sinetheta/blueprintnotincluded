@@ -10,7 +10,7 @@ Dockerfile
 /frontend/node_modules
 .angular
 *.Dockerfile
-
+**/*.tsbuildinfo
 
 # Include many of the entries from /frontend/.gitignore (both files could use a trim)
 /frontend/.angular
