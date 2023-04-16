@@ -30,16 +30,14 @@ COPY ./frontend/package*.json ./
 RUN npm ci --ignore-scripts && npm cache clean --force
 COPY ./lib ../lib
 COPY ./frontend ./
-RUN npm run build
+RUN npm run build -- --output-path=../build/app/public/
 
 FROM --platform=amd64 node:14-alpine as serve-prod
 WORKDIR /bpni
 COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 COPY --from=build-backend /bpni/build /bpni/build
-COPY --from=build-frontend /bpni/frontend/dist /bpni/frontend/dist
-COPY ./scripts/copy_frontend.sh ./scripts/
-RUN ./scripts/copy_frontend.sh
+COPY --from=build-frontend /bpni/build /bpni/build
 
 EXPOSE 3000
 WORKDIR /bpni/build
