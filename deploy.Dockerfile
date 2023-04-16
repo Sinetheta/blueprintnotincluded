@@ -1,20 +1,14 @@
-FROM --platform=amd64 node:14 as build
+FROM --platform=amd64 node:14-alpine as extract
 
 WORKDIR /bpni
 
-# TODO separate build build stage for asset extract
-COPY ./assets ./assets
-
-# Install backend deps (changes least frequently)
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts && npm cache clean --force
 
-# Install frontend deps
-COPY ./frontend/package*.json ./frontend/
-WORKDIR /bpni/frontend
-RUN npm ci --ignore-scripts
+# TODO separate build build stage for asset extract
+COPY ./assets/database/database.json ./assets/database/database.json
 
-# Build backend
+FROM extract as build-backend
 WORKDIR /bpni
 COPY ./lib ./lib
 RUN npm run build:lib
@@ -22,17 +16,31 @@ COPY ./scripts/copy_lib.sh ./scripts/
 RUN ./scripts/copy_lib.sh
 COPY ./tsconfig.json ./
 COPY ./app ./app
+COPY ./scripts/copy_assets.sh ./scripts/
+RUN ./scripts/copy_assets.sh
 COPY ./scripts/copy_views.sh ./scripts/
 RUN ./scripts/copy_views.sh
 COPY ./scripts/copy_public.sh ./scripts/
 RUN ./scripts/copy_public.sh
 RUN npm run build:backend
 
-# Build frontend
-COPY ./frontend ./frontend
-RUN npm run build:frontend
+FROM extract as build-frontend
+WORKDIR /bpni/frontend
+COPY ./frontend/package*.json ./
+RUN npm ci --ignore-scripts && npm cache clean --force
+COPY ./lib ../lib
+COPY ./frontend ./
+RUN npm run build
+
+FROM --platform=amd64 node:14-alpine as serve-prod
+WORKDIR /bpni
+COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY --from=build-backend /bpni/build /bpni/build
+COPY --from=build-frontend /bpni/frontend/dist /bpni/frontend/dist
 COPY ./scripts/copy_frontend.sh ./scripts/
 RUN ./scripts/copy_frontend.sh
 
 EXPOSE 3000
-CMD [ "node", "build/app/server.js" ]
+WORKDIR /bpni/build
+CMD [ "node", "app/server.js" ]
