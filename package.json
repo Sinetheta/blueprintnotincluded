@@ -13,7 +13,7 @@
     "build:lib": "tsc -b lib",
     "build:frontend": "(cd frontend && npm run build)",
     "postbuild": "./scripts/copy_lib.sh &&./scripts/copy_views.sh && ./scripts/copy_public.sh && ./scripts/copy_frontend.sh",
-    "serve:prod": "node ./build/app/server.js",
+    "serve:prod": "(cd build && node ./app/server.js)",
     "updateBasedOn": "tsc && node ./build/api/batch/update-based-on.js",
     "updatePositionCorrection": "tsc && node ./build/api/batch/update-position-correction.js",
     "updateThumbnail": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/update-thumbnail.ts",
