@@ -9,14 +9,11 @@ Dockerfile
 /lib/node_modules
 /frontend/node_modules
 .angular
-/build
-/dist
 *.Dockerfile
 
 
 # Include many of the entries from /frontend/.gitignore (both files could use a trim)
 /frontend/.angular
-/frontend/dist
 /frontend/tmp
 /frontend/out-tsc
 
