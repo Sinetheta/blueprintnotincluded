@@ -1,0 +1,25 @@
+name: Build and Publish main branch
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+      - name: Build image
+        run: docker build -t ${{ vars.IMAGE_NAME }} -f deploy.Dockerfile .
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 600
+      - name: Tag image
+        run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}
+      - name: Push image to DO Container Registry
+        run: docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}
