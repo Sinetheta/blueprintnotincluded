@@ -21,7 +21,7 @@ import * as yaml from "node_modules/js-yaml/lib/js-yaml";
 
 @Injectable({ providedIn: "root" })
 export class BlueprintService implements IObsBlueprintChange {
-  static baseUrl: string = process.env.NG_APP_HOST;
+  static baseUrl: string = window.location.origin;
 
   id: string;
   name: string;
