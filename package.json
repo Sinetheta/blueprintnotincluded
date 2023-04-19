@@ -12,7 +12,7 @@
     "build:backend": "tsc -b",
     "build:lib": "tsc -b lib",
     "build:frontend": "(cd frontend && npm run build -- --output-path=../build/app/public/)",
-    "postbuild": "./scripts/copy_assets.sh && ./scripts/copy_lib.sh && ./scripts/copy_views.sh && ./scripts/copy_public.sh && ./scripts/copy_frontend.sh",
+    "postbuild": "./scripts/copy_assets.sh && ./scripts/copy_lib.sh && ./scripts/copy_views.sh && ./scripts/copy_public.sh",
     "serve:prod": "(cd build && node ./app/server.js)",
     "updateBasedOn": "tsc && node ./build/api/batch/update-based-on.js",
     "updatePositionCorrection": "tsc && node ./build/api/batch/update-position-correction.js",
