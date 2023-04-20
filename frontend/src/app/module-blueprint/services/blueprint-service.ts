@@ -2,7 +2,6 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { AuthenticationService } from "./authentification-service";
 import { map } from "rxjs/operators";
-import { ComponentMenuComponent } from "../components/component-menu/component-menu.component";
 import {
   Blueprint,
   IObsBlueprintChange,
