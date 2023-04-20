@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
+import { Location } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { AuthenticationService } from "./authentification-service";
 import { map } from "rxjs/operators";
-import { ComponentMenuComponent } from "../components/component-menu/component-menu.component";
 import {
   Blueprint,
   IObsBlueprintChange,
@@ -47,7 +47,8 @@ export class BlueprintService implements IObsBlueprintChange {
   // TODO camera service does not need to be injected
   constructor(
     private http: HttpClient,
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    private location: Location
   ) {
     this.blueprint = new Blueprint();
 
@@ -149,7 +150,7 @@ export class BlueprintService implements IObsBlueprintChange {
     this.name = "new blueprint";
     this.reset();
     let newBlueprint = new Blueprint();
-
+    this.location.replaceState("/");
     this.observersBlueprintChanged.map((observer) => {
       observer.blueprintChanged(newBlueprint);
     });
@@ -241,6 +242,7 @@ export class BlueprintService implements IObsBlueprintChange {
 
   // TODO return observable here so we can close the browse window on success?
   openBlueprintFromId(id: string) {
+    this.location.replaceState(`/b/${id}`);
     this.getBlueprint(id).subscribe({
       next: this.handleGetBlueprint.bind(this),
       error: this.handleGetBlueprintError.bind(this),
@@ -354,6 +356,7 @@ export class BlueprintService implements IObsBlueprintChange {
         map((response: any) => {
           if (response.id) {
             this.id = response.id;
+            this.location.replaceState(`/b/${this.id}`);
           }
           return response;
         })
