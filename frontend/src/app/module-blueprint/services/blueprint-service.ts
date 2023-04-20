@@ -356,6 +356,7 @@ export class BlueprintService implements IObsBlueprintChange {
         map((response: any) => {
           if (response.id) {
             this.id = response.id;
+            this.location.replaceState(`/b/${this.id}`);
           }
           return response;
         })
