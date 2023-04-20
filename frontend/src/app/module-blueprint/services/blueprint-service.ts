@@ -150,7 +150,7 @@ export class BlueprintService implements IObsBlueprintChange {
     this.name = "new blueprint";
     this.reset();
     let newBlueprint = new Blueprint();
-
+    this.location.replaceState("/");
     this.observersBlueprintChanged.map((observer) => {
       observer.blueprintChanged(newBlueprint);
     });
