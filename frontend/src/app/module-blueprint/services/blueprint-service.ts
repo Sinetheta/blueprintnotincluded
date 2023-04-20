@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { Location } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { AuthenticationService } from "./authentification-service";
 import { map } from "rxjs/operators";
@@ -46,7 +47,8 @@ export class BlueprintService implements IObsBlueprintChange {
   // TODO camera service does not need to be injected
   constructor(
     private http: HttpClient,
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    private location: Location
   ) {
     this.blueprint = new Blueprint();
 
@@ -240,6 +242,7 @@ export class BlueprintService implements IObsBlueprintChange {
 
   // TODO return observable here so we can close the browse window on success?
   openBlueprintFromId(id: string) {
+    this.location.replaceState(`/b/${id}`);
     this.getBlueprint(id).subscribe({
       next: this.handleGetBlueprint.bind(this),
       error: this.handleGetBlueprintError.bind(this),
