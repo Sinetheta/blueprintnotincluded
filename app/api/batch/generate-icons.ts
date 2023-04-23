@@ -100,7 +100,7 @@ export class GenerateIcons {
       rt = null;
       container.destroy({ children: true });
       container = null;
-      global.gc();
+      global.gc && global.gc();
     }
     console.log('done generating icons')
   }

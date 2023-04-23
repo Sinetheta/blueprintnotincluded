@@ -73,7 +73,7 @@ export class UpdateThumbnail {
           // Release memory
           mdbBlueprint = null;
           angularBlueprint = null;
-          global.gc();
+          global.gc && global.gc();
 
           blueprints[index].thumbnail = newThumbnail;
           blueprints[index].save()

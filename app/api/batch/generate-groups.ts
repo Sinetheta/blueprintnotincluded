@@ -181,7 +181,7 @@ export class GenerateGroups {
         rt = null;
         container.destroy({ children: true });
         container = null;
-        global.gc();
+        global.gc && global.gc();
       }
       else console.log(oniItem.id + ' should not be grouped')
 
