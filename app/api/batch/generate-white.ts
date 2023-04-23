@@ -5,9 +5,8 @@ import { BExport, SpriteTag } from "../../../lib/index";
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem } from '../../../lib';
 import { PixiNodeUtil } from '../pixi-node-util';
 
-export class GenerateWhite
-{
-  constructor() {
+export class GenerateWhite {
+  constructor(databasePath: string) {
 
     console.log('Running batch GenerateWhite')
 
@@ -16,7 +15,7 @@ export class GenerateWhite
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database-groups.json').toString();
+    let rawdata = fs.readFileSync(databasePath).toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -50,7 +49,7 @@ export class GenerateWhite
 
   async generateWhite(database: BExport) {
 
-    let pixiNodeUtil = new PixiNodeUtil({forceCanvas: true, preserveDrawingBuffer: true});
+    let pixiNodeUtil = new PixiNodeUtil({ forceCanvas: true, preserveDrawingBuffer: true });
 
     let sourceSpriteModifiers = database.spriteModifiers.filter((s) => { return s.tags.indexOf(SpriteTag.solid) != -1; })
 
@@ -84,8 +83,7 @@ export class GenerateWhite
           building.sprites.spriteNames.push(spriteModifierWhite.name);
     }
 
-    for (let sourceTexture of sourceTextures)
-    {
+    for (let sourceTexture of sourceTextures) {
 
       if (!ImageSource.isTextureLoaded(sourceTexture)) {
         let imageUrl = ImageSource.getUrl(sourceTexture);
@@ -97,7 +95,7 @@ export class GenerateWhite
 
       let texture = pixiNodeUtil.getNewTextureWhole(baseTexture);
 
-      let brt = pixiNodeUtil.getNewBaseRenderTexture({width: texture.width, height: texture.height});
+      let brt = pixiNodeUtil.getNewBaseRenderTexture({ width: texture.width, height: texture.height });
       let rt = pixiNodeUtil.getNewRenderTexture(brt);
 
       let sprite = pixiNodeUtil.getSpriteFrom(texture);
@@ -118,5 +116,7 @@ export class GenerateWhite
 
 }
 
-// npm run generateWhite
-new GenerateWhite()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new GenerateWhite('./assets/database/database.json');
+}

@@ -7,9 +7,8 @@ import { BinController } from './bin-packing/bin-controller';
 import { PixiNodeUtil } from '../pixi-node-util';
 
 
-export class GenerateRepack
-{
-  constructor() {
+export class GenerateRepack {
+  constructor(databasePath: string) {
 
     console.log('Running batch GenerateRepack')
 
@@ -18,7 +17,7 @@ export class GenerateRepack
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database.json').toString();
+    let rawdata = fs.readFileSync(databasePath).toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -52,7 +51,7 @@ export class GenerateRepack
 
   async generateRepack(database: BExport) {
 
-    let pixiNodeUtil = new PixiNodeUtil({forceCanvas: true, preserveDrawingBuffer: true});
+    let pixiNodeUtil = new PixiNodeUtil({ forceCanvas: true, preserveDrawingBuffer: true });
     await pixiNodeUtil.initTextures();
 
     // Tests bintrays
@@ -95,7 +94,7 @@ export class GenerateRepack
     newSpriteInfos = newSpriteInfos.sort((i1, i2) => { return i2.uvSize.y - i1.uvSize.y; });
 
     for (let spriteInfo of newSpriteInfos) {
-      let itemAdded  = binController.addItem(spriteInfo.name, Vector2.cloneNullToZero(spriteInfo.uvSize), bleed);
+      let itemAdded = binController.addItem(spriteInfo.name, Vector2.cloneNullToZero(spriteInfo.uvSize), bleed);
       if (itemAdded != null) {
         spriteInfo.uvMin = Vector2.cloneNullToZero(itemAdded.uvStart);
         spriteInfo.textureName = textureBaseString + itemAdded.trayIndex;
@@ -106,7 +105,7 @@ export class GenerateRepack
     database.uiSprites = newSpriteInfos;
 
     for (let trayIndex = 0; trayIndex < binController.binTrays.length; trayIndex++) {
-      let brt = pixiNodeUtil.getNewBaseRenderTexture({width: binController.binTrays[trayIndex].binSize.x, height: binController.binTrays[trayIndex].binSize.y});
+      let brt = pixiNodeUtil.getNewBaseRenderTexture({ width: binController.binTrays[trayIndex].binSize.x, height: binController.binTrays[trayIndex].binSize.y });
       let rt = pixiNodeUtil.getNewRenderTexture(brt);
 
       let graphics = pixiNodeUtil.getNewGraphics();
@@ -148,5 +147,7 @@ export class GenerateRepack
   }
 }
 
-// npm run generateRepack
-new GenerateRepack()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new GenerateRepack('./assets/database/database.json');
+}

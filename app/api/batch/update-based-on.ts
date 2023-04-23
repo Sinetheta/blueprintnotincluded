@@ -4,8 +4,7 @@ import { BlueprintModel, Blueprint } from '../models/blueprint';
 import { BatchUtils } from './batch-utils';
 
 
-export class UpdateBasedOn
-{
+export class UpdateBasedOn {
   public db: Database;
 
   constructor() {
@@ -24,11 +23,11 @@ export class UpdateBasedOn
 
   updateBaseOn() {
 
-    BlueprintModel.model.find({ }).sort({ createdAt: 1 })
+    BlueprintModel.model.find({}).sort({ createdAt: 1 })
       .then((blueprints) => {
 
         for (let indexSuspect = blueprints.length - 1; indexSuspect >= 0; indexSuspect--) {
-          console.log('==> Analysing blueprint : ' + indexSuspect + ' : ' +blueprints[indexSuspect].name);
+          console.log('==> Analysing blueprint : ' + indexSuspect + ' : ' + blueprints[indexSuspect].name);
 
           BatchUtils.UpdateBasedOn(blueprints[indexSuspect], blueprints, indexSuspect);
         }
@@ -36,4 +35,7 @@ export class UpdateBasedOn
   }
 }
 
-new UpdateBasedOn();
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new UpdateBasedOn();
+}
