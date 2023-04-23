@@ -139,7 +139,7 @@ export class OniItem {
       for (let connection of original.utilities)
         this.utilityConnections.push({
           type: connection.type,
-          offset: new Vector2(connection.offset.x, connection.offset.y),
+          offset: connection.offset && new Vector2(connection.offset.x, connection.offset.y),
           isSecondary: connection.isSecondary
         });
 
