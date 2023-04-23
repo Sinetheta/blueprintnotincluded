@@ -76,16 +76,55 @@ export class PixiNodeUtil implements PixiUtil {
   }
 
   async getImageFromCanvas(path: string) {
+    
     console.log('loading image from file : ' + path)
-    let image = await loadImage(path);
-    let ressource = new NodeCanvasResource(image);
-    let bt = new PIXI.BaseTexture(ressource);
-    return bt;
+  
+    try {
+      let image = await loadImage(path);
+      let resource = new NodeCanvasResource(image);
+      let bt = new PIXI.BaseTexture(resource);
+      return bt;
+    } catch (error) {
+        console.warn(`Failed to load image from file: ${path}.  Removing 'solid' and trying again.`);
+        try {
+          path = path.replace('_solid', '');
+          let image = await loadImage(path);
+          let resource = new NodeCanvasResource(image);
+          let bt = new PIXI.BaseTexture(resource);
+          return bt;
+        } catch (error) {
+          console.error(`Failed to load image from ${path}.`);
+      }
+    }
+  }
+
+  // Define the generateFallbackRescueImage function
+  async generateFallbackRescueImage() {
+    // Set the dimensions for the fallback rescue image
+    const width = 100;
+    const height = 100;
+    
+    const data = await Jimp.read('./assets/images/unknown.png');
+    return data;
   }
 
   async getImageWhite(path: string) {
     console.log('reading ' + path);
-    let data: Jimp | null = await Jimp.read(path);
+    
+    let data;
+    try {
+      data = await Jimp.read(path);
+    } catch (error) {
+      console.warn(`Failed to read image from file: ${path}. Removing 'solid' and trying again.`);
+      try {
+        path = path.replace('_solid', '');
+        data = await Jimp.read(path);
+      } catch (error) {
+        console.warn(`Failed to read image from file and solid: ${path}, trying rescue fallback.`);
+        data = await this.generateFallbackRescueImage(); // You should define this function to create a fallback rescue image
+      }
+    }
+
     let width = data.getWidth();
     let height = data.getHeight();
 
