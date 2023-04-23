@@ -64,6 +64,8 @@ export class SpriteInfo {
     // TODO refactor
     // DO NOT FORGET : if you add something here, you must add it to the texture repacker also
     let imageUrl: string = DrawHelpers.createUrl(original.textureName, false);
+    // TODO FOR REAL find out why these textures are missing from extract
+    imageUrl = imageUrl.replace('0_solid.png', '0.png')
     ImageSource.AddImagePixi(original.textureName, imageUrl);
     this.imageId = original.textureName;
     let uvMin = Vector2.clone(original.uvMin); if (uvMin == null) uvMin = new Vector2();
