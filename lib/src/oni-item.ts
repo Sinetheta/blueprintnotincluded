@@ -14,8 +14,7 @@ import { BuildMenuItem, BuildMenuCategory } from "./b-export/b-build-order";
 import { BuildLocationRule } from "./enums/build-location-rule";
 import { ConnectionType } from "./enums/connection-type";
 
-export class OniItem
-{
+export class OniItem {
   static elementId = 'Element';
   static infoId = 'Info';
   static defaultColor = '#696969';
@@ -50,15 +49,15 @@ export class OniItem
   tileableLeftRight: boolean = false;
   tileableTopBottom: boolean = false;
 
-  get isPartOfCircuit(): boolean { 
+  get isPartOfCircuit(): boolean {
     for (let utility of this.utilityConnections)
       if (utility.type == ConnectionType.POWER_INPUT || utility.type == ConnectionType.POWER_OUTPUT) return true;
-    
+
     if (this.zIndex == ZIndex.Wires) return true;
-    
+
     return false;
   }
-  
+
   private permittedRotations_: PermittedRotations = PermittedRotations.Unrotatable;
   get permittedRotations() { return this.permittedRotations_; }
   set permittedRotations(value: PermittedRotations) {
@@ -77,14 +76,12 @@ export class OniItem
   zIndex: ZIndex = ZIndex.Building;
   overlay: Overlay = Overlay.Base;
 
-  constructor(id: string)
-  {
+  constructor(id: string) {
     this.id = id;
     this.cleanUp();
   }
 
-  public copyFrom(original: BBuilding)
-  {
+  public copyFrom(original: BBuilding) {
     this.id = original.prefabId;
     this.name = original.name;
     this.size = original.sizeInCells;
@@ -134,39 +131,36 @@ export class OniItem
       this.spriteGroups.set(newGroup.groupName, newGroup);
     }
     */
-  
+
     this.imageId = imageId;
 
     this.utilityConnections = [];
     if (original.utilities != null)
-        for (let connection of original.utilities)
-            this.utilityConnections.push({
-              type:connection.type, 
-              offset:new Vector2(connection.offset.x, connection.offset.y),
-              isSecondary:connection.isSecondary
-            });
+      for (let connection of original.utilities)
+        this.utilityConnections.push({
+          type: connection.type,
+          offset: new Vector2(connection.offset.x, connection.offset.y),
+          isSecondary: connection.isSecondary
+        });
 
   }
 
-  public getRealOverlay(overlay: Overlay)
-  {
+  public getRealOverlay(overlay: Overlay) {
     let returnValue: Overlay = overlay;
 
-    switch (overlay)
-    {
+    switch (overlay) {
       case Overlay.Decor:
       case Overlay.Light:
-      case Overlay.Oxygen: 
-      case Overlay.Room: 
-      case Overlay.Temperature: 
+      case Overlay.Oxygen:
+      case Overlay.Room:
+      case Overlay.Temperature:
       case Overlay.Unknown: returnValue = Overlay.Base;
     }
 
     return returnValue;
   }
 
-  public cleanUp()
-  {
+  public cleanUp() {
     if (this.isTile == null) this.isTile = false;
     if (this.isWire == null) this.isWire = false;
     if (this.isBridge == null) this.isBridge = false;
@@ -188,41 +182,36 @@ export class OniItem
     if (this.buildLocationRule == null) this.buildLocationRule = BuildLocationRule.Anywhere;
 
     if (Vector2.Zero.equals(this.size)) this.tileOffset = Vector2.Zero;
-    else
-    {
-        this.tileOffset = new Vector2(
-            1 - (this.size.x + (this.size.x % 2)) / 2,
-            0
-        );
+    else {
+      this.tileOffset = new Vector2(
+        1 - (this.size.x + (this.size.x % 2)) / 2,
+        0
+      );
     }
 
   }
 
   public static oniItemsMap: Map<string, OniItem>;
   public static get oniItems() { return Array.from(OniItem.oniItemsMap.values()); }
-  public static init()
-  {
+  public static init() {
     OniItem.oniItemsMap = new Map<string, OniItem>();
   }
 
-  public static load(buildings: BBuilding[])
-  {
-    for (let building of buildings)
-    {
+  public static load(buildings: BBuilding[]) {
+    for (let building of buildings) {
       let oniItem = new OniItem(building.prefabId);
       oniItem.copyFrom(building);
       oniItem.cleanUp();
 
       // If the building is a tile, we need to generate its spriteInfos and sprite modifiers
-      if (oniItem.isTile)
-      {
+      if (oniItem.isTile) {
         //SpriteInfo.addSpriteInfoArray(DrawHelpers.generateTileSpriteInfo(building.kanimPrefix, building.textureName));
         //SpriteModifier.addTileSpriteModifier(building.kanimPrefix);
       }
-      
+
 
       SpriteModifier.AddSpriteModifier(building);
-      
+
       OniItem.oniItemsMap.set(oniItem.id, oniItem);
     }
 
@@ -258,21 +247,19 @@ export class OniItem
     return overlay == this.overlay
   }
 
-  public getCategoryFromItem(): BuildMenuCategory
-  {
+  public getCategoryFromItem(): BuildMenuCategory {
     if (BuildMenuItem.buildMenuItems != null)
       for (let buildMenuItem of BuildMenuItem.buildMenuItems)
         if (buildMenuItem.buildingId == this.id)
           return BuildMenuCategory.getCategory(buildMenuItem.category);
-        
+
     throw new Error('OniItem.getCategoryFromItem : Building not found');
   }
 
-  public static getOniItem(id: string): OniItem
-  {
+  public static getOniItem(id: string): OniItem {
     let returnValue = OniItem.oniItemsMap.get(id);
     /*
-    if (returnValue == null) 
+    if (returnValue == null)
     {
       returnValue = new OniItem(id);
       returnValue.cleanUp();
