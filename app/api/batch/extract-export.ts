@@ -4,20 +4,20 @@ import {
 } from 'fs-extra';
 import path from 'path';
 import AdmZip from 'adm-zip';
+import { BExport } from "../../../lib/index";
 import { FixHtmlLabels } from "./fix-html-labels";
 import { AddInfoIcons } from './add-info-icons';
 import { GenerateIcons } from './generate-icons';
 import { GenerateGroups } from './generate-groups';
 import { GenerateWhite } from './generate-white';
 import { GenerateRepack } from './generate-repack';
+import { renameBuildings, updateJsonFile } from './database-massager';
 
 
 const projectRoot = path.join(__dirname, '../../../../');
 // Transform project relative path to absolute paths
 const absolutePath = (projectPathFromRoot: string) => path.join(projectRoot, projectPathFromRoot);
 const databasePath = absolutePath('export/database/database.json');
-const backendDb = absolutePath('assets/database/database.json');
-const frontendDb = absolutePath('frontend/src/assets/database/database.json');
 // Clean working export dir and unzip extract export.zip
 const freshExport = () => {
   fs.rmdirSync(absolutePath('export'), { recursive: true });
@@ -35,6 +35,9 @@ const replaceImages = () => {
 const generateDatabase = () => {
   new FixHtmlLabels(databasePath);
   new AddInfoIcons(databasePath);
+  updateJsonFile(databasePath, (database: BExport) => {
+    return renameBuildings(database, absolutePath('assets/manual-buildMenuRename.json'));
+  })
 }
 
 const processImages = () => {
