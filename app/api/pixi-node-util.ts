@@ -4,13 +4,12 @@ require('../pixi-shim/lib/pixi-shim-node.js');
 
 import Jimp from 'jimp';
 import { PixiUtil, ImageSource, Blueprint, Vector2, CameraService, Overlay, Display } from "../../lib";
-import {resources} from 'pixi.js-legacy';
+import { resources } from 'pixi.js-legacy';
 
-class NodeCanvasResource extends resources.BaseImageResource
-{
-    constructor(source: any) {
-        super(source);
-    }
+class NodeCanvasResource extends resources.BaseImageResource {
+  constructor(source: any) {
+    super(source);
+  }
 }
 
 export class PixiNodeUtil implements PixiUtil {
@@ -89,7 +88,7 @@ export class PixiNodeUtil implements PixiUtil {
     let width = data.getWidth();
     let height = data.getHeight();
 
-    let brt = this.getNewBaseRenderTexture({width: width, height: height });
+    let brt = this.getNewBaseRenderTexture({ width: width, height: height });
     let rt = this.getNewRenderTexture(brt);
 
     let graphics = this.getNewGraphics();
@@ -110,12 +109,12 @@ export class PixiNodeUtil implements PixiUtil {
     this.pixiApp.renderer.render(container, rt, false);
 
     // Release memory
-    container.destroy({children: true});
+    container.destroy({ children: true });
     container = null;
     rt.destroy();
     rt = null;
     data = null;
-    global.gc();
+    global.gc && global.gc();
 
     //console.log('render done for ' + path);
     return brt;
@@ -160,7 +159,7 @@ export class PixiNodeUtil implements PixiUtil {
       item.drawPixi(exportCamera, this);
     });
 
-    let brt = this.getNewBaseRenderTexture({width: thumbnailSize, height: thumbnailSize });
+    let brt = this.getNewBaseRenderTexture({ width: thumbnailSize, height: thumbnailSize });
     let rt = this.getNewRenderTexture(brt);
 
     this.pixiApp.renderer.render(exportCamera.container, rt, false);
@@ -168,7 +167,7 @@ export class PixiNodeUtil implements PixiUtil {
     let base64: string = this.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
 
     // Memory release
-    exportCamera.container.destroy({children: true});
+    exportCamera.container.destroy({ children: true });
     brt.destroy();
     rt.destroy();
 

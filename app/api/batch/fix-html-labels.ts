@@ -4,21 +4,19 @@ import { JSDOM } from 'jsdom'
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem, MdbBlueprint } from '../../../lib';
 
 
-export class FixHtmlLabels
-{
+export class FixHtmlLabels {
 
   dom: JSDOM
 
-  constructor() {
+  constructor(inputPath?: string) {
 
     console.log('Running batch FixHtmlLabels')
 
     this.dom = new JSDOM('<!DOCTYPE html>');
 
-    // Read database
-    let databaseToFix = './frontend/src/assets/database/' + process.argv[2];
+    const compatibilityPath = './frontend/src/assets/database/' + process.argv[2];
+    let databaseToFix = inputPath || compatibilityPath;
     console.log('Removing html tags from ' + databaseToFix);
-
 
     this.fixHtmlLabels(databaseToFix);
   }
@@ -77,5 +75,7 @@ export class FixHtmlLabels
   }
 }
 
-// npm run fixHtmlLabels -- database.json
-new FixHtmlLabels()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new FixHtmlLabels();
+}

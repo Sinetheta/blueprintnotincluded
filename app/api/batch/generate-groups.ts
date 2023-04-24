@@ -9,9 +9,8 @@ import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSprit
 import { PixiNodeUtil } from '../pixi-node-util';
 
 
-export class GenerateGroups
-{
-  constructor() {
+export class GenerateGroups {
+  constructor(databasePath: string) {
 
     console.log('Running batch GenerateGroups')
 
@@ -20,7 +19,7 @@ export class GenerateGroups
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database.json').toString();
+    let rawdata = fs.readFileSync(databasePath).toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -54,7 +53,7 @@ export class GenerateGroups
 
   async generateGroups(database: BExport) {
 
-    let pixiNodeUtil = new PixiNodeUtil({forceCanvas: true, preserveDrawingBuffer: true});
+    let pixiNodeUtil = new PixiNodeUtil({ forceCanvas: true, preserveDrawingBuffer: true });
     await pixiNodeUtil.initTextures();
 
     for (let oniItem of OniItem.oniItems) {
@@ -70,8 +69,8 @@ export class GenerateGroups
         if (spriteModifier == undefined) console.log(oniItem);
 
         if (spriteModifier.tags.indexOf(SpriteTag.solid) != -1 &&
-            spriteModifier.tags.indexOf(SpriteTag.tileable) == -1 &&
-            spriteModifier.tags.indexOf(SpriteTag.connection) == -1)
+          spriteModifier.tags.indexOf(SpriteTag.tileable) == -1 &&
+          spriteModifier.tags.indexOf(SpriteTag.connection) == -1)
           spritesToGroup.push(spriteModifier);
       }
 
@@ -111,7 +110,7 @@ export class GenerateGroups
 
           let texture = spriteInfo.getTexture(pixiNodeUtil);
           let sprite = pixiNodeUtil.getSpriteFrom(texture);
-          sprite.anchor.set(spriteInfo.pivot.x, 1-spriteInfo.pivot.y);
+          sprite.anchor.set(spriteInfo.pivot.x, 1 - spriteInfo.pivot.y);
           sprite.x = 0 + (spriteModifier.translation.x);
           sprite.y = 0 - (spriteModifier.translation.y);
           sprite.width = spriteInfo.realSize.x;
@@ -164,7 +163,7 @@ export class GenerateGroups
         newSpriteInfo.uvSize = new Vector2(bounds.width, bounds.height);
         database.uiSprites.push(newSpriteInfo);
 
-        let brt = pixiNodeUtil.getNewBaseRenderTexture({width: bounds.width, height: bounds.height});
+        let brt = pixiNodeUtil.getNewBaseRenderTexture({ width: bounds.width, height: bounds.height });
         let rt = pixiNodeUtil.getNewRenderTexture(brt);
 
         pixiNodeUtil.pixiApp.renderer.render(container, rt);
@@ -180,9 +179,9 @@ export class GenerateGroups
         brt = null;
         rt.destroy();
         rt = null;
-        container.destroy({children: true});
+        container.destroy({ children: true });
         container = null;
-        global.gc();
+        global.gc && global.gc();
       }
       else console.log(oniItem.id + ' should not be grouped')
 
@@ -195,5 +194,7 @@ export class GenerateGroups
 
 }
 
-// npm run generateGroups
-new GenerateGroups()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new GenerateGroups('./assets/database/database.json');
+}

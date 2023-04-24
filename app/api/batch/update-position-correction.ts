@@ -4,8 +4,7 @@ import { BlueprintModel, Blueprint } from '../models/blueprint';
 import { BatchUtils } from './batch-utils';
 
 
-export class UpdatePositionCorrection
-{
+export class UpdatePositionCorrection {
   public db: Database;
 
   constructor() {
@@ -24,7 +23,7 @@ export class UpdatePositionCorrection
 
   updateBaseOn() {
 
-    BlueprintModel.model.find({ }).sort({ createdAt: 1 })
+    BlueprintModel.model.find({}).sort({ createdAt: 1 })
       .then((blueprints) => {
 
         for (let toCorrect of blueprints) BatchUtils.UpdatePositionCorrection(toCorrect);
@@ -33,4 +32,7 @@ export class UpdatePositionCorrection
   }
 }
 
-new UpdatePositionCorrection();
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new UpdatePositionCorrection();
+}

@@ -4,16 +4,15 @@ import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSprit
 import { InfoIcon, BlueprintItemInfo } from '../../../lib/src/blueprint/blueprint-item-info';
 
 
-export class AddInfoIcons
-{
+export class AddInfoIcons {
 
 
-  constructor() {
+  constructor(inputPath?: string) {
 
     console.log('Running batch FixHtmlLabels')
 
     // Read database
-    let databaseToFix = './assets/database/' + process.argv[2];
+    let databaseToFix = inputPath || './assets/database/' + process.argv[2];
     console.log('Adding info icons srpite infos and sprite modifiers to ' + databaseToFix);
 
 
@@ -47,7 +46,7 @@ export class AddInfoIcons
     for (let i = 0; i < spriteModifiersNames.length; i++) {
       let spriteModifier = new BSpriteModifier();
       spriteModifier.name = spriteModifiersNames[i];
-      spriteModifier.spriteInfoName =  spriteModifiersNames[i];
+      spriteModifier.spriteInfoName = spriteModifiersNames[i];
       spriteModifier.rotation = 0;
       spriteModifier.translation = Vector2.zero();
       spriteModifier.scale = Vector2.one();
@@ -73,5 +72,7 @@ export class AddInfoIcons
   }
 }
 
-// npm run addInfoIcons -- database.json
-new AddInfoIcons()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new AddInfoIcons();
+}

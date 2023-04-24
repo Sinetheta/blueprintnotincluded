@@ -1,0 +1,156 @@
+{
+  "buildMenuItems": [
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "CommandModule"
+      },
+      "to": null
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "CosmicResearchCenter"
+      },
+      "to": null
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "ResearchModule"
+      },
+      "to": null
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "SolidBooster"
+      },
+      "to": null
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "SpecialCargoBay"
+      },
+      "to": null
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "TouristModule"
+      },
+      "to": null
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "MissionControl"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "MissionControlCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "SteamEngine"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "SteamEngineCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "KeroseneEngine"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "KeroseneEngineCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "LiquidFuelTank"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "LiquidFuelTankCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "OxidizerTank"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "OxidizerTankCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "OxidizerTankLiquid"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "OxidizerTankLiquidCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "CargoBay"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "CargoBayCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "LiquidCargoBay"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "LiquidCargoBayCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "GasCargoBay"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "GasCargoBayCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "HydrogenEngine"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "HydrogenEngineCluster"
+      }
+    },
+    {
+      "from": {
+        "category": 104161307,
+        "buildingId": "Telescope"
+      },
+      "to": {
+        "category": 104161307,
+        "buildingId": "ClusterTelescope"
+      }
+    }
+  ]
+}

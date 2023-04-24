@@ -6,8 +6,7 @@ import { Blueprint as sharedBlueprint, Vector2, CameraService, Overlay, Display,
 import { PixiNodeUtil } from "../pixi-node-util";
 
 
-export class UpdateThumbnail
-{
+export class UpdateThumbnail {
   public db: Database;
 
   constructor() {
@@ -56,13 +55,13 @@ export class UpdateThumbnail
 
   async updateThumbnail() {
 
-    let pixiNodeUtil = new PixiNodeUtil({forceCanvas: true, preserveDrawingBuffer: true});
+    let pixiNodeUtil = new PixiNodeUtil({ forceCanvas: true, preserveDrawingBuffer: true });
     await pixiNodeUtil.initTextures();
 
-    BlueprintModel.model.find({ }).sort({ createdAt: 1 })
+    BlueprintModel.model.find({}).sort({ createdAt: 1 })
       .then((blueprints) => {
         for (let index = blueprints.length - 1; index >= 0; index--) {
-          console.log('==> Generating thumbnail for blueprint : ' + index + ' : ' +blueprints[index].name);
+          console.log('==> Generating thumbnail for blueprint : ' + index + ' : ' + blueprints[index].name);
 
           let mdbBlueprint = blueprints[index].data as MdbBlueprint | null;
           let angularBlueprint: sharedBlueprint | null = new sharedBlueprint();
@@ -74,16 +73,19 @@ export class UpdateThumbnail
           // Release memory
           mdbBlueprint = null;
           angularBlueprint = null;
-          global.gc();
+          global.gc && global.gc();
 
           blueprints[index].thumbnail = newThumbnail;
           blueprints[index].save()
-          .then(() => { console.log('====> Save Ok for blueprint : ' + index + ' : ' +blueprints[index].name); })
-          .catch(() => { console.log('====> Save Error for blueprint : ' + index + ' : ' +blueprints[index].name); })
+            .then(() => { console.log('====> Save Ok for blueprint : ' + index + ' : ' + blueprints[index].name); })
+            .catch(() => { console.log('====> Save Error for blueprint : ' + index + ' : ' + blueprints[index].name); })
 
         }
       });
   }
 }
 
-new UpdateThumbnail()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new UpdateThumbnail();
+}

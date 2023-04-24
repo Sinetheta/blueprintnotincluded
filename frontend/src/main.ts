@@ -12,6 +12,7 @@ if (environment.production) {
 
 Sentry.init({
   dsn: process.env.NG_APP_SENTRY_DSN,
+  enabled: environment.production,
   integrations: [
     // Registers and configures the Tracing integration,
     // which automatically instruments your application to monitor its

@@ -4,11 +4,8 @@ import * as jimp from 'jimp';
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem } from '../../../lib';
 import { PixiNodeUtil } from '../pixi-node-util';
 
-
-
-export class GenerateIcons
-{
-  constructor() {
+export class GenerateIcons {
+  constructor(databasePath: string) {
 
     console.log('Running batch GenerateIcons')
 
@@ -17,7 +14,7 @@ export class GenerateIcons
     console.log(process.env.ENV_NAME);
 
     // Read database
-    let rawdata = fs.readFileSync('./assets/database/database.json').toString();
+    let rawdata = fs.readFileSync(databasePath).toString();
     let json = JSON.parse(rawdata);
 
     ImageSource.init();
@@ -51,12 +48,11 @@ export class GenerateIcons
 
   async generateIcons() {
 
-    let pixiNodeUtil = new PixiNodeUtil({forceCanvas: true, preserveDrawingBuffer: true});
+    let pixiNodeUtil = new PixiNodeUtil({ forceCanvas: true, preserveDrawingBuffer: true });
     await pixiNodeUtil.initTextures();
 
     console.log('start generating icons')
-    for (let k of SpriteInfo.keys.filter(s => SpriteInfo.getSpriteInfo(s).isIcon && !SpriteInfo.getSpriteInfo(s).isInputOutput))
-    {
+    for (let k of SpriteInfo.keys.filter(s => SpriteInfo.getSpriteInfo(s).isIcon && !SpriteInfo.getSpriteInfo(s).isInputOutput)) {
       let uiSpriteInfo = SpriteInfo.getSpriteInfo(k);
 
       // Only generate icons for sprite not in the texture atlases
@@ -83,7 +79,7 @@ export class GenerateIcons
       if (texture.width > texture.height) uiSprite.y += (texture.width / 2 - texture.height / 2);
       if (texture.height > texture.width) uiSprite.x += (texture.height / 2 - texture.width / 2);
 
-      let brt = pixiNodeUtil.getNewBaseRenderTexture({width: size, height: size});
+      let brt = pixiNodeUtil.getNewBaseRenderTexture({ width: size, height: size });
       let rt = pixiNodeUtil.getNewRenderTexture(brt);
 
       pixiNodeUtil.pixiApp.renderer.render(container, rt, true);
@@ -102,13 +98,15 @@ export class GenerateIcons
       brt = null;
       rt.destroy();
       rt = null;
-      container.destroy({children: true});
+      container.destroy({ children: true });
       container = null;
-      global.gc();
+      global.gc && global.gc();
     }
     console.log('done generating icons')
   }
 }
 
-// npm run generateIcons
-new GenerateIcons()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new GenerateIcons('./assets/database/database.json');
+}

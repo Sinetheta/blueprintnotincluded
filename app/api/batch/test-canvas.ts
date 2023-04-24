@@ -147,6 +147,7 @@ export class TestCanvas //implements PixiUtil
 
 }
 
-
-
-new TestCanvas()
+// Only execute this script if loaded directly with node
+if (require.main === module) {
+  new TestCanvas();
+}
