@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { BlueprintModel, Blueprint } from "./models/blueprint";
-import { MdbBlueprint, BlueprintResponse, BlueprintListItem, BlueprintListResponse, BlueprintLike, Vector2, CameraService, Overlay, ImageSource, BlueprintDelete,  } from "../../lib/index";
+import { MdbBlueprint, BlueprintResponse, BlueprintListItem, BlueprintListResponse, BlueprintLike, Vector2, CameraService, Overlay, ImageSource, BlueprintDelete, } from "../../lib/index";
 import { Blueprint as sharedBlueprint } from "../../lib/index";
 import { UserModel, User, UserJwt } from "./models/user";
 import { UpdateBasedOn } from "./batch/update-based-on";
@@ -9,12 +9,10 @@ import { use } from "passport";
 
 export class BlueprintController {
 
-  public uploadBlueprint(req: Request, res: Response)
-  {
+  public uploadBlueprint(req: Request, res: Response) {
     console.log('uploadBlueprint' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       // TODO input checks here
 
       let user = req.user as UserJwt;
@@ -32,24 +30,23 @@ export class BlueprintController {
       }
 
 
-        BlueprintModel.model.find({owner: ownerId, name: name})
-          .then((blueprints) => {
-            if (blueprints.length > 0)
-            {
-              if (overwrite || blueprints[0].deleted) BlueprintController.saveBlueprint(req, res, blueprints[0], ownerId, name, data, thumbnail, false);
-              else res.json({ overwrite: true });
-            }
-            else {
-              let blueprint = new BlueprintModel.model();
-              blueprint.likes = [ownerId];
-              BlueprintController.saveBlueprint(req, res, blueprint,ownerId, name, data, thumbnail, true);
-            }
-          })
-          .catch((err) => {
-            console.log('Blueprint find error');
-            console.log(err);
-            res.status(500).json({ saveBlueprintResult: 'ERROR' });
-          });
+      BlueprintModel.model.find({ owner: ownerId, name: name })
+        .then((blueprints) => {
+          if (blueprints.length > 0) {
+            if (overwrite || blueprints[0].deleted) BlueprintController.saveBlueprint(req, res, blueprints[0], ownerId, name, data, thumbnail, false);
+            else res.json({ overwrite: true });
+          }
+          else {
+            let blueprint = new BlueprintModel.model();
+            blueprint.likes = [ownerId];
+            BlueprintController.saveBlueprint(req, res, blueprint, ownerId, name, data, thumbnail, true);
+          }
+        })
+        .catch((err) => {
+          console.log('Blueprint find error');
+          console.log(err);
+          res.status(500).json({ saveBlueprintResult: 'ERROR' });
+        });
 
     }
   }
@@ -57,8 +54,7 @@ export class BlueprintController {
   public deleteBlueprint(req: Request, res: Response) {
     console.log('deleteBlueprint' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       try {
         let user = req.user as UserJwt
         let blueprintDelete = req.body as BlueprintDelete;
@@ -70,10 +66,9 @@ export class BlueprintController {
           return;
         }
 
-        BlueprintModel.model.find({_id: blueprintDelete.blueprintId, owner: ownerId})
+        BlueprintModel.model.find({ _id: blueprintDelete.blueprintId, owner: ownerId })
           .then((blueprints) => {
-            if (blueprints.length > 0)
-            {
+            if (blueprints.length > 0) {
               let blueprint = blueprints[0];
 
               blueprint.deleted = true;
@@ -107,8 +102,7 @@ export class BlueprintController {
   public likeBlueprint(req: Request, res: Response) {
     console.log('likeBlueprint' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       try {
         let user = req.user as UserJwt
         let blueprintLike = req.body as BlueprintLike;
@@ -119,10 +113,9 @@ export class BlueprintController {
         }
 
 
-        BlueprintModel.model.find({_id: blueprintLike.blueprintId})
+        BlueprintModel.model.find({ _id: blueprintLike.blueprintId })
           .then((blueprints) => {
-            if (blueprints.length > 0)
-            {
+            if (blueprints.length > 0) {
               let blueprint = blueprints[0];
 
               if (blueprint.likes == null) blueprint.likes = [];
@@ -161,121 +154,118 @@ export class BlueprintController {
     }
   }
 
-  public getBlueprint(req: Request, res: Response)
-  {
+  public getBlueprint(req: Request<{ id: string }, {}, {}, { userId: string }>, res: Response) {
     console.log('getBlueprint' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       // TODO checks here
       let id = req.params.id;
       let userId = req.query.userId;
 
-      BlueprintModel.model.find({_id: id})
-      .then((blueprints) => {
-        if (blueprints.length > 0) {
+      BlueprintModel.model.find({ _id: id })
+        .then((blueprints) => {
+          if (blueprints.length > 0) {
 
-          let blueprint = blueprints[0];
+            let blueprint = blueprints[0];
 
-          let likedByMe = false;
-          if (userId != null && blueprint.likes != null && blueprint.likes.indexOf(userId) != -1) likedByMe = true;
+            let likedByMe = false;
+            if (userId != null && blueprint.likes != null && blueprint.likes.indexOf(userId) != -1) likedByMe = true;
 
-          let nbLikes = 0;
-          if (blueprint.likes != null ) nbLikes = blueprint.likes.length;
+            let nbLikes = 0;
+            if (blueprint.likes != null) nbLikes = blueprint.likes.length;
 
-          let response: BlueprintResponse = {
-            id: blueprint._id,
-            name: blueprint.name,
-            data: blueprint.data,
-            likedByMe: likedByMe,
-            nbLikes: nbLikes
+            let response: BlueprintResponse = {
+              id: blueprint._id,
+              name: blueprint.name,
+              data: blueprint.data,
+              likedByMe: likedByMe,
+              nbLikes: nbLikes
+            }
+            res.json(response);
           }
-          res.json(response);
-        }
-        else res.status(500).json({ getBlueprint: 'ERROR' });
-      })
-      .catch((err) => {
-        console.log('Blueprint find error');
-        console.log(err);
-        res.status(500).json({ getBlueprint: 'ERROR' });
-      });
+          else res.status(500).json({ getBlueprint: 'ERROR' });
+        })
+        .catch((err) => {
+          console.log('Blueprint find error');
+          console.log(err);
+          res.status(500).json({ getBlueprint: 'ERROR' });
+        });
     }
   }
 
-  public getBlueprintMod(req: Request, res: Response)
-  {
+  public getBlueprintMod(req: Request, res: Response) {
     console.log('getBlueprintMod' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       // TODO checks here
       let id = req.params.id;
       let userId = req.query.userId;
 
-      BlueprintModel.model.find({_id: id})
-      .then((blueprints) => {
-        if (blueprints.length > 0) {
+      BlueprintModel.model.find({ _id: id })
+        .then((blueprints) => {
+          if (blueprints.length > 0) {
 
-          let blueprint = blueprints[0];
+            let blueprint = blueprints[0];
 
-          let mdbBlueprint = blueprint.data as MdbBlueprint;
-          let angularBlueprint = new sharedBlueprint();
-          angularBlueprint.importFromMdb(mdbBlueprint);
-          let bniBlueprint = angularBlueprint.toBniBlueprint(blueprint.name)
+            let mdbBlueprint = blueprint.data as MdbBlueprint;
+            let angularBlueprint = new sharedBlueprint();
+            angularBlueprint.importFromMdb(mdbBlueprint);
+            let bniBlueprint = angularBlueprint.toBniBlueprint(blueprint.name)
 
-          res.json(bniBlueprint);
-        }
-        else res.status(500).json({ getBlueprint: 'ERROR' });
-      })
-      .catch((err) => {
-        console.log('Blueprint find error');
-        console.log(err);
-        res.status(500).json({ getBlueprint: 'ERROR' });
-      });
+            res.json(bniBlueprint);
+          }
+          else res.status(500).json({ getBlueprint: 'ERROR' });
+        })
+        .catch((err) => {
+          console.log('Blueprint find error');
+          console.log(err);
+          res.status(500).json({ getBlueprint: 'ERROR' });
+        });
     }
   }
 
-  public getBlueprintThumbnail(req: Request, res: Response)
-  {
+  public getBlueprintThumbnail(req: Request, res: Response) {
     console.log('getBlueprintThumbnail' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       // TODO checks here
       let id = req.params.id;
       let userId = req.query.userId;
 
-      BlueprintModel.model.find({_id: id})
-      .then((blueprints) => {
-        if (blueprints.length > 0) {
+      BlueprintModel.model.find({ _id: id })
+        .then((blueprints) => {
+          if (blueprints.length > 0) {
 
-          let blueprint = blueprints[0];
+            let blueprint = blueprints[0];
 
-          let mdbBlueprint = blueprint.data as MdbBlueprint;
-          let angularBlueprint = new sharedBlueprint();
-          angularBlueprint.importFromMdb(mdbBlueprint);
+            let mdbBlueprint = blueprint.data as MdbBlueprint;
+            let angularBlueprint = new sharedBlueprint();
+            angularBlueprint.importFromMdb(mdbBlueprint);
 
-          // TODO not sure if I should allow users to regen, or just serve the save thumbnail
-          //PixiBackend.pixiBackend.generateThumbnail(angularBlueprint);
+            // TODO not sure if I should allow users to regen, or just serve the save thumbnail
+            //PixiBackend.pixiBackend.generateThumbnail(angularBlueprint);
 
-          res.json({status: 'ok'});
-        }
-        else res.status(500).json({ getBlueprint: 'ERROR' });
-      })
-      .catch((err) => {
-        console.log('Blueprint find error');
-        console.log(err);
-        res.status(500).json({ getBlueprint: 'ERROR' });
-      });
+            res.json({ status: 'ok' });
+          }
+          else res.status(500).json({ getBlueprint: 'ERROR' });
+        })
+        .catch((err) => {
+          console.log('Blueprint find error');
+          console.log(err);
+          res.status(500).json({ getBlueprint: 'ERROR' });
+        });
     }
   }
 
-  public getBlueprints(req: Request, res: Response)
-  {
+  public getBlueprints(req: Request<{}, {}, {}, {
+    filterName?: string,
+    filterUserId?: string,
+    getDuplicates?: boolean,
+    olderthan?: string
+  }>, res: Response) {
     console.log('getBlueprints' + req.clientIp);
     if (BlueprintModel.model == null) res.status(503).send();
-    else
-    {
+    else {
       let filterUserId: string;
       let filterName: string;
       let getDuplicates: boolean;
@@ -286,12 +276,12 @@ export class BlueprintController {
       if (userJwt != null) userId = userJwt._id;
 
       try {
-        let dateInt = parseInt(req.query.olderthan);
+        let dateInt = parseInt(req.query.olderthan || '');
         dateFilter.setTime(dateInt);
 
-        filterUserId = req.query.filterUserId;
-        filterName = req.query.filterName;
-        getDuplicates = req.query.getDuplicates;
+        filterUserId = req.query.filterUserId || '';
+        filterName = req.query.filterName || '';
+        getDuplicates = req.query.getDuplicates || false;
 
       }
       catch (error) {
@@ -300,11 +290,11 @@ export class BlueprintController {
         return;
       }
 
-      let filter: any = { $and: [ {createdAt: { $lt: dateFilter } }, {deleted: { $ne: true }}] };
+      let filter: any = { $and: [{ createdAt: { $lt: dateFilter } }, { deleted: { $ne: true } }] };
 
-      if (filterUserId != null) filter.$and.push({owner: filterUserId});
-      if (filterName != null) filter.$and.push({name: {$regex: filterName, $options: 'i'}});
-      if (!getDuplicates) filter.$and.push({$or: [ {isCopy: null}, {isCopy: false}]});
+      if (filterUserId != null) filter.$and.push({ owner: filterUserId });
+      if (filterName != null) filter.$and.push({ name: { $regex: filterName, $options: 'i' } });
+      if (!getDuplicates) filter.$and.push({ $or: [{ isCopy: null }, { isCopy: false }] });
 
       let browseIncrement = parseInt(process.env.BROWSE_INCREMENT as string);
       let query = BlueprintModel.model.find(filter).sort({ createdAt: -1 }).limit(browseIncrement * 2).populate('owner');
@@ -312,15 +302,15 @@ export class BlueprintController {
       query.then((blueprints) => {
         BlueprintController.handleGetBlueprint(req, res, userId, blueprints);
       })
-      .catch((err) => {
-        console.log('Blueprint find error');
-        console.log(err);
-        res.status(500).json({ getBlueprint: 'ERROR' });
-      });
+        .catch((err) => {
+          console.log('Blueprint find error');
+          console.log(err);
+          res.status(500).json({ getBlueprint: 'ERROR' });
+        });
     }
   }
 
-  private static handleGetBlueprint(req: Request, res: Response, userId: string, blueprints: Blueprint[]) {
+  private static handleGetBlueprint(req = {}, res: Response, userId: string, blueprints: Blueprint[]) {
 
     let browseIncrement = parseInt(process.env.BROWSE_INCREMENT as string);
 
@@ -379,8 +369,7 @@ export class BlueprintController {
     else res.json(returnValue);
   }
 
-  private static saveBlueprint(req: Request, res: Response, blueprint: Blueprint, ownerId: string, name: string, data: any, thumbnail: string, overwriteCreateDate: boolean)
-  {
+  private static saveBlueprint(req: Request, res: Response, blueprint: Blueprint, ownerId: string, name: string, data: any, thumbnail: string, overwriteCreateDate: boolean) {
     blueprint.owner = ownerId;
     blueprint.name = name;
     // TODO tags
@@ -393,21 +382,21 @@ export class BlueprintController {
     blueprint.modifiedAt = new Date();
 
     blueprint.save()
-    .then((newBlueprint) => {
-      let id = newBlueprint.id;
-      res.json({ id: id });
+      .then((newBlueprint) => {
+        let id = newBlueprint.id;
+        res.json({ id: id });
 
-      // Then we identify if the uploaded bleuprint is a duplicate
-      BlueprintModel.model.find({ }).sort({ createdAt: 1 }).then((blueprints) => {
-        BatchUtils.UpdateBasedOn(newBlueprint, blueprints, blueprints.length - 1);
-        BatchUtils.UpdatePositionCorrection(newBlueprint);
+        // Then we identify if the uploaded bleuprint is a duplicate
+        BlueprintModel.model.find({}).sort({ createdAt: 1 }).then((blueprints) => {
+          BatchUtils.UpdateBasedOn(newBlueprint, blueprints, blueprints.length - 1);
+          BatchUtils.UpdatePositionCorrection(newBlueprint);
+        });
+      })
+      .catch((error) => {
+        console.log('Blueprint save error');
+        console.log(error);
+
+        res.status(500).json({ saveBlueprintResult: 'ERROR' });
       });
-    })
-    .catch((error) => {
-      console.log('Blueprint save error');
-      console.log(error);
-
-      res.status(500).json({ saveBlueprintResult: 'ERROR' });
-     });
   }
 }
