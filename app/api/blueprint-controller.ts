@@ -292,8 +292,8 @@ export class BlueprintController {
 
       let filter: any = { $and: [{ createdAt: { $lt: dateFilter } }, { deleted: { $ne: true } }] };
 
-      if (filterUserId != null) filter.$and.push({ owner: filterUserId });
-      if (filterName != null) filter.$and.push({ name: { $regex: filterName, $options: 'i' } });
+      if (filterUserId != '') filter.$and.push({ owner: filterUserId });
+      if (filterName != '') filter.$and.push({ name: { $regex: filterName, $options: 'i' } });
       if (!getDuplicates) filter.$and.push({ $or: [{ isCopy: null }, { isCopy: false }] });
 
       let browseIncrement = parseInt(process.env.BROWSE_INCREMENT as string);
