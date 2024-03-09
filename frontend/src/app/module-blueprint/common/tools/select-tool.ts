@@ -366,6 +366,13 @@ export class SelectTool implements ITool {
           this.sameItemCollections[itemGroupToDestroyIndex]
         );
     } else if (keyCode == "b") {
+      // ignore keypress when a textbox is active
+      let textboxElements = ["INPUT", "TEXTAREA"];
+      let activeElement = document.activeElement.tagName;
+      if ( textboxElements.includes(activeElement)) {
+        return;
+      }
+
       // find the currently selected item
       let newItem = null;
       let itemGroupToDestroyIndex = this.currentMultipleSelectionIndex;
