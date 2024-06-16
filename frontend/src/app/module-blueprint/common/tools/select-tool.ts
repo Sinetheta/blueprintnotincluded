@@ -369,7 +369,7 @@ export class SelectTool implements ITool {
       // ignore keypress when a textbox is active
       let textboxElements = ["INPUT", "TEXTAREA"];
       let activeElement = document.activeElement.tagName;
-      if ( textboxElements.includes(activeElement)) {
+      if (textboxElements.includes(activeElement)) {
         return;
       }
 
