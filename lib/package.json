@@ -15,5 +15,13 @@
     "tsc": "tsc"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "engines": {
+    "node": "18.18.2",
+    "npm": "10.2.0"
+  },
+  "volta": {
+    "node": "18.18.2",
+    "npm": "10.2.0"
+  }
 }
