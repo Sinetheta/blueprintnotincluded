@@ -1,4 +1,4 @@
-FROM --platform=amd64 node:14-alpine as extract
+FROM --platform=amd64 node:18-alpine3.17 as extract
 
 WORKDIR /bpni
 
@@ -32,7 +32,7 @@ COPY ./lib ../lib
 COPY ./frontend ./
 RUN npm run build -- --output-path=../build/app/public/
 
-FROM --platform=amd64 node:14-alpine as serve-prod
+FROM --platform=amd64 node:18-alpine3.17 as serve-prod
 WORKDIR /bpni
 COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force

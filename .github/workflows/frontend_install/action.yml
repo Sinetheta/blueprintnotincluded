@@ -8,7 +8,7 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: 14.18
+        node-version: 18.18.2
     - name: Install frontend Node.js dependencies
       working-directory: frontend
       shell: bash
