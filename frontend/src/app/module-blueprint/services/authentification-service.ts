@@ -106,4 +106,15 @@ export class AuthenticationService {
     this.token = "";
     window.localStorage.removeItem(AuthenticationService.localStorage);
   }
+
+  public requestPasswordReset(email: string): Observable<any> {
+    return this.http.post("/api/request-reset", { email });
+  }
+
+  public resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post("/api/reset-password", {
+      token,
+      newPassword,
+    });
+  }
 }

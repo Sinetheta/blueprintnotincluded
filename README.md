@@ -9,6 +9,7 @@ It is a combined curated version of the original blueprintnotincluded web app.
 `docker-compose up`
 
 Visit http://localhost:3000
+To check incoming emails visit: http://localhost:8025
 
 ## Docker image building
 

@@ -2,6 +2,26 @@
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.8.
 
+## Environment Variables
+
+The following environment variables are required for the application to run:
+
+### Required
+- `DB_URI` - MongoDB connection string
+- `JWT_SECRET` - Secret key for JWT token generation
+- `SITE_URL` - Base URL of the site (e.g., http://localhost:3000)
+
+### Email Configuration (SMTP)
+- `SMTP_HOST` - SMTP server hostname (default: localhost)
+- `SMTP_PORT` - SMTP server port (default: 25)
+- `SMTP_USER` - SMTP username (optional)
+- `SMTP_PASS` - SMTP password (optional)
+- `SMTP_FROM` - From email address (default: noreply@blueprintnotincluded.com)
+
+### reCAPTCHA (Production Only)
+- `CAPTCHA_SITE` - Google reCAPTCHA site key
+- `CAPTCHA_SECRET` - Google reCAPTCHA secret key
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.

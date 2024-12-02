@@ -11,10 +11,15 @@ services:
       - JWT_SECRET=anylongstringhere
       - CAPTCHA_SITE=localhost
       - CAPTCHA_SECRET=YOURCAPTCHASECRET
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_FROM=noreply@blueprintnotincluded.com
     links:
       - "mongodb-bpni:database"
+      - "mailhog:mailhog"
     depends_on:
       - mongodb-bpni
+      - mailhog
     ports:
       - "3000:3000"
   mongodb-bpni:
@@ -26,3 +31,9 @@ services:
       - ./mongo/docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     ports:
       - "27017:27017"
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog-bpni
+    ports:
+      - "1025:1025"
+      - "8025:8025"
