@@ -10,13 +10,20 @@ The following environment variables are required for the application to run:
 - `DB_URI` - MongoDB connection string
 - `JWT_SECRET` - Secret key for JWT token generation
 - `SITE_URL` - Base URL of the site (e.g., http://localhost:3000)
+- `ENV_NAME` - If not set, will default to mailhog for dev testing, if set to 'production' sendgrid will be used
 
-### Email Configuration (SMTP)
+### Email Configuration
+#### Development (Mailhog)
+(these do not have to be set by default, only if you want to override)
 - `SMTP_HOST` - SMTP server hostname (default: localhost)
 - `SMTP_PORT` - SMTP server port (default: 25)
 - `SMTP_USER` - SMTP username (optional)
 - `SMTP_PASS` - SMTP password (optional)
 - `SMTP_FROM` - From email address (default: noreply@blueprintnotincluded.com)
+
+#### Production (SendGrid)
+- `SENDGRID_API_KEY` - Your SendGrid API key (required in production)
+- `SENDGRID_FROM_EMAIL` - Verified sender email address for SendGrid
 
 ### reCAPTCHA (Production Only)
 - `CAPTCHA_SITE` - Google reCAPTCHA site key
