@@ -13,7 +13,7 @@ services:
       - CAPTCHA_SECRET=YOURCAPTCHASECRET
       - SMTP_HOST=mailhog
       - SMTP_PORT=1025
-      - SMTP_FROM=noreply@blueprintnotincluded.com
+      - SMTP_FROM=help@blueprintnotincluded.com
     links:
       - "mongodb-bpni:database"
       - "mailhog:mailhog"
