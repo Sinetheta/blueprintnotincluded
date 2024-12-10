@@ -35,7 +35,12 @@
   <div *ngIf="authError" class="error-red" i18n>Authentication error</div>
 
   <br />
-  <a [routerLink]="" (click)="registration()" i18n>First registration ?</a>
+  <div class="links-container">
+    <a [routerLink]="" (click)="registration()" i18n>First registration ?</a>
+    <a [routerLink]="" (click)="forgotPassword()" class="forgot-password" i18n
+      >Forgot Password?</a
+    >
+  </div>
 
   <br />
   <br />
@@ -48,3 +53,23 @@
   <!--This is just here so that enter submits the form-->
   <button type="submit" style="visibility: hidden"></button>
 </form>
+
+<p-dialog
+  [(visible)]="showResetDialog"
+  header="Reset Password"
+  [modal]="true"
+  [style]="{ width: '350px' }"
+>
+  <div class="p-field">
+    <label for="email">Enter your email address</label>
+    <input
+      type="email"
+      pInputText
+      [(ngModel)]="resetEmail"
+      style="width: 100%"
+    />
+  </div>
+  <p-footer>
+    <p-button label="Send Reset Email" (click)="requestReset()"></p-button>
+  </p-footer>
+</p-dialog>

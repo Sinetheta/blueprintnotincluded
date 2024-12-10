@@ -10,6 +10,8 @@ export interface User extends Document
   password?: string;
   hash?: string;
   salt: string;
+  resetToken?: string;
+  resetTokenExpiration?: Date;
 
   setPassword(password: string): void;
   validPassword(password: string): boolean;
@@ -33,7 +35,9 @@ export class UserModel
         required: true
       },
       hash: String,
-      salt: String
+      salt: String,
+      resetToken: String,
+      resetTokenExpiration: Date
     });
 
 

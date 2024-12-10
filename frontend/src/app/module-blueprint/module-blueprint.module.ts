@@ -79,6 +79,7 @@ import { BitSelectionScreenComponent } from "./components/side-bar/ui-screens/bi
 import { InfoInputComponent } from "./components/side-bar/info-input/info-input.component";
 import { InfoInputIconComponent } from "./components/side-bar/info-input-icon/info-input-icon.component";
 import { PipeContentComponent } from "./components/side-bar/pipe-content/pipe-content.component";
+import { ResetPasswordComponent } from "./components/user-auth/reset-password/reset-password.component";
 
 @NgModule({
   imports: [
@@ -154,6 +155,7 @@ import { PipeContentComponent } from "./components/side-bar/pipe-content/pipe-co
     InfoInputComponent,
     InfoInputIconComponent,
     PipeContentComponent,
+    ResetPasswordComponent,
   ],
   providers: [
     CheckDuplicateService,
@@ -164,6 +166,7 @@ import { PipeContentComponent } from "./components/side-bar/pipe-content/pipe-co
     BuildTool,
     ElementReport,
     DatePipe,
+    MessageService,
     {
       provide: RECAPTCHA_V3_SITE_KEY,
       useValue: "6Leizc0kAAAAAIZQRmbXVXZ2HvfS_cY_LrkOk8x6",

@@ -2,6 +2,40 @@
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.8.
 
+## Environment Variables
+
+The following environment variables are required for the application to run:
+
+### Required
+
+- `DB_URI` - MongoDB connection string
+- `JWT_SECRET` - Secret key for JWT token generation
+- `SITE_URL` - Base URL of the site (e.g., http://localhost:3000)
+- `ENV_NAME` - If not set, will default to mailhog for dev testing, if set to 'production' sendgrid will be used
+
+### Email Configuration
+
+#### Development (Mailhog)
+
+(these do not have to be set by default, only if you want to override)
+
+- `SMTP_HOST` - SMTP server hostname (default: localhost)
+- `SMTP_PORT` - SMTP server port (default: 25)
+- `SMTP_USER` - SMTP username (optional)
+- `SMTP_PASS` - SMTP password (optional)
+- `SMTP_FROM` - From email address (default: noreply@blueprintnotincluded.com)
+
+#### Production (Mailjet)
+
+- `MAILJET_API_KEY` - Your Mailjet API key (required in production)
+- `MAILJET_SECRET_KEY` - Your Mailjet Secret key (required in production)
+- `MAILJET_FROM_EMAIL` - Verified sender email address for Mailjet
+
+### reCAPTCHA (Production Only)
+
+- `CAPTCHA_SITE` - Google reCAPTCHA site key
+- `CAPTCHA_SECRET` - Google reCAPTCHA secret key
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.

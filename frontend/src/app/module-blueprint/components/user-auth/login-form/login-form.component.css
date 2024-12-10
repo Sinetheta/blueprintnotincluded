@@ -7,3 +7,23 @@
   font-size: x-small;
   width: 25em;
 }
+
+.links-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.5em 0;
+}
+
+.links-container a {
+  color: var(--primary-color, #007ad9);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.links-container a:hover {
+  text-decoration: underline;
+}
+
+.forgot-password {
+  margin-left: 1em;
+}

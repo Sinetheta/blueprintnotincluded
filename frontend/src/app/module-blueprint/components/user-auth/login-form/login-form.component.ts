@@ -6,6 +6,7 @@ import { MessageService } from "primeng/api";
 import { ReCaptchaV3Service } from "ng-recaptcha";
 import { Observable, Subscription } from "rxjs";
 import { UsernameValidationDirective } from "src/app/module-blueprint/directives/username-validation.directive";
+import { Dialog } from "primeng/dialog";
 
 @Component({
   selector: "app-login-form",
@@ -39,6 +40,8 @@ export class LoginFormComponent {
 
   working: boolean = false;
   authError: boolean = false;
+  showResetDialog: boolean = false;
+  resetEmail: string = "";
 
   reset() {
     this.working = false;
@@ -90,5 +93,41 @@ export class LoginFormComponent {
 
   registration() {
     this.loginRegistration.emit();
+  }
+
+  forgotPassword() {
+    this.showResetDialog = true;
+  }
+
+  requestReset() {
+    if (!this.resetEmail) {
+      this.messageService.add({
+        severity: "error",
+        summary: "Error",
+        detail: "Please enter your email address",
+      });
+      return;
+    }
+
+    this.recaptchaV3Service.execute("resetPassword").subscribe((token) => {
+      this.authService.requestPasswordReset(this.resetEmail).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: "success",
+            summary: "Reset Email Sent",
+            detail: "Please check your inbox for password reset instructions",
+          });
+          this.showResetDialog = false;
+          this.resetEmail = "";
+        },
+        error: () => {
+          this.messageService.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to send reset email",
+          });
+        },
+      });
+    });
   }
 }

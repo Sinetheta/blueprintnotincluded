@@ -7,15 +7,17 @@ import {
   NgxGoogleAnalyticsRouterModule,
 } from "ngx-google-analytics";
 import * as Sentry from "@sentry/angular-ivy";
+import { FormsModule } from "@angular/forms";
 
 import { AppRoutingModule } from "./app-routing.module";
 import { AppComponent } from "./app.component";
 
 import { ModuleBlueprintModule } from "./module-blueprint/module-blueprint.module";
 import { CustomEventManager } from "./module-blueprint/directives/custom-event-manager";
+import { RequestResetComponent } from "./password-reset/request-reset.component";
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, RequestResetComponent],
   imports: [
     BrowserModule,
     NgxGoogleAnalyticsModule.forRoot(process.env.NG_APP_GA_TRACKING_CODE),
@@ -23,6 +25,7 @@ import { CustomEventManager } from "./module-blueprint/directives/custom-event-m
     ModuleBlueprintModule,
     HttpClientModule,
     AppRoutingModule,
+    FormsModule,
   ],
   providers: [
     { provide: EventManager, useClass: CustomEventManager },
