@@ -30,7 +30,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.4",
     "@types/jsdom": "^16.2.3",
     "adm-zip": "^0.5.10",
     "canvas": "^2.6.1",
@@ -48,6 +47,7 @@
     "jsdom-global": "^3.0.2",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.7.7",
+    "node-mailjet": "^6.0.6",
     "nodemailer": "^6.7.2",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",

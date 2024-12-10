@@ -55,12 +55,11 @@ EXPOSE 3000
 #RUN npm run dev
 ENTRYPOINT npm run dev
 
-ENV EMAIL_USER=your-gmail@gmail.com
-ENV EMAIL_PASS=your-16-char-app-password
+
 ENV SITE_URL=http://localhost:3000
 ENV ENV_NAME=development
 ENV SMTP_HOST=localhost
 ENV SMTP_PORT=25
 ENV SMTP_USER=
 ENV SMTP_PASS=
-ENV SMTP_FROM=noreply@blueprintnotincluded.com
+ENV SMTP_FROM=help@blueprintnotincluded.org

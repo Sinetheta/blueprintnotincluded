@@ -11,9 +11,9 @@ services:
       - JWT_SECRET=anylongstringhere
       - CAPTCHA_SITE=localhost
       - CAPTCHA_SECRET=YOURCAPTCHASECRET
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
-      - SMTP_FROM=help@blueprintnotincluded.com
+      - MAILJET_API_KEY=produseonly
+      - MAILJET_SECRET_KEY=produseonly
+      - MAILJET_FROM_EMAIL=help@blueprintnotincluded.org
     links:
       - "mongodb-bpni:database"
       - "mailhog:mailhog"

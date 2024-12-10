@@ -21,9 +21,10 @@ The following environment variables are required for the application to run:
 - `SMTP_PASS` - SMTP password (optional)
 - `SMTP_FROM` - From email address (default: noreply@blueprintnotincluded.com)
 
-#### Production (SendGrid)
-- `SENDGRID_API_KEY` - Your SendGrid API key (required in production)
-- `SENDGRID_FROM_EMAIL` - Verified sender email address for SendGrid
+#### Production (Mailjet)
+- `MAILJET_API_KEY` - Your Mailjet API key (required in production)
+- `MAILJET_SECRET_KEY` - Your Mailjet Secret key (required in production)
+- `MAILJET_FROM_EMAIL` - Verified sender email address for Mailjet
 
 ### reCAPTCHA (Production Only)
 - `CAPTCHA_SITE` - Google reCAPTCHA site key
