@@ -31,11 +31,13 @@ export class Routes {
       app.route("/api/reset-password").post(this.loginController.resetPassword);
     }
     else {
-      console.log('Initializing routes with recaptcha verification');
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('Initializing routes with recaptcha verification');
+      }
       app.route("/api/login").post(recaptcha.middleware.verify, this.loginController.login);
       app.route("/api/register").post(recaptcha.middleware.verify, this.registerController.register);
       app.route("/api/request-reset").post(
-        recaptcha.middleware.verify, 
+        recaptcha.middleware.verify,
         this.loginController.requestPasswordReset
       );
       app.route("/api/reset-password").post(recaptcha.middleware.verify, this.loginController.resetPassword);
