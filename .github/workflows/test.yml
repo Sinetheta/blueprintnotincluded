@@ -1,0 +1,118 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:4.2
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongo --eval 'db.adminCommand(\"ismaster\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Build shared library
+        run: npm run build:lib
+
+      - name: Wait for MongoDB
+        run: |
+          until mongo --host localhost:27017 --eval "print('MongoDB is ready')"; do
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+
+      - name: Set test environment variables
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "DB_URI=mongodb://localhost:27017/blueprintnotincluded_test" >> $GITHUB_ENV
+          echo "JWT_SECRET=test_jwt_secret_for_ci" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-node-${{ matrix.node-version }}
+          path: |
+            coverage/
+            junit.xml
+          retention-days: 30
+
+  # Separate job for frontend tests (if any)
+  frontend-test:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'frontend/') || github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run frontend linting
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+  # Status check job that will be required for PRs
+  test-status:
+    runs-on: ubuntu-latest
+    needs: [test, frontend-test]
+    if: always()
+    
+    steps:
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.test.result }}" == "failure" ]]; then
+            echo "Backend tests failed"
+            exit 1
+          elif [[ "${{ needs.frontend-test.result }}" == "failure" ]]; then
+            echo "Frontend tests failed"
+            exit 1
+          else
+            echo "All tests passed or skipped"
+          fi

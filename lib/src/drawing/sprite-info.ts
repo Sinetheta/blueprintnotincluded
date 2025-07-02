@@ -40,7 +40,6 @@ export class SpriteInfo {
 
       let imageUrl: string = DrawHelpers.createUrl(newUiSpriteInfo.imageId, false);
       imageUrl = imageUrl.replace('0_solid.png', '0.png')
-      console.log('SpriteInfo load imageUrl', imageUrl)
       ImageSource.AddImagePixi(newUiSpriteInfo.imageId, imageUrl)
 
       SpriteInfo.addSpriteInfo(newUiSpriteInfo);

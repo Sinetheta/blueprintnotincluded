@@ -31,9 +31,9 @@ if (process.env.ENV_NAME === 'production') {
   });
 
   transporter.verify(function(error, success) {
-    if (error) {
+    if (error && process.env.NODE_ENV !== 'test') {
       console.error('SMTP connection error:', error);
-    } else {
+    } else if (success && process.env.NODE_ENV !== 'test') {
       console.log('SMTP server is ready to take our messages');
     }
   });
