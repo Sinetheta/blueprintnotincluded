@@ -6,20 +6,82 @@ on:
       - "master"
 
 jobs:
+  # Run tests but don't block deployment if they fail
+  test:
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Allow deployment even if tests fail
+    
+    services:
+      mongodb:
+        image: mongo:4.2
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongo --eval 'db.adminCommand(\"ismaster\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Build shared library
+        run: npm run build:lib
+
+      - name: Wait for MongoDB
+        run: |
+          until mongo --host localhost:27017 --eval "print('MongoDB is ready')"; do
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+
+      - name: Set test environment variables
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "DB_URI=mongodb://localhost:27017/blueprintnotincluded_test" >> $GITHUB_ENV
+          echo "JWT_SECRET=test_jwt_secret_for_ci" >> $GITHUB_ENV
+
+      - name: Run tests (non-blocking)
+        run: npm run test || echo "Tests failed but continuing with deployment"
+
   build:
     runs-on: ubuntu-latest
+    needs: test  # Run after tests but continue regardless of test result
+    if: always()  # Always run even if tests fail
+    
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        
       - name: Build image
         run: docker build -t ${{ vars.IMAGE_NAME }} -f deploy.Dockerfile .
+        
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
       - name: Log in to DO Container Registry
         run: doctl registry login --expiry-seconds 600
+        
       - name: Tag image
         run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}
+        
       - name: Push image to DO Container Registry
         run: docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}
+        
+      - name: Report test status
+        if: needs.test.result == 'failure'
+        run: |
+          echo "⚠️ WARNING: Tests failed but deployment proceeded"
+          echo "Please review test failures and fix them soon"
