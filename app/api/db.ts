@@ -9,18 +9,26 @@ export class Database {
       useUnifiedTopology: true,
       useCreateIndex: true
     }).catch((reason) => {
-      console.log('Mongoose connection error: ' + reason);
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('Mongoose connection error: ' + reason);
+      }
     });
     mongoose.connection.on('connected', () => {
-      console.log('Mongoose connected to database');
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('Mongoose connected to database');
+      }
       UserModel.init();
       BlueprintModel.init();
     });
     mongoose.connection.on('error', (err) => {
-      console.log('Mongoose connection error: ' + err);
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('Mongoose connection error: ' + err);
+      }
     });
     mongoose.connection.on('disconnected', () => {
-      console.log('Mongoose disconnected');
+      if (process.env.NODE_ENV !== 'test') {
+        console.log('Mongoose disconnected');
+      }
     });
   }
 }
