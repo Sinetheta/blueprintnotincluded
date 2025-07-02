@@ -7,6 +7,9 @@
     "tsc": "tsc -b",
     "dev": "ts-node-dev --respawn --transpile-only ./app/server.ts",
     "prod": "tsc -b && node ./build/server.js",
+    "test": "jest",
+    "test:db-setup": "./scripts/test-db-setup.sh",
+    "test:only": "jest",
     "prebuild": "rm -rf build/",
     "build": "npm run build:backend && npm run build:lib && npm run build:frontend",
     "build:backend": "tsc -b",
@@ -23,9 +26,8 @@
     "generateWhite": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/generate-white.ts",
     "generateRepack": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/generate-repack.ts",
     "fixHtmlLabels": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/fix-html-labels.ts",
-    "addInfoIcons": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/add-info-icons.ts",
-    "testCanvas": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/test-canvas.ts",
-    "postinstall": "cd frontend && npm install"
+    "addInfoIcons": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/generate-icons.ts",
+    "testCanvas": "ts-node-dev --expose_gc --max_old_space_size=4096 --transpile-only ./app/api/batch/test-canvas.ts"
   },
   "author": "",
   "license": "ISC",
@@ -57,12 +59,14 @@
     "typescript": "^4.9.5"
   },
   "devDependencies": {
+    "@faker-js/faker": "^5.5.3",
     "@types/adm-zip": "^0.5.0",
     "@types/crypto-js": "^3.1.43",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.1",
     "@types/express-jwt": "0.0.42",
     "@types/fs-extra": "^11.0.1",
+    "@types/jest": "^27.5.2",
     "@types/jsonwebtoken": "^8.3.5",
     "@types/mongodb": "^3.3.6",
     "@types/mongoose": "^5.5.23",
@@ -70,10 +74,20 @@
     "@types/passport": "^1.0.1",
     "@types/passport-local": "^1.0.33",
     "@types/request-ip": "0.0.34",
-    "fs-extra": "^11.1.1"
+    "@types/supertest": "^6.0.3",
+    "expect": "^27.5.1",
+    "fs-extra": "^11.1.1",
+    "jest": "^27.5.1",
+    "jest-junit": "^16.0.0",
+    "pretty-format": "^27.5.1",
+    "supertest": "^7.1.1",
+    "ts-jest": "^27.1.5"
   },
   "engines": {
     "node": "^14.18",
     "npm": "^6.14"
+  },
+  "volta": {
+    "node": "14.18.3"
   }
 }
