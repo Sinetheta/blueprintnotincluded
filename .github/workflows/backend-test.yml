@@ -1,0 +1,83 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - '__tests__/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'jest.config.js'
+      - 'tsconfig.json'
+      - 'scripts/**'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - '__tests__/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'jest.config.js'
+      - 'tsconfig.json'
+      - 'scripts/**'
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:4.2
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongo --eval 'db.adminCommand(\"ismaster\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (Backend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14.18.3'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Build shared library
+        run: npm run build:lib
+
+      - name: Wait for MongoDB
+        run: |
+          until nc -z localhost 27017; do
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+          echo "MongoDB is ready"
+
+      - name: Set test environment variables
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "DB_URI=mongodb://localhost:27017/blueprintnotincluded_test" >> $GITHUB_ENV
+          echo "JWT_SECRET=test_jwt_secret_for_ci" >> $GITHUB_ENV
+
+      - name: Run backend tests
+        run: npm run test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: |
+            coverage/
+            junit.xml
+          retention-days: 30

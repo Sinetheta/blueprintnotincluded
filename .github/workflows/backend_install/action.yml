@@ -1,6 +1,6 @@
 inputs:
   name:
-    description: "Install frontend"
+    description: "Install backend"
     default: "No name provided"
 runs:
   using: "composite"
@@ -8,8 +8,8 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: "16.20.2"
-    - name: Install frontend Node.js dependencies
-      working-directory: frontend
+        node-version: "14.18.3"
+
+    - name: Install backend Node.js dependencies
       shell: bash
       run: npm ci

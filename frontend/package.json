@@ -84,5 +84,8 @@
   },
   "resolutions": {
     "serialize-javascript": "^2.1.1"
+  },
+  "volta": {
+    "node": "16.20.2"
   }
 }
