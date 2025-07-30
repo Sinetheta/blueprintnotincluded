@@ -169,7 +169,7 @@ export class BlueprintController {
             let blueprint = blueprints[0];
 
             let likedByMe = false;
-            if (userId != null && blueprint.likes != null && blueprint.likes.indexOf(userId) != -1) likedByMe = true;
+            if (userId != null && blueprint.likes != null && blueprint.likes.indexOf(userId as string) != -1) likedByMe = true;
 
             let nbLikes = 0;
             if (blueprint.likes != null) nbLikes = blueprint.likes.length;
@@ -271,12 +271,12 @@ export class BlueprintController {
       if (userJwt != null) userId = userJwt._id;
 
       try {
-        let dateInt = parseInt(req.query.olderthan);
+        let dateInt = parseInt(req.query.olderthan as string);
         dateFilter.setTime(dateInt);
 
-        filterUserId = req.query.filterUserId;
-        filterName = req.query.filterName;
-        getDuplicates = req.query.getDuplicates;
+        filterUserId = req.query.filterUserId as string;
+        filterName = req.query.filterName as string;
+        getDuplicates = req.query.getDuplicates as any;
 
       }
       catch (error) {
