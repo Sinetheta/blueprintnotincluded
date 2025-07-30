@@ -87,5 +87,9 @@
   },
   "volta": {
     "node": "16.20.2"
+  },
+  "optionalDependencies": {
+    "@nrwl/nx-darwin-arm64": "^15.9.3",
+    "esbuild-android-arm64": "^0.15.18"
   }
 }

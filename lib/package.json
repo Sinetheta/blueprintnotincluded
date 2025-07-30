@@ -9,7 +9,9 @@
     "tslib": "^2.0.0",
     "typescript": "~3.5.3"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/bson": "^4.0.5"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc"
