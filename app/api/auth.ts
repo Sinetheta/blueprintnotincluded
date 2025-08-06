@@ -12,8 +12,8 @@ export class Auth
   constructor()
   {
     let localStrategy = new Strategy(
-      function(username, password, done) {
-        UserModel.model.findOne({ username: username }, function (err, user) {
+      function(username: string, password: string, done: any) {
+        UserModel.model.findOne({ username: username }, function (err: any, user: any) {
           
           if (err) { return done(err); }
           

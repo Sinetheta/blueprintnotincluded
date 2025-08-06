@@ -24,7 +24,7 @@ export class LoginController {
     }
     else
     {
-      passport.authenticate('local', function(err, user, info){
+      passport.authenticate('local', function(err: any, user: User | false, info: any){
         var token;
         // If Passport throws/catches an error
         if (err) {
@@ -88,7 +88,7 @@ export class LoginController {
     try {
       const user = await UserModel.model.findOne({
         resetToken: token,
-        resetTokenExpiration: { $gt: Date.now() }
+        resetTokenExpiration: { $gt: new Date(Date.now()) }
       });
 
       if (!user) {

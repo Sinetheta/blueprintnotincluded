@@ -7,7 +7,7 @@ export class DuplicateCheckController {
   {
     // If we can't access mongoose, assume the username is not present
     if (UserModel.model == null) res.json({ usernameExists: false });
-    else UserModel.model.find({username: req.query.username}, (err, users) => 
+    else UserModel.model.find({username: req.query.username as string}, (err: any, users: User[]) => 
     {
       if (users.length) res.json({ usernameExists: true });
       else res.json({ usernameExists: false });
