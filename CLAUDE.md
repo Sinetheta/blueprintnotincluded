@@ -81,4 +81,11 @@ Uses MongoDB 4.2 with Mongoose models in `app/api/models/`:
 
 ## Testing
 
-Uses Jest with TypeScript support. Test files in `__tests__/` directory. The test database setup script creates a clean test environment.
+Uses Mocha with Chai and TypeScript support. Test files in `__tests__/` directory. The test database setup script creates a clean test environment.
+
+### Testing Framework Notes
+- **Framework**: Mocha with Chai (recommended by Mongoose team for MongoDB testing)
+- **Expected Warnings**: 
+  - MongoDB driver 3.x circular dependency warnings (will be resolved when upgrading Mongoose in Phase 2)
+  - Blueprint API cast error logs in one test (documents existing backend validation bug)
+- **Maintenance**: When removing large dependency sets, regenerate package-lock.json with `rm package-lock.json && npm install` to prevent corruption
