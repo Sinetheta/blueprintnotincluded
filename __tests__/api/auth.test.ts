@@ -1,18 +1,29 @@
+import { describe, it, beforeEach, afterEach } from 'mocha';
+import { expect } from 'chai';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load test environment first 
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
+process.env.NODE_ENV = 'test';
+
 import { TestSetup } from '../setup/testSetup';
 
-describe('Authentication API', () => {
+describe('Authentication API (Mocha)', function() {
   let testData: any;
 
-  beforeEach(async () => {
+  beforeEach(async function() {
+    this.timeout(5000);
     testData = await TestSetup.beforeEach();
   });
 
-  afterEach(async () => {
+  afterEach(async function() {
+    this.timeout(5000);
     await TestSetup.afterEach();
   });
 
-  describe('POST /api/register', () => {
-    test('should successfully create a new user', async () => {
+  describe('POST /api/register', function() {
+    it('should successfully create a new user', async function() {
       const newUser = {
         username: 'newuser123',
         email: 'newuser@test.com',
@@ -23,14 +34,14 @@ describe('Authentication API', () => {
         .post('/api/register')
         .send(newUser);
 
-      expect(response.status).toBe(200);
-      expect(response.body.token).toBeDefined();
+      expect(response.status).to.equal(200);
+      expect(response.body.token).to.exist;
     });
   });
 
-  describe('POST /api/login', () => {
-    test('should successfully login with valid credentials', async () => {
-      // First create a user with a known password
+  describe('POST /api/login', function() {
+    it('should successfully login with valid credentials', async function() {
+      // First create a user with a known password (matching Jest test exactly)
       const testPassword = 'testpassword123';
       const registerResponse = await TestSetup.request()
         .post('/api/register')
@@ -40,7 +51,7 @@ describe('Authentication API', () => {
           password: testPassword
         });
 
-      expect(registerResponse.status).toBe(200);
+      expect(registerResponse.status).to.equal(200);
 
       // Now test login with the same credentials
       const loginResponse = await TestSetup.request()
@@ -50,11 +61,11 @@ describe('Authentication API', () => {
           password: testPassword
         });
 
-      expect(loginResponse.status).toBe(200);
-      expect(loginResponse.body.token).toBeDefined();
+      expect(loginResponse.status).to.equal(200);
+      expect(loginResponse.body.token).to.exist;
     });
 
-    test('should reject login with invalid credentials', async () => {
+    it('should reject login with invalid credentials', async function() {
       const response = await TestSetup.request()
         .post('/api/login')
         .send({
@@ -62,10 +73,10 @@ describe('Authentication API', () => {
           password: 'wrongpassword'                 // But wrong password
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).to.equal(401);
     });
 
-    test('should reject login with nonexistent user', async () => {
+    it('should reject login with nonexistent user', async function() {
       const response = await TestSetup.request()
         .post('/api/login')
         .send({
@@ -73,31 +84,35 @@ describe('Authentication API', () => {
           password: 'anypassword'
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).to.equal(401);
     });
 
-    test('should handle missing username parameter', async () => {
+    it('should handle missing username parameter', async function() {
       const response = await TestSetup.request()
         .post('/api/login')
-        .send({ password: 'somepassword' });
+        .send({
+          password: 'somepassword'
+        });
 
-      expect(response.status).toBe(401);
+      expect(response.status).to.equal(401); // Matches Jest behavior - returns 401 not 400
     });
 
-    test('should handle missing password parameter', async () => {
+    it('should handle missing password parameter', async function() {
       const response = await TestSetup.request()
         .post('/api/login')
-        .send({ username: 'someuser' });
+        .send({
+          username: 'someuser'
+        });
 
-      expect(response.status).toBe(401);
+      expect(response.status).to.equal(401); // Matches Jest behavior - returns 401 not 400
     });
 
-    test('should handle completely missing login parameters', async () => {
+    it('should handle completely missing login parameters', async function() {
       const response = await TestSetup.request()
         .post('/api/login')
         .send({});
 
-      expect(response.status).toBe(401);
+      expect(response.status).to.equal(401); // Matches Jest behavior - returns 401 not 400
     });
   });
 });
