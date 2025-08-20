@@ -111,14 +111,14 @@ describe('Blueprint API (Mocha)', function() {
       expect(blueprintNames).to.include('Super Coal Generator Setup'); // Original should still be included
     });
 
-    it('should return 500 error without required olderthan parameter', async function() {
+    it('should return 400 error with proper validation for missing olderthan parameter', async function() {
       const response = await TestSetup.request()
         .get('/api/getblueprints');
       
-      // NOTE: This test documents a backend bug and intentionally causes a MongoDB cast error
-      // The error "Cast to date failed for value 'Invalid Date'" in the logs is EXPECTED
-      // Backend should handle missing 'olderthan' parameter gracefully with proper validation
-      expect(response.status).to.equal(500);
+      // Fixed: Backend now properly validates the 'olderthan' parameter
+      // Returns 400 Bad Request instead of 500 Internal Server Error
+      expect(response.status).to.equal(400);
+      expect(response.body.getBlueprints).to.equal('Invalid olderthan parameter');
     });
   });
 });
