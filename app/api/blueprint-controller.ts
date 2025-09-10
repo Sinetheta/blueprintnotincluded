@@ -271,11 +271,18 @@ export class BlueprintController {
       if (userJwt != null) userId = userJwt._id;
 
       try {
-        let dateInt = parseInt(req.query.olderthan as string);
-        if (isNaN(dateInt) || dateInt < 0) {
+        // Check if olderthan parameter exists and is not empty
+        if (!req.query.olderthan || req.query.olderthan === '') {
           res.status(400).json({ getBlueprints: 'Invalid olderthan parameter' });
           return;
         }
+
+        let dateInt = parseInt(req.query.olderthan as string);
+        if (isNaN(dateInt)) {
+          res.status(400).json({ getBlueprints: 'Invalid olderthan parameter' });
+          return;
+        }
+        
         dateFilter.setTime(dateInt);
         
         // Validate that the date is valid after setting time

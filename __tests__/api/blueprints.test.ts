@@ -120,5 +120,41 @@ describe('Blueprint API (Mocha)', function() {
       expect(response.status).to.equal(400);
       expect(response.body.getBlueprints).to.equal('Invalid olderthan parameter');
     });
+
+    it('should return 400 error for invalid olderthan parameter formats', async function() {
+      // Test non-numeric string
+      const response1 = await TestSetup.request()
+        .get('/api/getblueprints')
+        .query({ olderthan: 'invalid-date' });
+      
+      expect(response1.status).to.equal(400);
+      expect(response1.body.getBlueprints).to.equal('Invalid olderthan parameter');
+
+      // Test empty parameter  
+      const response2 = await TestSetup.request()
+        .get('/api/getblueprints')
+        .query({ olderthan: '' });
+      
+      expect(response2.status).to.equal(400);
+      expect(response2.body.getBlueprints).to.equal('Invalid olderthan parameter');
+
+      // Test mixed alphanumeric
+      const response3 = await TestSetup.request()
+        .get('/api/getblueprints')
+        .query({ olderthan: 'abc123def' });
+      
+      expect(response3.status).to.equal(400);
+      expect(response3.body.getBlueprints).to.equal('Invalid olderthan parameter');
+    });
+
+    it('should accept negative timestamps as valid dates before 1970', async function() {
+      // Negative timestamps represent dates before Jan 1, 1970
+      const response = await TestSetup.request()
+        .get('/api/getblueprints')
+        .query({ olderthan: -1 });
+      
+      expect(response.status).to.equal(200);
+      expect(response.body).to.have.property('blueprints');
+    });
   });
 });
