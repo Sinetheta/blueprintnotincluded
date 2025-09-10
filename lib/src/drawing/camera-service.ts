@@ -19,7 +19,7 @@ export class CameraService
   // Zoom is the number of pixels between cells
   currentZoom: number;
 
-  private overlay_: Overlay = -1;
+  private overlay_: Overlay = Overlay.None;
   get overlay() { return this.overlay_; }
   set overlay(value: Overlay) {
     let emitChange = this.overlay_ != value;
@@ -30,7 +30,7 @@ export class CameraService
     }
   }
 
-  private display_: Display = -1;
+  private display_: Display = Display.None;
   get display() { return this.display_; }
   set display(value: Display) {
     let emitChange = this.display_ != value;
@@ -43,7 +43,7 @@ export class CameraService
     if (value == Display.blueprint) this.visualization = Visualization.none;
   }
 
-  private visualization_: Visualization = -1;
+  private visualization_: Visualization = Visualization.none;
   get visualization() { return this.visualization_; }
   set visualization(value: Visualization) {
     let emitChange = this.visualization_ != value;
@@ -99,9 +99,9 @@ export class CameraService
     this.observersCameraChange = [];
     this.observersToAnimationChange = [];
 
-    this.overlay = -1;//Overlay.Base;
-    this.display = -1;//Display.solid;
-    this.visualization = -1;//Visualization.none;
+    this.overlay = Overlay.None;//Overlay.Base;
+    this.display = Display.None;//Display.solid;
+    this.visualization = Visualization.none;//Visualization.none;
   }
 
   observersCameraChange: IObsCameraChanged[];

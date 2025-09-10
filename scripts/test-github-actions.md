@@ -73,8 +73,8 @@ act -j frontend-test
 
 ## Node Version Requirements
 
-- **Backend/Tests**: Node 14.18.3 (as specified in package.json volta config)
-- **Frontend**: Node 16.20.2 (as specified in frontend/package.json volta config)
+- **Backend/Tests**: Node 20.18.0 (as specified in package.json volta config)
+- **Frontend**: Node 20.18.0 (as specified in frontend/package.json volta config)
 
 Use `nvm` or `volta` to switch between versions if testing manually.
 
@@ -86,8 +86,8 @@ Use `nvm` or `volta` to switch between versions if testing manually.
 - Verify `DB_URI` environment variable is set
 
 ### Node Version Issues
-- Backend tests require Node 14.18.3
-- Frontend tests require Node 16.20.2
+- Backend tests require Node 20.18.0
+- Frontend tests require Node 20.18.0
 - Use the test script to handle version switching automatically
 
 ### Port Conflicts

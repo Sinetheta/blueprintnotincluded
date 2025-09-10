@@ -8,7 +8,7 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: "16.20.2"
+        node-version: "20.18.0"
     - name: Install frontend Node.js dependencies
       working-directory: frontend
       shell: bash

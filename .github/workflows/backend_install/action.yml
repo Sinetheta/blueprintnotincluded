@@ -12,4 +12,4 @@ runs:
 
     - name: Install backend Node.js dependencies
       shell: bash
-      run: npm ci
+      run: npm install

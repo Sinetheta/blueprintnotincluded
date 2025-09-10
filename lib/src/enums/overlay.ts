@@ -1,5 +1,6 @@
 export enum Overlay
 {
+  None = -1,
   Base,
   Power,
   Liquid,
