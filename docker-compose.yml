@@ -1,9 +1,8 @@
-version: '3'
+# Production Docker Compose - uses pre-built images
 services:
-  bpni:
+  app:
     image: racefpv/bpni:latest
-    container_name: bpni
-    build: .
+    container_name: bpni-prod
     environment:
       - ENV_NAME=development
       - BROWSE_INCREMENT=100
@@ -14,26 +13,31 @@ services:
       - MAILJET_API_KEY=produseonly
       - MAILJET_SECRET_KEY=produseonly
       - MAILJET_FROM_EMAIL=help@blueprintnotincluded.org
-    links:
-      - "mongodb-bpni:database"
-      - "mailhog:mailhog"
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
     depends_on:
-      - mongodb-bpni
+      - database
       - mailhog
     ports:
       - "3000:3000"
-  mongodb-bpni:
+
+  database:
     image: mongo:4.2
-    container_name: mongodb-bpni
+    container_name: bpni-mongodb
     environment:
       - "MONGO_INITDB_DATABASE=blueprintnotincluded"
     volumes:
       - ./mongo/docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongodb_data:/data/db
     ports:
       - "27017:27017"
+
   mailhog:
-    image: mailhog/mailhog
-    container_name: mailhog-bpni
+    image: axllent/mailpit
+    container_name: bpni-mailhog
     ports:
       - "1025:1025"
       - "8025:8025"
+
+volumes:
+  mongodb_data:

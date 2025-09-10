@@ -24,8 +24,8 @@ if (process.env.ENV_NAME === 'production') {
   }
 } else {
   transporter = nodemailer.createTransport({
-    host: 'mailhog',
-    port: 1025,
+    host: process.env.SMTP_HOST || 'localhost',
+    port: parseInt(process.env.SMTP_PORT || '1025'),
     secure: false,
     auth: undefined
   });
