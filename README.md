@@ -4,9 +4,34 @@ This is the source repo of blueprintnotincluded.org
 
 It is a combined curated version of the original blueprintnotincluded web app.
 
-## Easy local testing w/ docker-compose
+## Development Setup
 
-`docker-compose up`
+### Development (Recommended)
+For ARM64 Macs and local development with live reloading:
+
+```bash
+# One-time setup: copy environment configuration
+cp .env.sample .env
+
+# Start dependencies only (database + mail)
+./dev-setup.sh
+
+# In separate terminals:
+npm run dev              # Backend with live reloading
+cd frontend && npm start # Frontend with live reloading
+```
+
+- **Frontend**: http://localhost:4200 (Angular dev server with API proxy)
+- **Backend API**: http://localhost:3000 (Express with ts-node-dev)
+- **Database**: mongodb://localhost:27017
+- **Mail testing**: http://localhost:8025 (Mailpit web UI)
+
+### Production Testing
+Test with pre-built images (may require AMD64 emulation on ARM64 Macs):
+
+```bash
+docker compose up
+```
 
 Visit http://localhost:3000
 To check incoming emails visit: http://localhost:8025

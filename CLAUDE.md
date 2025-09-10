@@ -28,6 +28,16 @@ This is the source repository for blueprintnotincluded.org, a web application fo
 
 ## Development Commands
 
+### Development (Recommended)
+- `./dev-setup.sh` - Start dependencies (database + mail)
+- `npm run dev` - Start backend with live reloading
+- `cd frontend && npm start` - Start frontend with live reloading
+- Frontend: http://localhost:4200, Backend: http://localhost:3000
+
+### Production Testing
+- `docker compose up` - Start with pre-built images
+- Visit: http://localhost:3000
+
 ### Backend Development
 - `npm run dev` - Start development server with auto-reload
 - `npm run tsc` - Compile TypeScript
@@ -63,6 +73,7 @@ Copy `.env.sample` to `.env` and configure:
 - `JWT_SECRET` - Secret key for JWT tokens
 - `CAPTCHA_SITE`/`CAPTCHA_SECRET` - reCAPTCHA configuration
 - `ENV_NAME` - Environment identifier
+- `SMTP_HOST`/`SMTP_PORT` - Mail server configuration (defaults to localhost:1025)
 
 ## Database
 
