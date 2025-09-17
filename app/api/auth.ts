@@ -12,10 +12,9 @@ export class Auth
   constructor()
   {
     let localStrategy = new Strategy(
-      function(username: string, password: string, done: any) {
-        UserModel.model.findOne({ username: username }, function (err: any, user: any) {
-          
-          if (err) { return done(err); }
+      async function(username: string, password: string, done: any) {
+        try {
+          const user = await UserModel.model.findOne({ username: username });
           
           // Return if user not found in database
           if (!user) {
@@ -33,7 +32,9 @@ export class Auth
 
           // If credentials are correct, return the user object
           return done(null, user);
-        });
+        } catch (err) {
+          return done(err);
+        }
       }
     );
 

@@ -4,11 +4,11 @@ import { BlueprintModel } from './models/blueprint';
 
 export class Database {
   constructor() {
-    mongoose.connect(process.env.DB_URI as string, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useCreateIndex: true
-    }).catch((reason) => {
+    // Mongoose 7.x: strictQuery is false by default, but being explicit
+    mongoose.set('strictQuery', false);
+    
+    mongoose.connect(process.env.DB_URI as string)
+    .catch((reason) => {
       if (process.env.NODE_ENV !== 'test') {
         console.log('Mongoose connection error: ' + reason);
       }

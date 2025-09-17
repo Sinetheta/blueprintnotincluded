@@ -47,7 +47,7 @@
     "jsdom": "^16.3.0",
     "jsdom-global": "^3.0.2",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.7.7",
+    "mongoose": "^8.18.1",
     "node-mailjet": "^6.0.6",
     "nodemailer": "^6.7.2",
     "passport": "^0.7.0",
