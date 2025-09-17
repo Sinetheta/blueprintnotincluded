@@ -60,7 +60,7 @@ class App {
     this.app.use(helmet.contentSecurityPolicy({
       directives: {
         "default-src": ["'self'"],
-        "connect-src": ["'self'", "*.sentry.io", "https://www.google-analytics.com"],
+        "connect-src": ["'self'", "*.sentry.io", "https://www.google-analytics.com", "https://www.google.com", "https://www.gstatic.com"],
         "style-src": ["'self'", "'unsafe-inline'"],
         "frame-src": ["https://www.google.com", "http://localhost:4200"],
         "img-src": ["'self'", "data:"],
