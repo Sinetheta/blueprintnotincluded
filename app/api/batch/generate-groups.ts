@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { Database } from '../db';
 import { BlueprintModel, Blueprint } from '../models/blueprint';
 import * as fs from 'fs';
-import * as jimp from 'jimp';
+import { Jimp } from 'jimp';
 import { BatchUtils } from './batch-utils';
 import { BExport, SpriteTag, Vector2 } from "../../../lib/index";
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem, MdbBlueprint } from '../../../lib';
@@ -169,10 +169,10 @@ export class GenerateGroups {
         pixiNodeUtil.pixiApp.renderer.render(container, rt);
         let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
 
-        let group = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
+        let group = await Jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
         let groupePath = './assets/images/' + textureName + '.png';
         console.log('saving group to ' + groupePath);
-        group.write(groupePath);
+        group.write(groupePath as `${string}.png`);
 
         // Free memory
         brt.destroy();

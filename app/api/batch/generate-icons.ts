@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import * as fs from 'fs';
-import * as jimp from 'jimp';
+import { Jimp } from 'jimp';
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem } from '../../../lib';
 import { PixiNodeUtil } from '../pixi-node-util';
 
@@ -85,13 +85,13 @@ export class GenerateIcons {
       pixiNodeUtil.pixiApp.renderer.render(container, rt, true);
       let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
 
-      let icon = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
+      let icon = await Jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
       let iconPath = './assets/images/ui/' + k + '.png';
       console.log('saving icon to ' + iconPath);
-      icon.write(iconPath);
+      icon.write(iconPath as `${string}.png`);
       let frontendIconPath = './frontend/src/assets/images/ui/' + k + '.png';
       console.log('saving icon to ' + frontendIconPath);
-      icon.write(frontendIconPath);
+      icon.write(frontendIconPath as `${string}.png`);
 
       // Free memory
       brt.destroy();

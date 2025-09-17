@@ -2,7 +2,7 @@ const { loadImage } = require('canvas');
 const PIXI = require('../pixi-shim');
 require('../pixi-shim/lib/pixi-shim-node.js');
 
-import Jimp from 'jimp';
+import { Jimp, intToRGBA } from 'jimp';
 import { PixiUtil, ImageSource, Blueprint, Vector2, CameraService, Overlay, Display } from "../../lib";
 import { resources } from 'pixi.js-legacy';
 
@@ -84,9 +84,9 @@ export class PixiNodeUtil implements PixiUtil {
 
   async getImageWhite(path: string) {
     console.log('reading ' + path);
-    let data: Jimp | null = await Jimp.read(path);
-    let width = data.getWidth();
-    let height = data.getHeight();
+    let data: any = await Jimp.read(path);
+    let width = data.width;
+    let height = data.height;
 
     let brt = this.getNewBaseRenderTexture({ width: width, height: height });
     let rt = this.getNewRenderTexture(brt);
@@ -99,7 +99,7 @@ export class PixiNodeUtil implements PixiUtil {
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
         let color = data.getPixelColor(x, y);
-        let colorObject = Jimp.intToRGBA(color);
+        let colorObject = intToRGBA(color);
         let alpha = colorObject.a / 255;
         graphics.beginFill(0xFFFFFF, alpha);
         graphics.drawRect(x, y, 1, 1);

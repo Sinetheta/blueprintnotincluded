@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import * as fs from 'fs';
-import * as jimp from 'jimp';
+import { Jimp } from 'jimp';
 import { BExport, Vector2 } from "../../../lib/index";
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem } from '../../../lib';
 import { BinController } from './bin-packing/bin-controller';
@@ -130,13 +130,13 @@ export class GenerateRepack {
       pixiNodeUtil.pixiApp.renderer.render(container, rt, true);
 
       let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
-      let repack = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
+      let repack = await Jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
       let repackPath = './assets/images/' + textureBaseString + trayIndex + '.png'
       let repackFrontendPath = './frontend/src/assets/images/' + textureBaseString + trayIndex + '.png'
       console.log('saving repack to ' + repackPath);
-      repack.write(repackPath);
+      repack.write(repackPath as `${string}.png`);
       console.log('saving repack to ' + repackFrontendPath);
-      repack.write(repackFrontendPath);
+      repack.write(repackFrontendPath as `${string}.png`);
     }
 
     let data = JSON.stringify(database, null, 2);

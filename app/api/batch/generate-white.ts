@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import * as fs from 'fs';
-import * as jimp from 'jimp';
+import { Jimp } from 'jimp';
 import { BExport, SpriteTag } from "../../../lib/index";
 import { ImageSource, BuildableElement, BuildMenuCategory, BuildMenuItem, BSpriteInfo, SpriteInfo, BSpriteModifier, SpriteModifier, BBuilding, OniItem } from '../../../lib';
 import { PixiNodeUtil } from '../pixi-node-util';
@@ -102,10 +102,10 @@ export class GenerateWhite {
 
       pixiNodeUtil.pixiApp.renderer.render(sprite, rt);
       let base64: string = pixiNodeUtil.pixiApp.renderer.plugins.extract.canvas(rt).toDataURL();
-      let white = await jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
+      let white = await Jimp.read(Buffer.from(base64.replace(/^data:image\/png;base64,/, ""), 'base64'));
       let whitePath = './assets/images/' + sourceTexture + '_white.png';
       console.log('saving white to ' + whitePath);
-      white.write(whitePath);
+      white.write(whitePath as `${string}.png`);
 
     }
 

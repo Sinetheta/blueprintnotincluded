@@ -1,7 +1,7 @@
 import path from 'path';
 import { Application } from "express";
 import express from 'express';
-import expressJwt from 'express-jwt'
+import { expressjwt as expressJwt } from 'express-jwt'
 
 import { StaticController } from './static-controller';
 import { LoginController } from './api/login-controller';
@@ -19,7 +19,10 @@ export class Routes {
   public routes(app: Application): void {
     // Initialize authentication middleware
     //let auth = expressJwt({secret: process.env.JWT_SECRET as string, userProperty: 'tokenPayload' });
-    let auth = expressJwt({ secret: process.env.JWT_SECRET as string });
+    let auth = expressJwt({ 
+      secret: process.env.JWT_SECRET as string,
+      algorithms: ['HS256']
+    });
     let recaptcha = new Recaptcha(process.env.CAPTCHA_SITE as string, process.env.CAPTCHA_SECRET as string);
 
 
