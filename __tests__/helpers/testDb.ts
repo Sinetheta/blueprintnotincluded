@@ -34,10 +34,10 @@ export class TestDbHelper {
 
     // Create various blueprints for testing
     const now = Date.now();
-    const popularBlueprint = await this.createTestBlueprint(user1._id, {
+    const popularBlueprint = await this.createTestBlueprint(user1._id as Types.ObjectId, {
       name: 'Super Coal Generator Setup',
       tags: ['power', 'coal', 'automation'],
-      likes: [user2._id.toString(), user3._id.toString()],
+      likes: [(user2._id as Types.ObjectId).toString(), (user3._id as Types.ObjectId).toString()],
       createdAt: new Date(now - 3 * 24 * 60 * 60 * 1000), // 3 days ago
       data: {
         version: '1.0',
@@ -53,10 +53,10 @@ export class TestDbHelper {
       }
     });
 
-    const recentBlueprint = await this.createTestBlueprint(user2._id, {
+    const recentBlueprint = await this.createTestBlueprint(user2._id as Types.ObjectId, {
       name: 'Oxygen Production Line',
       tags: ['oxygen', 'life-support'],
-      likes: [user1._id.toString()],
+      likes: [(user1._id as Types.ObjectId).toString()],
       createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       data: {
         version: '1.0',
@@ -71,7 +71,7 @@ export class TestDbHelper {
       }
     });
 
-    const oldBlueprint = await this.createTestBlueprint(user3._id, {
+    const oldBlueprint = await this.createTestBlueprint(user3._id as Types.ObjectId, {
       name: 'Legacy Food System',
       tags: ['food', 'farming', 'legacy'],
       likes: [],
@@ -89,12 +89,12 @@ export class TestDbHelper {
       }
     });
 
-    const copiedBlueprint = await this.createTestBlueprint(user3._id, {
+    const copiedBlueprint = await this.createTestBlueprint(user3._id as Types.ObjectId, {
       name: 'Modified Coal Generator',
       tags: ['power', 'coal', 'modified'],
       likes: [],
       isCopy: true,
-      copyOf: popularBlueprint._id,
+      copyOf: popularBlueprint._id as Types.ObjectId,
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       data: {
         version: '1.0',

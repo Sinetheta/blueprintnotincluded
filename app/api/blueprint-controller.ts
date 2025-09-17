@@ -175,7 +175,7 @@ export class BlueprintController {
             if (blueprint.likes != null) nbLikes = blueprint.likes.length;
 
             let response: BlueprintResponse = {
-              id: blueprint._id,
+              id: (blueprint._id as any).toString(),
               name: blueprint.name,
               data: blueprint.data,
               likedByMe: likedByMe,
@@ -360,7 +360,7 @@ export class BlueprintController {
         if (blueprint.likes != null) nbLikes = blueprint.likes.length;
 
         returnValue.blueprints.push({
-          id: blueprint._id,
+          id: (blueprint._id as any).toString(),
           name: blueprint.name,
           ownerId: ownerId,
           ownerName: username,
