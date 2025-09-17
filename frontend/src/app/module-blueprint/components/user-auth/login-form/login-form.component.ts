@@ -4,7 +4,8 @@ import { HttpClient } from "@angular/common/http";
 import { AuthenticationService } from "../../../services/authentification-service";
 import { MessageService } from "primeng/api";
 import { ReCaptchaV3Service } from "ng-recaptcha";
-import { Observable, Subscription } from "rxjs";
+import { Observable, Subscription, of } from "rxjs";
+import { catchError } from "rxjs/operators";
 import { UsernameValidationDirective } from "src/app/module-blueprint/directives/username-validation.directive";
 import { Dialog } from "primeng/dialog";
 
@@ -50,31 +51,72 @@ export class LoginFormComponent {
   }
 
   subscription: Subscription;
+  loginSubscription: Subscription;
+
   onSubmit() {
     this.working = true;
     this.subscription = this.recaptchaV3Service
       .execute("login")
-      .subscribe((token) => {
-        let tokenPayload = {
-          "g-recaptcha-response": token,
-          email: "",
-          username: this.loginForm.value.username as string,
-          password: this.loginForm.value.password as string,
-        };
+      .pipe(
+        catchError((error) => {
+          this.handleSaveError(error);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (token) => {
+          if (token === null) {
+            // reCAPTCHA failed, error already handled
+            return;
+          }
 
-        this.authService.login(tokenPayload).subscribe({
-          next: this.handleSaveNext.bind(this),
-          error: this.handleSaveError.bind(this),
-        });
+          let tokenPayload = {
+            "g-recaptcha-response": token,
+            email: "",
+            username: this.loginForm.value.username as string,
+            password: this.loginForm.value.password as string,
+          };
 
-        this.subscription.unsubscribe();
+          this.loginSubscription = this.authService
+            .login(tokenPayload)
+            .pipe(
+              catchError((error) => {
+                this.handleSaveError(error);
+                return of(null);
+              })
+            )
+            .subscribe({
+              next: (response) => {
+                if (response !== null) {
+                  this.handleSaveNext(response);
+                }
+              },
+              error: (error) => {
+                this.handleSaveError(error);
+              },
+            });
+
+          // Unsubscribe from recaptcha after starting login subscription
+          if (this.subscription) {
+            this.subscription.unsubscribe();
+          }
+        },
+        error: (error) => {
+          this.handleSaveError(error);
+        },
       });
   }
 
   handleSaveNext(response: any) {
     this.loginOk.emit();
 
-    const username = this.authService.getUserDetails().username;
+    const userDetails = this.authService.getUserDetails();
+    if (!userDetails) {
+      this.handleSaveError("User details not available");
+      return;
+    }
+
+    const username = userDetails.username;
     let summary: string = $localize`Login Successful`;
     let detail: string = $localize`Welcome ${username}`;
 
@@ -84,11 +126,19 @@ export class LoginFormComponent {
       detail: detail,
     });
     this.working = false;
+
+    if (this.loginSubscription) {
+      this.loginSubscription.unsubscribe();
+    }
   }
 
-  handleSaveError() {
+  handleSaveError(error: any) {
     this.authError = true;
     this.working = false;
+
+    if (this.loginSubscription) {
+      this.loginSubscription.unsubscribe();
+    }
   }
 
   registration() {
@@ -109,25 +159,52 @@ export class LoginFormComponent {
       return;
     }
 
-    this.recaptchaV3Service.execute("resetPassword").subscribe((token) => {
-      this.authService.requestPasswordReset(this.resetEmail).subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: "success",
-            summary: "Reset Email Sent",
-            detail: "Please check your inbox for password reset instructions",
-          });
-          this.showResetDialog = false;
-          this.resetEmail = "";
-        },
-        error: () => {
+    this.recaptchaV3Service
+      .execute("resetPassword")
+      .pipe(
+        catchError((error) => {
           this.messageService.add({
             severity: "error",
             summary: "Error",
-            detail: "Failed to send reset email",
+            detail: "Failed to verify reCAPTCHA",
+          });
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (token) => {
+          if (token === null) {
+            // reCAPTCHA failed, error already handled
+            return;
+          }
+
+          this.authService.requestPasswordReset(this.resetEmail).subscribe({
+            next: () => {
+              this.messageService.add({
+                severity: "success",
+                summary: "Reset Email Sent",
+                detail:
+                  "Please check your inbox for password reset instructions",
+              });
+              this.showResetDialog = false;
+              this.resetEmail = "";
+            },
+            error: () => {
+              this.messageService.add({
+                severity: "error",
+                summary: "Error",
+                detail: "Failed to send reset email",
+              });
+            },
+          });
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to verify reCAPTCHA",
           });
         },
       });
-    });
   }
 }

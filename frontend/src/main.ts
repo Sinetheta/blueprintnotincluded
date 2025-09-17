@@ -32,6 +32,16 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
+// Global handler for unhandled promise rejections
+window.addEventListener("unhandledrejection", (event) => {
+  console.warn(
+    "Unhandled promise rejection caught and prevented:",
+    event.reason
+  );
+  // Prevent the default behavior (console error)
+  event.preventDefault();
+});
+
 platformBrowserDynamic()
   .bootstrapModule(AppModule)
   .catch((err) => console.error(err));

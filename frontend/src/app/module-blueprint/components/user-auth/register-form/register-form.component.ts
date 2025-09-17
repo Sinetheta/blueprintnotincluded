@@ -10,7 +10,8 @@ import { HttpClient } from "@angular/common/http";
 import { CheckDuplicateService } from "../../../services/check-duplicate-service";
 import { AuthenticationService } from "../../../services/authentification-service";
 import { MessageService } from "primeng/api";
-import { Subscription } from "rxjs";
+import { Subscription, of } from "rxjs";
+import { catchError } from "rxjs/operators";
 import { ReCaptchaV3Service } from "ng-recaptcha";
 import { UsernameValidationDirective } from "src/app/module-blueprint/directives/username-validation.directive";
 
@@ -67,23 +68,47 @@ export class RegisterFormComponent {
   }
 
   subscription: Subscription;
+  registerSubscription: Subscription;
+
   onSubmit() {
     this.working = true;
 
     this.subscription = this.recaptchaV3Service
       .execute("register")
-      .subscribe((token) => {
-        let tokenPayload = {
-          "g-recaptcha-response": token,
-          email: this.registerForm.value.email as string,
-          username: this.registerForm.value.username as string,
-          password: this.registerForm.value.password as string,
-        };
+      .pipe(
+        catchError((error) => {
+          this.handleSaveError(error);
+          return of(null);
+        })
+      )
+      .subscribe({
+        next: (token) => {
+          if (token === null) {
+            // reCAPTCHA failed, error already handled
+            return;
+          }
 
-        this.authService.register(tokenPayload).subscribe({
-          next: this.handleSaveNext.bind(this),
-          error: this.handleSaveError.bind(this),
-        });
+          let tokenPayload = {
+            "g-recaptcha-response": token,
+            email: this.registerForm.value.email as string,
+            username: this.registerForm.value.username as string,
+            password: this.registerForm.value.password as string,
+          };
+
+          this.registerSubscription = this.authService
+            .register(tokenPayload)
+            .subscribe({
+              next: (response) => {
+                this.handleSaveNext(response);
+              },
+              error: (error) => {
+                this.handleSaveError(error);
+              },
+            });
+        },
+        error: (error) => {
+          this.handleSaveError(error);
+        },
       });
   }
 
@@ -92,7 +117,13 @@ export class RegisterFormComponent {
     else if (data.token) {
       this.registrationOk.emit();
 
-      const username = this.authService.getUserDetails().username;
+      const userDetails = this.authService.getUserDetails();
+      if (!userDetails) {
+        this.handleSaveError("User details not available");
+        return;
+      }
+
+      const username = userDetails.username;
       let summary: string = $localize`Registration Successful`;
       let detail: string = $localize`Welcome ${username}`;
       this.messageService.add({
@@ -103,10 +134,18 @@ export class RegisterFormComponent {
     }
 
     this.working = false;
+
+    if (this.registerSubscription) {
+      this.registerSubscription.unsubscribe();
+    }
   }
 
-  handleSaveError() {
+  handleSaveError(error: any) {
     this.authError = true;
     this.working = false;
+
+    if (this.registerSubscription) {
+      this.registerSubscription.unsubscribe();
+    }
   }
 }
