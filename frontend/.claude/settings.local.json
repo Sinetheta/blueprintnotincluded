@@ -12,7 +12,8 @@
       "mcp__playwright__browser_close",
       "Bash(curl:*)",
       "Bash(npm run tsc:*)",
-      "Bash(ng build:*)"
+      "Bash(ng build:*)",
+      "Read(//Users/sinetheta/sites/blueprintnotincluded/app/**)"
     ],
     "deny": [],
     "ask": []
