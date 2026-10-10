@@ -96,6 +96,47 @@ export class AuthenticationService {
     window.localStorage.removeItem(AuthenticationService.localStorage);
   }
 
+  // ─── Where to go after logging in ──────────────────────────────────────
+
+  // The login page is a separate route, so sending someone there from the
+  // editor means leaving the editor. The editor passes `returnTo` on the
+  // /login link and the login page parks it here; every login-completion
+  // path then consumes it. sessionStorage, not a query string threaded
+  // through register → verify-email: it survives that chain in the same tab
+  // and is naturally absent in the tab a magic-link email opens.
+  private static readonly returnToKey = "bpni-login-return-to";
+
+  public rememberReturnTo(path: string | null | undefined): void {
+    const safe = AuthenticationService.safeReturnTo(path);
+    try {
+      if (safe == null)
+        sessionStorage.removeItem(AuthenticationService.returnToKey);
+      else sessionStorage.setItem(AuthenticationService.returnToKey, safe);
+    } catch {
+      // Private mode: login then simply lands on the home page.
+    }
+  }
+
+  public consumeReturnTo(): string {
+    let stored: string | null = null;
+    try {
+      stored = sessionStorage.getItem(AuthenticationService.returnToKey);
+      sessionStorage.removeItem(AuthenticationService.returnToKey);
+    } catch {
+      stored = null;
+    }
+    return AuthenticationService.safeReturnTo(stored) ?? "/";
+  }
+
+  // Only an in-app path: a protocol-relative "//evil" or a full URL would
+  // turn the login page into an open redirect.
+  static safeReturnTo(path: string | null | undefined): string | null {
+    if (typeof path !== "string") return null;
+    if (!path.startsWith("/")) return null;
+    if (path.startsWith("//") || path.startsWith("/\\")) return null;
+    return path;
+  }
+
   // ─── Auth methods ─────────────────────────────────────────────────────────
 
   public loginWithPassword(

@@ -21,11 +21,13 @@ describe("LoginPageComponent", () => {
     mockAuth = {
       loginWithPassword: vi.fn(),
       saveToken: vi.fn(),
+      rememberReturnTo: vi.fn(),
+      consumeReturnTo: vi.fn(() => "/"),
       getAuthMode: vi
         .fn()
         .mockReturnValue(of({ mode: "workos", devUsers: [] })),
     };
-    mockRouter = { navigate: vi.fn() };
+    mockRouter = { navigate: vi.fn(), navigateByUrl: vi.fn() };
     mockRoute = { snapshot: { queryParams: {} } };
     mockMessageService = { add: vi.fn() };
 
@@ -96,14 +98,21 @@ describe("LoginPageComponent", () => {
       expect(mockAuth.saveToken).toHaveBeenCalledWith("t");
     });
 
-    it("navigates to / on success", () => {
+    it("navigates where the auth service says on success (returnTo, default /)", () => {
       component.email = "a@b.com";
       component.password = "pass";
       mockAuth.loginWithPassword.mockReturnValue(
         of({ kind: "success", token: "jwt" }),
       );
+      mockAuth.consumeReturnTo.mockReturnValue("/editor?save=1");
       component.submit();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/editor?save=1");
+    });
+
+    it("parks the returnTo query param for the login completion to use", () => {
+      mockRoute.snapshot.queryParams = { returnTo: "/editor?save=1" };
+      component.ngOnInit();
+      expect(mockAuth.rememberReturnTo).toHaveBeenCalledWith("/editor?save=1");
     });
 
     it("shows legacy hint on legacy_account result", () => {
@@ -221,7 +230,7 @@ describe("LoginPageComponent", () => {
         "dev_password",
       );
       expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
-      expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
     });
 
     it("shows an error when the dev user login is rejected", () => {

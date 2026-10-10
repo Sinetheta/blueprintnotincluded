@@ -31,6 +31,11 @@ export class LoginPageComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Where to go once logged in (the editor sends people here with their
+    // work parked); absent means the home page, and clears a stale one.
+    this.authService.rememberReturnTo(
+      this.route.snapshot.queryParams["returnTo"],
+    );
     const reset = this.route.snapshot.queryParams["reset"];
     if (reset) {
       this.messageService.add({
@@ -65,7 +70,7 @@ export class LoginPageComponent implements OnInit {
           this.loading = false;
           if (result.kind === "success") {
             this.authService.saveToken(result.token);
-            this.router.navigate(["/"]);
+            this.router.navigateByUrl(this.authService.consumeReturnTo());
           } else {
             this.errorMessage = "Could not sign in as this dev user.";
           }
@@ -88,7 +93,7 @@ export class LoginPageComponent implements OnInit {
         this.loading = false;
         if (result.kind === "success") {
           this.authService.saveToken(result.token);
-          this.router.navigate(["/"]);
+          this.router.navigateByUrl(this.authService.consumeReturnTo());
         } else if (result.kind === "legacy_account") {
           this.showLegacyHint = true;
         } else {

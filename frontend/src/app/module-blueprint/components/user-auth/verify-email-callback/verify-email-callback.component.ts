@@ -32,7 +32,7 @@ export class VerifyEmailCallbackComponent implements OnInit {
     this.authService.verifyEmail(this.code, this.userId).subscribe({
       next: (res) => {
         this.authService.saveToken(res.token);
-        this.router.navigate(["/"]);
+        this.router.navigateByUrl(this.authService.consumeReturnTo());
       },
       error: () => {
         this.loading = false;

@@ -20,8 +20,10 @@ describe("MagicRequestComponent", () => {
       sendMagicLink: vi.fn(),
       verifyMagicCode: vi.fn(),
       saveToken: vi.fn(),
+      rememberReturnTo: vi.fn(),
+      consumeReturnTo: vi.fn(() => "/"),
     };
-    mockRouter = { navigate: vi.fn() };
+    mockRouter = { navigate: vi.fn(), navigateByUrl: vi.fn() };
     mockRoute = { snapshot: { queryParams: {} } };
 
     await TestBed.configureTestingModule({
@@ -100,13 +102,13 @@ describe("MagicRequestComponent", () => {
       );
     });
 
-    it("saves token and navigates to / on success", () => {
+    it("saves token and navigates where the auth service says (returnTo, default /) on success", () => {
       component.code = "CODE123";
       component.email = "a@b.com";
       mockAuth.verifyMagicCode.mockReturnValue(of({ token: "magic-jwt" }));
       component.verifyCode();
       expect(mockAuth.saveToken).toHaveBeenCalledWith("magic-jwt");
-      expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
     });
 
     it("sets codeError on invalid code", () => {

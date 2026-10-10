@@ -55,7 +55,7 @@ export class MagicRequestComponent implements OnInit {
     this.authService.verifyMagicCode(this.code.trim(), this.email).subscribe({
       next: (res) => {
         this.authService.saveToken(res.token);
-        this.router.navigate(["/"]);
+        this.router.navigateByUrl(this.authService.consumeReturnTo());
       },
       error: () => {
         this.codeLoading = false;
