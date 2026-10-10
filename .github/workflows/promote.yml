@@ -32,6 +32,10 @@ on:
 # One promotion at a time: two overlapping runs could cross their retags.
 concurrency: promote-to-production
 
+# Nothing here talks to GitHub: the only credential this job needs is the
+# registry token.
+permissions: {}
+
 jobs:
   promote:
     runs-on: ubuntu-latest
@@ -50,19 +54,29 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # The registry is read-only while a garbage collection runs (publish.yml
-      # starts one after each staging deploy). They take well under a minute
-      # at this size; wait rather than fail.
+      # starts one after each staging deploy), and a collection first waits
+      # up to 15 minutes for outstanding write credentials to expire before
+      # it does its (quick) work. Wait rather than fail.
       - name: Wait for any running garbage collection
         run: |
-          for i in $(seq 1 40); do
-            active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>/dev/null || true)
-            if [ -z "$active" ]; then
+          # The API answers 404 when nothing is running, which doctl reports
+          # as an error, so only that error means idle. Any other failure is
+          # not an idle registry: keep polling, and give up only when the
+          # window closes.
+          for _ in $(seq 1 80); do
+            if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1); then
+              if [ -z "$active" ]; then
+                exit 0
+              fi
+              echo "Garbage collection in progress, waiting..."
+            elif echo "$active" | grep -qiE '404|not found'; then
               exit 0
+            else
+              echo "::warning::Could not query garbage collection: $active"
             fi
-            echo "Garbage collection in progress, waiting..."
             sleep 15
           done
-          echo "::error::A garbage collection has been running for over 10 minutes; try again later."
+          echo "::error::Could not confirm the registry is writable after 20 minutes; try again later."
           exit 1
 
       - name: ${{ inputs.action == 'rollback' && 'Roll production back' || 'Promote staging to production' }}
@@ -72,9 +86,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Manifest digest a tag resolves to, empty when the tag does not exist
+          # Manifest digest a tag resolves to; empty when the tag does not
+          # exist. Any other failure aborts, before a retag can run against a
+          # wrong picture of the registry.
           digest() {
-            docker buildx imagetools inspect "$IMAGE:$1" --format '{{.Manifest.Digest}}' 2>/dev/null || true
+            local out
+            if out=$(docker buildx imagetools inspect "$IMAGE:$1" --format '{{.Manifest.Digest}}' 2>&1); then
+              echo "$out"
+            elif echo "$out" | grep -qiE 'not found|manifest unknown'; then
+              echo ""
+            else
+              echo "::error::Could not inspect $IMAGE:$1: $out" >&2
+              return 1
+            fi
           }
           # Point tag $1 at the manifest of reference $2 (a tag or @digest),
           # server-side: no layers are pulled or pushed
