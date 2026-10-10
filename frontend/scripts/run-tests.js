@@ -49,10 +49,10 @@ if (!/max-old-space-size/.test(env.NODE_OPTIONS ?? "")) {
   env.NODE_OPTIONS =
     `${env.NODE_OPTIONS ?? ""} --max-old-space-size=${WORKER_HEAP_MB}`.trim();
 }
-const workerCap = Math.max(
-  Number.parseInt(env.VITEST_MAX_FORKS, 10) || WORKER_CAP,
-  Number.parseInt(env.VITEST_MAX_THREADS, 10) || WORKER_CAP,
-);
+// The ceiling is WORKER_CAP regardless of what the environment asks for: a
+// caller raising VITEST_MAX_FORKS gets a bigger pool and a failed run, which is
+// the point — the limit is documented, not negotiable per run.
+const workerCap = WORKER_CAP;
 
 const ng = path.join(
   __dirname,
@@ -153,6 +153,9 @@ const sampler = setInterval(sample, SAMPLE_MS);
 child.on("exit", (code, signal) => {
   clearInterval(sampler);
   sample();
+  // If ng died but its forks did not, they are still in the group. Harmless
+  // when the group is already empty.
+  killGroup("SIGKILL");
   const fmt = (mb) => `${Math.round(mb)} MB`;
   const problems = [];
   if (peakWorkers > workerCap) {
