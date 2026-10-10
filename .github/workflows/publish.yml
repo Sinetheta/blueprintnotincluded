@@ -112,37 +112,27 @@ jobs:
       - name: Log in to DO Container Registry
         run: doctl registry login --expiry-seconds 3600
         
-      # :latest is what the app deploys; sha-<commit> is a rollback handle.
-      # Both tags point at the same manifest, so the second costs nothing.
+      # :latest is staging's image. Production is promoted from it by the
+      # "Promote to production" workflow, which names the manifest :prod.
       - name: Tag image
-        run: |
-          docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
-          docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:sha-${GIT_COMMIT::12}
+        run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
       - name: Push image to DO Container Registry
-        run: |
-          docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
-          docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:sha-${GIT_COMMIT::12}
+        run: docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
       # DOCR never frees space on its own: every push of :latest leaves the
       # previous manifest behind, untagged but still billed, and garbage
-      # collection only runs when something starts it. So each deploy prunes
-      # what it replaced. Keep the two newest sha- tags as rollback images,
-      # drop older ones, then collect everything no tag references. The
-      # registry is read-only while a collection runs; the image is already
-      # pushed by now, so a slow or overlapping collection is harmless and
-      # must never fail the deploy.
-      - name: Prune old images and garbage-collect the registry
+      # collection only runs when something starts it. Everything worth
+      # keeping has a tag (latest, prod, prod-previous), so collecting the
+      # untagged manifests is exactly "delete what we can't afford to keep".
+      # The image is already pushed by now and the registry is merely
+      # read-only while a collection runs, so this must never fail a deploy.
+      - name: Garbage-collect untagged manifests
         continue-on-error: true
-        env:
-          KEEP: 2
         run: |
-          set -u
-          repo="${{ vars.IMAGE_NAME }}"
-          doctl registry repository list-tags "$repo" --format Tag,UpdatedAt --no-header \
-            | awk '$1 ~ /^sha-/' | sort -k2 -r | awk '{print $1}' | tail -n +$((KEEP + 1)) \
-            | while read -r tag; do
-                echo "deleting $repo:$tag"
-                doctl registry repository delete-tag "$repo" "$tag" --force
-              done
+          active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>/dev/null || true)
+          if [ -n "$active" ]; then
+            echo "A garbage collection is already running; it will pick up this deploy's leftovers next time."
+            exit 0
+          fi
           doctl registry garbage-collection start --include-untagged-manifests --force
