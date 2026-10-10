@@ -5,6 +5,10 @@ on:
     branches:
       - "master"
 
+# checkout needs to read the repo; nothing else here uses GITHUB_TOKEN
+permissions:
+  contents: read
+
 jobs:
   quick-check:
     runs-on: ubuntu-latest
@@ -118,19 +122,30 @@ jobs:
         run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
       # The registry is read-only while a garbage collection runs (one started
-      # by the previous deploy, a minute ago, or by a promotion), and a push
-      # into that window fails. Wait it out rather than fail the deploy.
+      # by the previous deploy, or by a promotion), and a collection first
+      # waits up to 15 minutes for outstanding write credentials to expire
+      # before it does its (quick) work. A push into that window fails, so
+      # wait it out rather than fail the deploy.
       - name: Wait for any running garbage collection
         run: |
-          for i in $(seq 1 40); do
-            active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>/dev/null || true)
-            if [ -z "$active" ]; then
+          # The API answers 404 when nothing is running, which doctl reports
+          # as an error, so only that error means idle. Any other failure is
+          # not an idle registry: keep polling, and give up only when the
+          # window closes.
+          for _ in $(seq 1 80); do
+            if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1); then
+              if [ -z "$active" ]; then
+                exit 0
+              fi
+              echo "Garbage collection in progress, waiting..."
+            elif echo "$active" | grep -qiE '404|not found'; then
               exit 0
+            else
+              echo "::warning::Could not query garbage collection: $active"
             fi
-            echo "Garbage collection in progress, waiting..."
             sleep 15
           done
-          echo "::error::A garbage collection has been running for over 10 minutes; re-run this workflow later."
+          echo "::error::Could not confirm the registry is writable after 20 minutes; re-run this workflow later."
           exit 1
 
       - name: Push image to DO Container Registry
@@ -146,9 +161,11 @@ jobs:
       - name: Garbage-collect untagged manifests
         continue-on-error: true
         run: |
-          active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>/dev/null || true)
-          if [ -n "$active" ]; then
+          if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1) && [ -n "$active" ]; then
             echo "A garbage collection is already running; it will pick up this deploy's leftovers next time."
             exit 0
+          elif [ -n "$active" ] && ! echo "$active" | grep -qiE '404|not found'; then
+            echo "::warning::Could not query garbage collection: $active"
+            exit 1
           fi
           doctl registry garbage-collection start --include-untagged-manifests --force
