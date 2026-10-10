@@ -1041,6 +1041,9 @@ export class BlueprintService implements IObsBlueprintChange {
 
   saveBlueprint(overwrite: boolean, publish?: boolean | null) {
     const saveBlueprint = this.blueprint.toMdbBlueprint();
+    // The undo state being saved: the user can keep editing while the
+    // request is in flight, and only this state becomes clean, not theirs
+    const savedState = this.undoStates[this.undoIndex];
 
     const body = new SaveBlueprintMessage();
     body.overwrite = overwrite;
@@ -1081,9 +1084,13 @@ export class BlueprintService implements IObsBlueprintChange {
             this.serverRawSourceFormat = validRaw?.format ?? null;
             this.serverRawSourceMdbJson =
               validRaw != null ? this.rawSourceMdbJson : null;
-            // The server has this state now: nothing left to recover
-            this.cleanUndoIndex = this.undoIndex;
-            this.unsavedWork.discardIfOwned();
+            // The server has the saved state now. If nothing changed
+            // meanwhile there is nothing left to recover; otherwise the
+            // newer edits stay unsaved (and persisted)
+            const savedIndex = this.undoStates.indexOf(savedState);
+            this.cleanUndoIndex = savedIndex;
+            if (savedIndex === this.undoIndex)
+              this.unsavedWork.discardIfOwned();
           }
           return response;
         }),

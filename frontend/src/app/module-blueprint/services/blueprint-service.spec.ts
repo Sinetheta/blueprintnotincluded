@@ -4,7 +4,7 @@ import {
   decodeBniShareString,
   encodeBniShareString,
 } from "../../../../../lib/index";
-import { of, throwError } from "rxjs";
+import { of, Subject, throwError } from "rxjs";
 
 describe("BlueprintService", () => {
   let service: BlueprintService;
@@ -76,6 +76,20 @@ describe("BlueprintService", () => {
       expect(mockUnsavedWork.discardIfOwned).toHaveBeenCalled();
       edit();
       expect(service.isDirty).toBe(true);
+    });
+
+    it("edits made while the save is in flight stay unsaved", () => {
+      edit();
+      const response = new Subject<any>();
+      mockHttp.post.mockReturnValue(response);
+      service.saveBlueprint(false).subscribe();
+      edit();
+      response.next({ id: "bp-9" });
+      expect(service.isDirty).toBe(true);
+      expect(mockUnsavedWork.discardIfOwned).not.toHaveBeenCalled();
+      // Undoing the in-flight edit lands on the saved state
+      service.undo();
+      expect(service.isDirty).toBe(false);
     });
 
     it("New asks before discarding edits and keeps the work on No", () => {
