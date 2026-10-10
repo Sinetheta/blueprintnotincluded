@@ -117,6 +117,22 @@ jobs:
       - name: Tag image
         run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
+      # The registry is read-only while a garbage collection runs (one started
+      # by the previous deploy, a minute ago, or by a promotion), and a push
+      # into that window fails. Wait it out rather than fail the deploy.
+      - name: Wait for any running garbage collection
+        run: |
+          for i in $(seq 1 40); do
+            active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>/dev/null || true)
+            if [ -z "$active" ]; then
+              exit 0
+            fi
+            echo "Garbage collection in progress, waiting..."
+            sleep 15
+          done
+          echo "::error::A garbage collection has been running for over 10 minutes; re-run this workflow later."
+          exit 1
+
       - name: Push image to DO Container Registry
         run: docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
