@@ -11,8 +11,11 @@
 # three named manifests, and publish.yml's garbage collection removes the
 # rest.
 #
-# Gated by the "production" GitHub Environment: it holds the registry token
-# and requires an approving reviewer before the job runs.
+# Gated by the "production" GitHub Environment, which requires an approving
+# reviewer before the job runs. It uses the same registry token as the
+# staging deploy: minting the short-lived docker credential that the deploy
+# already relies on needs registry write access, and a retag needs nothing
+# more than that.
 name: Promote to production
 
 on:
@@ -38,7 +41,7 @@ jobs:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DIGITALOCEAN_PROMOTE_TOKEN }}
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Log in to DO Container Registry
         run: doctl registry login --expiry-seconds 900
