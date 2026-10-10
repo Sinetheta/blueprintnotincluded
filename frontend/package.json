@@ -17,9 +17,9 @@
     "start:admin": "ng serve blueprintnotincluded-admin --port=4201",
     "build:dev": "ng build blueprintnotincluded --configuration=dev",
     "pretest": "rm -rf dist/test-out",
-    "test": "ng test --no-watch",
+    "test": "node scripts/run-tests.js",
     "pretest:coverage": "rm -rf dist/test-out",
-    "test:coverage": "ng test --no-watch --code-coverage",
+    "test:coverage": "node scripts/run-tests.js --code-coverage",
     "lint": "ng lint",
     "compodoc": "npx compodoc -p tsconfig.app.json",
     "extract-i18n": "ng extract-i18n blueprintnotincluded --output-path src/i18n && xliffmerge --profile xliffmerge.json"

@@ -44,6 +44,19 @@ x-node: &node
     # one-click picker. Never set in the deploy stack. See AUTH_MODE in
     # .env.sample and CLAUDE.md "Environment Configuration".
     AUTH_MODE: local
+    # Bounds for `npm test` in frontend/ (Angular's unit-test builder → vitest
+    # 3). Vitest sizes its fork pool from the CPUs it can see — the host's,
+    # not the container's share — and the builder exposes no worker option,
+    # but vitest reads these two variables as its pool defaults. Incident
+    # 2026-10-10: 24 workers at ~300 MB each, a retry loop stacking several
+    # pools, host down. frontend/scripts/run-tests.js applies the same values
+    # when they are missing (host and CI) and fails the run if they are
+    # exceeded; set here as well so a bare `ng test` in any of these
+    # containers is bounded too. NODE_OPTIONS caps every node heap in here —
+    # the vitest parent and each worker, but also ng serve and the backend.
+    VITEST_MAX_FORKS: "4"
+    VITEST_MAX_THREADS: "4"
+    NODE_OPTIONS: --max-old-space-size=1536
   volumes:
     - ..:/app:cached
     # Named volumes, not part of the bind mount: canvas and sharp are built for
@@ -64,6 +77,11 @@ services:
   # runtime, so restarting a server never disturbs a session in here.
   app:
     <<: *node
+    # A real PID 1. `sleep infinity` never reaps, so a test run killed from
+    # outside (a timed-out exec, a dropped session) left every orphaned
+    # vitest fork a zombie here and the live ones running. The init process
+    # reaps them on any Compose runtime.
+    init: true
     command: sleep infinity
     stdin_open: true
     tty: true
