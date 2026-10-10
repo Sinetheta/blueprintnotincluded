@@ -27,7 +27,15 @@ headings in older notes are current.
 - Backend tests use Mocha + Chai. Do not introduce Jest.
 - Frontend tests use the Angular builder with Vitest. Run a single spec with
   `npm test -- --include='**/name.spec.ts'` from `frontend/`; do not invoke bare Vitest on
-  a spec path.
+  a spec path. Run the spec you are working on that way first; the full `npm test` is a
+  pre-commit gate, not a debugging loop. `npm test` goes through
+  `frontend/scripts/run-tests.js`, which caps the pool at 4 workers, kills the pool on
+  SIGINT/SIGTERM/SIGHUP or after 10 minutes, and fails the run if the worker count or
+  per-worker memory exceeds its ceilings. Never re-run the full suite after a timeout
+  without first checking for a run that is still going:
+  `ps -eo pid,ppid,stat,rss,args | grep vitest` — a killed `docker exec` leaves the
+  container-side run going to completion, and stacking pools is what took a host down on
+  2026-10-10.
 - The backend has no ESLint configuration. Frontend lint is `npm run lint` from
   `frontend/`. Do not use a repo-wide formatting pass for a focused change.
 - Use the 2024 flat-icon asset pipeline documented in
