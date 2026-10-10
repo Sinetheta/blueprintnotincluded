@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NO_ERRORS_SCHEMA } from "@angular/core";
-import { ActivatedRoute } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import {
   provideHttpClient,
   withInterceptorsFromDi,
@@ -22,6 +22,7 @@ import { ToolService } from "src/app/module-blueprint/services/tool-service";
 import { GameStringService } from "src/app/module-blueprint/services/game-string-service";
 import { KeyboardShortcutService } from "src/app/module-blueprint/services/keyboard-shortcut.service";
 import { UserService } from "src/app/module-blueprint/services/user-service";
+import { UnsavedWorkService } from "src/app/module-blueprint/services/unsaved-work.service";
 
 // TODO: spec is incomplete — missing providers for MessageService, BlueprintService,
 // ToolService, and GameStringService. Add stubs for these before re-enabling.
@@ -115,6 +116,8 @@ describe("ComponentBlueprintParentComponent.noticeHiddenDlcs", () => {
         { provide: GameStringService, useValue: {} },
         { provide: KeyboardShortcutService, useValue: {} },
         { provide: UserService, useValue: userService },
+        { provide: UnsavedWorkService, useValue: {} },
+        { provide: Router, useValue: {} },
       ],
     })
       // The component declares its own MessageService; swap that one out
@@ -335,5 +338,192 @@ describe("ComponentBlueprintParentComponent.noticeRocketStacks", () => {
     component.exportBlueprint();
     expect(blueprintService.exportBlueprintFile).toHaveBeenCalled();
     expect(rocketToasts()).toHaveLength(0);
+  });
+});
+
+// Which work the editor opens with, and what it offers back. Same recipe as
+// above: stubs everywhere, no detectChanges, startEditor called directly.
+describe("ComponentBlueprintParentComponent unsaved work", () => {
+  let component: ComponentBlueprintParentComponent;
+  let messageService: {
+    add: ReturnType<typeof vi.fn>;
+    clear: ReturnType<typeof vi.fn>;
+  };
+  let authService: { isLoggedIn: ReturnType<typeof vi.fn> };
+  let blueprintService: any;
+  let unsavedWork: any;
+  let router: { navigate: ReturnType<typeof vi.fn> };
+  let snapshot: any;
+
+  const toasts = () => messageService.add.mock.calls.map((c) => c[0]);
+  const recoveryToast = () => toasts().find((t) => t.key === "unsaved-work");
+
+  beforeEach(async () => {
+    snapshot = {
+      v: 1,
+      sessionId: "other-tab",
+      savedAt: Date.now() - 60_000,
+      id: "bp-1",
+      name: "my build",
+      metadata: {},
+      mdb: { blueprintItems: [{ id: "Ladder" }] },
+    };
+    messageService = { add: vi.fn(), clear: vi.fn() };
+    authService = { isLoggedIn: vi.fn().mockReturnValue(false) };
+    blueprintService = {
+      id: null,
+      requiredDlcs: null,
+      blueprint: { blueprintItems: [] as unknown[], clone: vi.fn() },
+      openBlueprintFromId: vi.fn(),
+      resumeUnsavedWork: vi.fn(),
+      stashForLogin: vi.fn(),
+      unsubscribeBlueprintChanged: vi.fn(),
+      unsubscribeImportError: vi.fn(),
+    };
+    unsavedWork = {
+      peek: vi.fn(() => null),
+      owns: vi.fn(() => false),
+      release: vi.fn(),
+      discard: vi.fn(),
+    };
+    router = { navigate: vi.fn() };
+
+    await TestBed.configureTestingModule({
+      declarations: [ComponentBlueprintParentComponent],
+      schemas: [NO_ERRORS_SCHEMA],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: of({}),
+            url: of([]),
+            snapshot: { queryParams: {} },
+          },
+        },
+        { provide: AuthenticationService, useValue: authService },
+        { provide: BlueprintService, useValue: blueprintService },
+        { provide: ToolService, useValue: {} },
+        { provide: HttpClient, useValue: {} },
+        { provide: GameStringService, useValue: {} },
+        { provide: KeyboardShortcutService, useValue: {} },
+        {
+          provide: UserService,
+          useValue: { getDlcPreferences: vi.fn(() => of({})) },
+        },
+        { provide: UnsavedWorkService, useValue: unsavedWork },
+        { provide: Router, useValue: router },
+      ],
+    })
+      .overrideComponent(ComponentBlueprintParentComponent, {
+        set: {
+          providers: [{ provide: MessageService, useValue: messageService }],
+        },
+      })
+      .compileComponents();
+
+    component = TestBed.createComponent(
+      ComponentBlueprintParentComponent,
+    ).componentInstance;
+  });
+
+  const start = (routeId: string | null) =>
+    (component as any).startEditor(routeId);
+
+  it("opens a blank editor when there is nothing to recover", () => {
+    start(null);
+    expect(blueprintService.resumeUnsavedWork).not.toHaveBeenCalled();
+    expect(blueprintService.openBlueprintFromId).not.toHaveBeenCalled();
+    expect(recoveryToast()).toBeUndefined();
+  });
+
+  it("/editor resumes the slot and says so, with a Discard", () => {
+    unsavedWork.peek.mockReturnValue(snapshot);
+    start(null);
+    expect(blueprintService.resumeUnsavedWork).toHaveBeenCalledWith(snapshot);
+    expect(recoveryToast().data.actions).toEqual(["discard"]);
+    expect(recoveryToast().sticky).toBe(true);
+  });
+
+  it("/b/:id of the same blueprint, same tab (reload): resumes the edits", () => {
+    unsavedWork.peek.mockReturnValue(snapshot);
+    unsavedWork.owns.mockReturnValue(true);
+    start("bp-1");
+    expect(blueprintService.resumeUnsavedWork).toHaveBeenCalledWith(snapshot);
+    expect(blueprintService.openBlueprintFromId).not.toHaveBeenCalled();
+  });
+
+  it("/b/:id of the same blueprint from another tab: loads the server copy and offers Resume", () => {
+    unsavedWork.peek.mockReturnValue(snapshot);
+    start("bp-1");
+    expect(blueprintService.openBlueprintFromId).toHaveBeenCalledWith("bp-1");
+    expect(blueprintService.resumeUnsavedWork).not.toHaveBeenCalled();
+    expect(recoveryToast().data.actions).toEqual(["resume", "discard"]);
+    expect(recoveryToast().detail).toContain("my build");
+  });
+
+  it("/b/:id of a different blueprint: loads it untouched and offers a new tab", () => {
+    unsavedWork.peek.mockReturnValue(snapshot);
+    unsavedWork.owns.mockReturnValue(true);
+    start("bp-2");
+    expect(unsavedWork.release).toHaveBeenCalled();
+    expect(blueprintService.openBlueprintFromId).toHaveBeenCalledWith("bp-2");
+    expect(recoveryToast().data.actions).toEqual(["newTab", "discard"]);
+  });
+
+  it("/editor with work still in memory redraws it rather than the slot", () => {
+    blueprintService.blueprint.blueprintItems = [{}];
+    blueprintService.blueprint.clone.mockReturnValue({
+      blueprintItems: [{}],
+      unknownBuildingDefs: [],
+    });
+    component.canvas = { loadNewBlueprint: vi.fn() } as any;
+    vi.spyOn(component, "loadTemplateIntoCanvas").mockImplementation(() => {});
+    unsavedWork.peek.mockReturnValue(snapshot);
+    start(null);
+    expect(component.loadTemplateIntoCanvas).toHaveBeenCalled();
+    expect(blueprintService.resumeUnsavedWork).not.toHaveBeenCalled();
+    expect(recoveryToast().data.actions).toEqual(["newTab", "discard"]);
+  });
+
+  it("the embedded editor never touches the slot", () => {
+    component.forceSize = true;
+    unsavedWork.peek.mockReturnValue(snapshot);
+    start("bp-2");
+    expect(unsavedWork.peek).not.toHaveBeenCalled();
+    expect(blueprintService.openBlueprintFromId).toHaveBeenCalledWith("bp-2");
+  });
+
+  it("toast actions: discard clears, resume loads, new tab opens /editor", () => {
+    unsavedWork.peek.mockReturnValue(snapshot);
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    component.recoveryAction("discard");
+    expect(unsavedWork.discard).toHaveBeenCalled();
+    component.recoveryAction("resume");
+    expect(blueprintService.resumeUnsavedWork).toHaveBeenCalledWith(snapshot);
+    component.recoveryAction("newTab");
+    expect(open).toHaveBeenCalledWith("/editor", "_blank");
+    open.mockRestore();
+  });
+
+  describe("saving while logged out", () => {
+    it("asks to log in instead of erroring, once there is something to save", () => {
+      component.saveBlueprint();
+      expect(component.loginPromptVisible).toBe(false);
+      expect(toasts()[0].summary).toBe("Empty blueprint");
+
+      blueprintService.blueprint.blueprintItems = [{}];
+      component.saveBlueprint();
+      expect(component.loginPromptVisible).toBe(true);
+    });
+
+    it("parks the work and sends the login page back to the editor's save", () => {
+      component.loginPromptVisible = true;
+      component.goToLogin();
+      expect(component.loginPromptVisible).toBe(false);
+      expect(blueprintService.stashForLogin).toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(["/login"], {
+        queryParams: { returnTo: "/editor?save=1" },
+      });
+    });
   });
 });

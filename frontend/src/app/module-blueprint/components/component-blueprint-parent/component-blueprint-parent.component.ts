@@ -8,7 +8,7 @@ import {
   ViewChild,
 } from "@angular/core";
 // Library imports
-import { ActivatedRoute, Params, UrlSegment } from "@angular/router";
+import { ActivatedRoute, Params, Router, UrlSegment } from "@angular/router";
 import JSZip from "jszip";
 import { MessageService } from "primeng/api";
 import {
@@ -46,6 +46,11 @@ import {
 } from "../../keybindings/shortcut-actions";
 import { ToolService } from "../../services/tool-service";
 import { UserService } from "../../services/user-service";
+import {
+  describeAge,
+  UnsavedWorkService,
+  UnsavedWorkSnapshot,
+} from "../../services/unsaved-work.service";
 import { ComponentCanvasComponent } from "../component-canvas/component-canvas.component";
 import {
   BrowseData,
@@ -140,6 +145,8 @@ export class ComponentBlueprintParentComponent
     public gameStringService: GameStringService,
     private shortcutService: KeyboardShortcutService,
     private userService: UserService,
+    private unsavedWork: UnsavedWorkService,
+    private router: Router,
   ) {}
 
   private shortcutSubscriptions: (() => void)[] = [];
@@ -202,8 +209,18 @@ export class ComponentBlueprintParentComponent
       });
 
       this.route.params.subscribe((params: Params): void => {
-        if (params.id != null)
-          this.blueprintService.openBlueprintFromId(params.id);
+        const routeId: string | null = params.id ?? null;
+        if (!this.started) {
+          this.started = true;
+          this.startEditor(routeId);
+        } else if (routeId != null) {
+          // In-tab navigation to another saved blueprint (browse dialog,
+          // details page): never a confirm, the URL has already moved. The
+          // slot is left behind and offered back instead.
+          this.unsavedWork.release();
+          this.blueprintService.openBlueprintFromId(routeId);
+          this.offerUnsavedWork(this.unsavedWork.peek(), routeId);
+        }
       });
     }); /*
       .catch((error) => {
@@ -252,6 +269,144 @@ export class ComponentBlueprintParentComponent
 
   blueprintChanged(blueprint: Blueprint) {
     this.loadTemplateIntoCanvas(blueprint);
+  }
+
+  // ─── Unsaved work recovery ──────────────────────────────────────────────
+
+  private started = false;
+  static readonly recoveryToastKey = "unsaved-work";
+
+  // What the editor opens with, decided once the game database is loaded
+  // (a snapshot cannot be imported before it). Three sources, in order:
+  //  - the blueprint still in memory: the singleton service outlives this
+  //    component, so the login round-trip and a trip to /discover and back
+  //    come home to the same canvas, storage or not;
+  //  - the recovery slot in localStorage, for a closed tab or a reload;
+  //  - the route's saved blueprint, which always wins when there is one.
+  // A slot that cannot be resumed here is offered back, never silently
+  // dropped: see offerUnsavedWork.
+  private startEditor(routeId: string | null) {
+    if (this.forceSize) {
+      if (routeId != null) this.blueprintService.openBlueprintFromId(routeId);
+      return;
+    }
+    const snapshot = this.unsavedWork.peek();
+    const owned = this.unsavedWork.owns(snapshot);
+
+    if (routeId == null) {
+      if (this.blueprintService.blueprint.blueprintItems.length > 0) {
+        this.restoreFromMemory();
+        if (snapshot != null && !owned)
+          this.offerUnsavedWork(snapshot, routeId);
+      } else if (snapshot != null) {
+        this.resumeUnsavedWork(snapshot);
+      }
+      this.openSaveDialogIfRequested();
+      return;
+    }
+
+    if (snapshot != null && owned && snapshot.id === routeId) {
+      // Same tab reloaded on the blueprint it was editing (F5, a locale
+      // switch): the edits are more recent than the server, so just carry on
+      this.resumeUnsavedWork(snapshot);
+      return;
+    }
+    if (owned) this.unsavedWork.release();
+    this.blueprintService.openBlueprintFromId(routeId);
+    this.offerUnsavedWork(snapshot, routeId);
+  }
+
+  private restoreFromMemory() {
+    // The canvas copies into the service's blueprint, so the source must be
+    // a copy of it; and redrawing is not an edit, so no undo state for it
+    const copy = this.blueprintService.blueprint.clone();
+    this.blueprintService.suppressChanges = true;
+    try {
+      this.loadTemplateIntoCanvas(copy);
+    } finally {
+      this.blueprintService.suppressChanges = false;
+    }
+  }
+
+  private resumeUnsavedWork(snapshot: UnsavedWorkSnapshot) {
+    this.blueprintService.resumeUnsavedWork(snapshot);
+    this.messageService.clear(
+      ComponentBlueprintParentComponent.recoveryToastKey,
+    );
+    this.messageService.add({
+      key: ComponentBlueprintParentComponent.recoveryToastKey,
+      severity: "info",
+      summary: $localize`Restored your unsaved work`,
+      detail: $localize`From ${describeAge(snapshot.savedAt)}:age:. It is not saved to the site yet.`,
+      data: { actions: ["discard"] },
+      sticky: true,
+    });
+  }
+
+  // The slot holds work this editor is not showing. Same blueprint: offer
+  // to swap the edits in. Different one: offer a new tab, so the blueprint
+  // just opened here is never mangled. Discard is always available.
+  private offerUnsavedWork(
+    snapshot: UnsavedWorkSnapshot | null,
+    routeId: string | null,
+  ) {
+    if (snapshot == null) return;
+    const sameBlueprint = snapshot.id != null && snapshot.id === routeId;
+    this.messageService.clear(
+      ComponentBlueprintParentComponent.recoveryToastKey,
+    );
+    this.messageService.add({
+      key: ComponentBlueprintParentComponent.recoveryToastKey,
+      severity: "warn",
+      summary: sameBlueprint
+        ? $localize`You have unsaved changes to this blueprint`
+        : $localize`You have unsaved work`,
+      detail: $localize`"${snapshot.name}:name:", from ${describeAge(snapshot.savedAt)}:age:.`,
+      data: { actions: [sameBlueprint ? "resume" : "newTab", "discard"] },
+      sticky: true,
+    });
+  }
+
+  // Toast buttons (see the template's recovery toast)
+  recoveryAction(action: string) {
+    this.messageService.clear(
+      ComponentBlueprintParentComponent.recoveryToastKey,
+    );
+    const snapshot = this.unsavedWork.peek();
+    if (action === "discard") {
+      this.unsavedWork.discard();
+    } else if (action === "newTab") {
+      // The new tab resumes the slot on its own (startEditor, no route id)
+      window.open("/editor", "_blank");
+    } else if (action === "resume" && snapshot != null) {
+      this.resumeUnsavedWork(snapshot);
+    }
+  }
+
+  // ─── Saving while logged out ────────────────────────────────────────────
+
+  loginPromptVisible = false;
+
+  // Park the work and go log in; the login page brings the user straight
+  // back here with the save dialog open.
+  goToLogin() {
+    this.loginPromptVisible = false;
+    this.blueprintService.stashForLogin();
+    this.router.navigate(["/login"], {
+      queryParams: { returnTo: "/editor?save=1" },
+    });
+  }
+
+  private openSaveDialogIfRequested() {
+    if (this.route.snapshot.queryParams["save"] == null) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { save: null },
+      queryParamsHandling: "merge",
+      replaceUrl: true,
+    });
+    if (this.blueprintService.blueprint.blueprintItems.length > 0)
+      this.saveBlueprint();
   }
 
   database: any;
@@ -545,18 +700,13 @@ export class ComponentBlueprintParentComponent
   }
 
   saveBlueprint() {
-    if (!this.authService.isLoggedIn())
-      this.messageService.add({
-        severity: "error",
-        summary: $localize`Not logged in`,
-        detail: $localize`You must be logged in to be able to save blueprints`,
-      });
-    else if (this.blueprintService.blueprint.blueprintItems.length == 0)
+    if (this.blueprintService.blueprint.blueprintItems.length == 0)
       this.messageService.add({
         severity: "error",
         summary: $localize`Empty blueprint`,
         detail: $localize`Add some buildings before trying to save`,
       });
+    else if (!this.authService.isLoggedIn()) this.loginPromptVisible = true;
     else {
       this.updateThumbnail();
       this.saveDialog.showDialog();
