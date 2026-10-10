@@ -21,6 +21,7 @@
           <span>{{ footprintLabel }}</span>
           <span
             *ngIf="activeTile as t"
+            i18n
             i18n-pTooltip
             pTooltip="The cell this feature acts on"
             >erupts at {{ t.x }}, {{ t.y }}</span
