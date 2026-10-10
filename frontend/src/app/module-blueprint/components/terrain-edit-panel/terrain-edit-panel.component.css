@@ -64,6 +64,8 @@
 
 .terrain-panel-name {
   font-weight: 600;
+  /* An unrecognised id is shown raw and can be long; wrap rather than clip. */
+  overflow-wrap: anywhere;
 }
 
 .terrain-panel-meta {
