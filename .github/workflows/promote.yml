@@ -1,0 +1,137 @@
+# Promote staging's image to production, or roll production back.
+#
+# Staging deploys :latest on every push to master (publish.yml). Production
+# runs the :prod tag with autodeploy on, so pointing :prod at a manifest IS
+# the production deploy. Promotion is a server-side retag of the manifest
+# :latest resolves to: nothing is rebuilt or re-uploaded, so production gets
+# byte-for-byte what was tested on staging, in seconds.
+#
+# The old :prod moves to :prod-previous first, so "rollback" is the same
+# button swapping the two. The registry therefore never holds more than
+# three named manifests, and publish.yml's garbage collection removes the
+# rest.
+#
+# Gated by the "production" GitHub Environment: it holds the registry token
+# and requires an approving reviewer before the job runs.
+name: Promote to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "promote: make staging's current image (:latest) the production image. rollback: put the previous production image back."
+        type: choice
+        options:
+          - promote
+          - rollback
+        default: promote
+
+# One promotion at a time: two overlapping runs could cross their retags.
+concurrency: promote-to-production
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_PROMOTE_TOKEN }}
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 900
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      # The registry is read-only while a garbage collection runs (publish.yml
+      # starts one after each staging deploy). They take well under a minute
+      # at this size; wait rather than fail.
+      - name: Wait for any running garbage collection
+        run: |
+          for i in $(seq 1 40); do
+            active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>/dev/null || true)
+            if [ -z "$active" ]; then
+              exit 0
+            fi
+            echo "Garbage collection in progress, waiting..."
+            sleep 15
+          done
+          echo "::error::A garbage collection has been running for over 10 minutes; try again later."
+          exit 1
+
+      - name: ${{ inputs.action == 'rollback' && 'Roll production back' || 'Promote staging to production' }}
+        env:
+          IMAGE: ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          set -euo pipefail
+
+          # Manifest digest a tag resolves to, empty when the tag does not exist
+          digest() {
+            docker buildx imagetools inspect "$IMAGE:$1" --format '{{.Manifest.Digest}}' 2>/dev/null || true
+          }
+          # Point tag $1 at the manifest of reference $2 (a tag or @digest),
+          # server-side: no layers are pulled or pushed
+          retag() {
+            docker buildx imagetools create --tag "$IMAGE:$1" "$2"
+          }
+
+          latest=$(digest latest)
+          prod=$(digest prod)
+          previous=$(digest prod-previous)
+          echo "latest        ${latest:-<none>}"
+          echo "prod          ${prod:-<none>}"
+          echo "prod-previous ${previous:-<none>}"
+
+          if [ "$ACTION" = "promote" ]; then
+            if [ -z "$latest" ]; then
+              echo "::error::There is no :latest image to promote. Has a staging deploy run?"
+              exit 1
+            fi
+            if [ "$latest" = "$prod" ]; then
+              echo "Production already runs staging's image. Nothing to do."
+              echo "Production already runs staging's image ($latest). Nothing changed." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ -n "$prod" ]; then
+              retag prod-previous "$IMAGE@$prod"
+            fi
+            retag prod "$IMAGE@$latest"
+            {
+              echo "## Promoted to production"
+              echo
+              echo "| tag | before | after |"
+              echo "|---|---|---|"
+              echo "| prod | ${prod:-<none>} | $latest |"
+              echo "| prod-previous | ${previous:-<none>} | ${prod:-<none>} |"
+              echo
+              echo "Production autodeploys from :prod; watch the app in DigitalOcean for the new deployment."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            if [ -z "$previous" ]; then
+              echo "::error::There is no :prod-previous image to roll back to."
+              exit 1
+            fi
+            if [ "$previous" = "$prod" ]; then
+              echo "Production already runs the previous image. Nothing to do."
+              exit 0
+            fi
+            # Swap, so that a second rollback goes forward again
+            retag prod "$IMAGE@$previous"
+            if [ -n "$prod" ]; then
+              retag prod-previous "$IMAGE@$prod"
+            fi
+            {
+              echo "## Rolled production back"
+              echo
+              echo "| tag | before | after |"
+              echo "|---|---|---|"
+              echo "| prod | ${prod:-<none>} | $previous |"
+              echo "| prod-previous | $previous | ${prod:-<none>} |"
+              echo
+              echo "Production autodeploys from :prod; watch the app in DigitalOcean for the new deployment."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
