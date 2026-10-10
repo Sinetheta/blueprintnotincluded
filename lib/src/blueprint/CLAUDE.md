@@ -55,13 +55,21 @@ in the exported `buildings` array (a geyser written as a building resolves to a 
   annotations alone is the one thing that would break alignment. The desync is created on
   write and is fixed on write.
 - **Editor** — `ToolType.terrain` + `TerrainTool` (`common/tools/terrain-tool.ts`), palette in
-  `components/side-bar/terrain-tool/`, selection/visibility in
+  `components/side-bar/terrain-tool/` (palette and visibility only), selection/visibility in
   `services/terrain-annotation.service.ts`, rendering in `drawing/draw-terrain-overlay.ts`
   (translucent icon inside a dashed footprint outline — context, not construction).
   Hit-testing is area-based, since footprints run 2x2 to 4x4. The "show terrain features"
   toggle is view state only: it never reaches stored data, and never applies to export or
   thumbnail canvases.
-- **Delete is the ordinary editor delete** (`ShortcutAction.editDelete`), not a panel button:
+- **Selection panel** — a feature can be selected from _any_ tool (the canvas hit-tests
+  annotations before handing the click to the tool), so its controls cannot sit in the Terrain
+  tool's left card, which is hidden from Select. `components/terrain-edit-panel/` is pinned
+  bottom-right, stacked with the note panel (`.corner-panels` in the blueprint parent), and
+  appears whenever `terrainService.selected` is set: name, footprint, eruption cell, a
+  **Delete feature** button, and a link to the Terrain tool for placing more. Before it
+  existed, clicking a geyser from Select produced only a magenta cell on the canvas and
+  nothing said it could be deleted.
+- **Delete is also the ordinary editor delete** (`ShortcutAction.editDelete`):
   the canvas registers a handler above the tool layer that removes the selected annotation and
   **declines when none is selected**, so the key falls straight through to `SelectTool`'s
   building delete. For that to be unambiguous the two selections are mutually exclusive —

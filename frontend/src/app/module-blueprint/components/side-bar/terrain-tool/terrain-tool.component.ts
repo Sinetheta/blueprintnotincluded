@@ -1,17 +1,12 @@
 import { Component } from "@angular/core";
-import {
-  activeTileOf,
-  BniTerrainFeature,
-  terrainDisplayName,
-  terrainIconUrl,
-  TerrainFeature,
-} from "../../../../../../../lib/index";
+import { terrainIconUrl, TerrainFeature } from "../../../../../../../lib/index";
 import { TerrainTool } from "../../../common/tools/terrain-tool";
 import { TerrainAnnotationService } from "../../../services/terrain-annotation.service";
 
 // Left-panel UI for the Terrain Annotation Tool: the palette of natural map
-// features to place, plus a detail block for whichever annotation is currently
-// selected.
+// features to place. The selected annotation is shown and deleted from
+// TerrainEditPanelComponent instead, since a feature can be selected from any
+// tool and this card is only visible while the Terrain tool is active.
 //
 // Deliberately separate from the building palette. Dupes cannot build a geyser
 // — these record what the map already contains, so mixing them into the build
@@ -30,35 +25,6 @@ export class TerrainToolComponent {
 
   get features(): TerrainFeature[] {
     return TerrainFeature.features;
-  }
-
-  get selected(): BniTerrainFeature | null {
-    return this.terrainService.selected;
-  }
-
-  // The selected annotation's catalogue entry, or null when its id is one
-  // this database doesn't know — a modded feature, or one newer than our export.
-  // The template falls back to showing the raw id rather than hiding the thing.
-  get selectedDef(): TerrainFeature | null {
-    const selected = this.selected;
-    if (selected == null) return null;
-    return TerrainFeature.getFeature(selected.id) ?? null;
-  }
-
-  get selectedName(): string {
-    const selected = this.selected;
-    return selected != null ? terrainDisplayName(selected) : "";
-  }
-
-  get selectedIsUnknown(): boolean {
-    return this.selected != null && this.selectedDef === null;
-  }
-
-  // The one cell the feature acts on — where it erupts. That, not the anchor,
-  // is the coordinate someone planning a pump around it cares about.
-  get selectedActiveTile(): { x: number; y: number } | null {
-    const selected = this.selected;
-    return selected != null ? activeTileOf(selected) : null;
   }
 
   iconUrl(id: string): string {

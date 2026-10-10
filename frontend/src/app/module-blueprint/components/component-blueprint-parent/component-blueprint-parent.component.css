@@ -30,3 +30,20 @@
   gap: 8px;
   z-index: 10;
 }
+
+/* Bottom-right stack for the note and terrain selection panels. Fixed here,
+   once, so the panels themselves only need a width. */
+.corner-panels {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+.corner-panels > * {
+  pointer-events: auto;
+}

@@ -39,7 +39,14 @@
     </div>
     <app-dialog-about #aboutDialog></app-dialog-about>
   </div>
-  <app-note-edit-panel></app-note-edit-panel>
+  <!-- Selection panels for the two annotation layers, stacked in one corner.
+       Note and terrain selection are mutually exclusive, but the note panel
+       also shows the pending note while the Notes tool is active, and a
+       terrain feature can be selected from that tool too. -->
+  <div class="corner-panels">
+    <app-terrain-edit-panel></app-terrain-edit-panel>
+    <app-note-edit-panel></app-note-edit-panel>
+  </div>
   <div class="tool-toolbar">
     <app-toolbar-button
       iconUrl="assets/images/icon-select.png"

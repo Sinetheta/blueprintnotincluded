@@ -1,13 +1,10 @@
-/* Pinned bottom-right, modelled on the mod's in-game note edit screen — the
-   magenta title bar is the flavour it keeps. The body follows the app theme
-   instead of a hardcoded dark palette: it embeds the same element picker the
-   side bar uses, and that picker is themed, so a fixed-dark body meant light
-   list rows sitting inside a dark panel. */
+/* Pinned bottom-right by the parent's corner-panels stack, modelled on the
+   mod's in-game note edit screen — the magenta title bar is the flavour it
+   keeps. The body follows the app theme instead of a hardcoded dark palette:
+   it embeds the same element picker the side bar uses, and that picker is
+   themed, so a fixed-dark body meant light list rows sitting inside a dark
+   panel. */
 .note-panel {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 600;
   width: 300px;
   max-width: calc(100vw - 32px);
   background: var(--p-content-background);

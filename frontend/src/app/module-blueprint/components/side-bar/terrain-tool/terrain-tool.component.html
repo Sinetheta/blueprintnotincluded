@@ -20,34 +20,6 @@
     </button>
   </div>
 
-  <div *ngIf="selected !== null" class="selected-block">
-    <div class="section-label" i18n>Selected</div>
-    <div class="selected-row">
-      <img class="selected-icon" [src]="iconUrl(selected.id)" alt="" />
-      <div class="selected-text">
-        <div class="selected-name">{{ selectedName }}</div>
-        <div class="selected-meta">
-          <span *ngIf="selectedDef !== null">{{
-            footprintLabel(selectedDef)
-          }}</span>
-          <span
-            class="selected-pos"
-            *ngIf="selectedActiveTile !== null"
-            i18n-pTooltip
-            pTooltip="The cell this feature acts on"
-            >erupts at {{ selectedActiveTile.x }},
-            {{ selectedActiveTile.y }}</span
-          >
-        </div>
-        <!-- An id we do not recognise is kept, not dropped: show it raw so the
-             user can see exactly what the file contains. -->
-        <div *ngIf="selectedIsUnknown" class="selected-unknown" i18n>
-          Unrecognized feature id
-        </div>
-      </div>
-    </div>
-  </div>
-
   <label class="visibility-row">
     <input
       type="checkbox"
@@ -58,7 +30,7 @@
   </label>
 
   <p class="hint" i18n>
-    Click the blueprint to place, or click an existing feature to select it.
-    Delete removes the selected feature. Right-click to return to Select.
+    Click the blueprint to place. Click an existing feature, from any tool, to
+    select it and delete it. Right-click to return to Select.
   </p>
 </div>

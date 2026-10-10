@@ -1,0 +1,120 @@
+/* Pinned bottom-right beside the note panel (the parent stacks the two), with
+   the same themed body and a coloured title bar — amber, so a selected geyser
+   never reads as a selected note. */
+.terrain-panel {
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  font-family: var(--p-font-family, Arial, sans-serif);
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.terrain-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #a8651f;
+  color: #fff;
+  font-weight: bold;
+}
+
+.terrain-panel-close {
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.terrain-panel-close:hover {
+  color: #ffe2bd;
+}
+
+.terrain-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+}
+
+.terrain-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.terrain-panel-icon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.terrain-panel-text {
+  min-width: 0;
+}
+
+.terrain-panel-name {
+  font-weight: 600;
+}
+
+.terrain-panel-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.terrain-panel-unknown {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: #f59e0b;
+}
+
+.terrain-panel-hint {
+  margin: 6px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--p-content-border-color);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--p-text-muted-color);
+}
+
+.terrain-panel-delete {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #8a2b2b;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.terrain-panel-delete:hover {
+  background: #a83535;
+}
+
+.terrain-panel-link {
+  margin-top: 2px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--p-primary-color);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.terrain-panel-link:hover {
+  text-decoration: underline;
+}
