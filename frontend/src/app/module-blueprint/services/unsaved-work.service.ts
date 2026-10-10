@@ -87,7 +87,8 @@ export class UnsavedWorkService {
   // intact (and offered back) instead of being overwritten by whatever it
   // edits next.
   release(): void {
-    this.cancelPending();
+    // Whatever is still pending belongs to the work being left behind
+    this.flush();
     this.sessionId_ = this.newSessionId();
   }
 
@@ -221,7 +222,21 @@ function isSnapshot(value: unknown): value is UnsavedWorkSnapshot {
     typeof v["metadata"] === "object" &&
     v["mdb"] != null &&
     typeof v["mdb"] === "object" &&
-    Array.isArray((v["mdb"] as Record<string, unknown>)["blueprintItems"])
+    isItemList((v["mdb"] as Record<string, unknown>)["blueprintItems"])
+  );
+}
+
+// importFromMdb dereferences each item's id, so a slot that would make it
+// throw is treated as unreadable rather than resumed
+function isItemList(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        item != null &&
+        typeof item === "object" &&
+        typeof (item as Record<string, unknown>)["id"] === "string",
+    )
   );
 }
 

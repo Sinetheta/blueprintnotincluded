@@ -40,10 +40,12 @@ describe("UnsavedWorkService", () => {
       expect(new UnsavedWorkService().sessionId).toBe(first);
     });
 
-    it("release() gives the tab a new id so the slot is no longer owned", () => {
+    it("release() flushes what is pending, then gives the tab a new id so the slot is no longer owned", () => {
       service.store(draft());
       expect(service.owns(service.peek())).toBe(true);
+      service.schedule(() => draft({ name: "last edit" }));
       service.release();
+      expect(stored().name).toBe("last edit");
       expect(service.owns(service.peek())).toBe(false);
       expect(sessionStorage.getItem(EDITOR_SESSION_KEY)).toBe(
         service.sessionId,
@@ -89,6 +91,11 @@ describe("UnsavedWorkService", () => {
       expect(localStorage.getItem(UNSAVED_WORK_KEY)).toBeNull();
 
       localStorage.setItem(UNSAVED_WORK_KEY, JSON.stringify({ v: 2, mdb: {} }));
+      expect(service.peek()).toBeNull();
+      expect(localStorage.getItem(UNSAVED_WORK_KEY)).toBeNull();
+
+      // An item the importer would choke on is as good as unreadable
+      service.store(draft({ mdb: { blueprintItems: [null] } as any }));
       expect(service.peek()).toBeNull();
       expect(localStorage.getItem(UNSAVED_WORK_KEY)).toBeNull();
     });

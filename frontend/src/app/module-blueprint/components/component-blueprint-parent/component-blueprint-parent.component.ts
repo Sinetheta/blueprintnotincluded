@@ -391,7 +391,15 @@ export class ComponentBlueprintParentComponent
   // back here with the save dialog open.
   goToLogin() {
     this.loginPromptVisible = false;
-    this.blueprintService.stashForLogin();
+    // The in-app round trip keeps the blueprint in memory regardless; the
+    // stash is what survives a reload or a closed tab in the meantime
+    if (!this.blueprintService.stashForLogin())
+      this.messageService.add({
+        severity: "warn",
+        summary: $localize`Your work could not be kept in this browser`,
+        detail: $localize`It stays as long as this tab is open. Download it first if you want to be safe.`,
+        sticky: true,
+      });
     this.router.navigate(["/login"], {
       queryParams: { returnTo: "/editor?save=1" },
     });

@@ -516,7 +516,15 @@ describe("ComponentBlueprintParentComponent unsaved work", () => {
       expect(component.loginPromptVisible).toBe(true);
     });
 
+    it("warns, but still goes, when the work cannot be parked (slot owned elsewhere, no storage)", () => {
+      blueprintService.stashForLogin.mockReturnValue(false);
+      component.goToLogin();
+      expect(toasts()[0].severity).toBe("warn");
+      expect(router.navigate).toHaveBeenCalled();
+    });
+
     it("parks the work and sends the login page back to the editor's save", () => {
+      blueprintService.stashForLogin.mockReturnValue(true);
       component.loginPromptVisible = true;
       component.goToLogin();
       expect(component.loginPromptVisible).toBe(false);
