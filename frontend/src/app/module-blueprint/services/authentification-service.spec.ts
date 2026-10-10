@@ -324,4 +324,37 @@ describe("AuthenticationService", () => {
       expect(emitted).toBeUndefined();
     });
   });
+
+  describe("returnTo (where login lands)", () => {
+    afterEach(() => sessionStorage.clear());
+
+    it("defaults to the home page", () => {
+      expect(service.consumeReturnTo()).toBe("/");
+    });
+
+    it("remembers an in-app path and hands it over exactly once", () => {
+      service.rememberReturnTo("/editor?save=1");
+      expect(service.consumeReturnTo()).toBe("/editor?save=1");
+      expect(service.consumeReturnTo()).toBe("/");
+    });
+
+    it("forgets a stale path when the login page opens without one", () => {
+      service.rememberReturnTo("/editor");
+      service.rememberReturnTo(undefined);
+      expect(service.consumeReturnTo()).toBe("/");
+    });
+
+    it("never redirects off-site", () => {
+      for (const bad of [
+        "https://evil.example/",
+        "//evil.example/",
+        "/\\evil.example",
+        "editor",
+        "",
+      ]) {
+        service.rememberReturnTo(bad);
+        expect(service.consumeReturnTo()).toBe("/");
+      }
+    });
+  });
 });

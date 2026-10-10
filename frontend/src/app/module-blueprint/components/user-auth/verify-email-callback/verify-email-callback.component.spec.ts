@@ -19,8 +19,10 @@ describe("VerifyEmailCallbackComponent", () => {
     mockAuth = {
       verifyEmail: vi.fn(),
       saveToken: vi.fn(),
+      rememberReturnTo: vi.fn(),
+      consumeReturnTo: vi.fn(() => "/"),
     };
-    mockRouter = { navigate: vi.fn() };
+    mockRouter = { navigate: vi.fn(), navigateByUrl: vi.fn() };
     mockRoute = { snapshot: { queryParams: { userId: "u123" } } };
 
     await TestBed.configureTestingModule({
@@ -73,13 +75,13 @@ describe("VerifyEmailCallbackComponent", () => {
       expect(mockAuth.verifyEmail).not.toHaveBeenCalled();
     });
 
-    it("saves token and navigates to / on success", () => {
+    it("saves token and navigates where the auth service says (returnTo, default /) on success", () => {
       component.code = "code456";
       mockAuth.verifyEmail.mockReturnValue(of({ token: "jwt" }));
       component.submit();
       expect(mockAuth.verifyEmail).toHaveBeenCalledWith("code456", "u123");
       expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
-      expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
     });
 
     it("sets errorMessage on invalid/expired code", () => {

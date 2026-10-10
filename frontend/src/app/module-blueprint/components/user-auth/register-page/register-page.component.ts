@@ -44,7 +44,7 @@ export class RegisterPageComponent implements OnInit {
           if (res.token) {
             // Local mode: no email verification step, log straight in.
             this.authService.saveToken(res.token);
-            this.router.navigate(["/"]);
+            this.router.navigateByUrl(this.authService.consumeReturnTo());
           } else {
             this.router.navigate(["/auth/verify-email"], {
               queryParams: { userId: res.userId },

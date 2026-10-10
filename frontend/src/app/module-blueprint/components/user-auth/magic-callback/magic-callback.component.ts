@@ -31,7 +31,7 @@ export class MagicCallbackComponent implements OnInit {
     this.authService.verifyMagicCode(code, email).subscribe({
       next: (res) => {
         this.authService.saveToken(res.token);
-        this.router.navigate(["/"]);
+        this.router.navigateByUrl(this.authService.consumeReturnTo());
       },
       error: () => {
         this.loading = false;

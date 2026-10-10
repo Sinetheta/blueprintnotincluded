@@ -19,8 +19,10 @@ describe("MagicCallbackComponent", () => {
     mockAuth = {
       verifyMagicCode: vi.fn(),
       saveToken: vi.fn(),
+      rememberReturnTo: vi.fn(),
+      consumeReturnTo: vi.fn(() => "/"),
     };
-    mockRouter = { navigate: vi.fn() };
+    mockRouter = { navigate: vi.fn(), navigateByUrl: vi.fn() };
     mockRoute = {
       snapshot: { queryParams: { code: "abc123", email: "a@b.com" } },
     };
@@ -61,7 +63,7 @@ describe("MagicCallbackComponent", () => {
       expect(mockAuth.verifyMagicCode).not.toHaveBeenCalled();
     });
 
-    it("saves token and navigates to / on success", () => {
+    it("saves token and navigates where the auth service says (returnTo, default /) on success", () => {
       mockAuth.verifyMagicCode.mockReturnValue(of({ token: "magic-jwt" }));
       component.ngOnInit();
       expect(mockAuth.verifyMagicCode).toHaveBeenCalledWith(
@@ -69,7 +71,7 @@ describe("MagicCallbackComponent", () => {
         "a@b.com",
       );
       expect(mockAuth.saveToken).toHaveBeenCalledWith("magic-jwt");
-      expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
     });
 
     it("sets errorMessage on expired/used link", () => {

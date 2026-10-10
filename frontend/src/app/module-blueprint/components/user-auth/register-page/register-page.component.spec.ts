@@ -18,11 +18,13 @@ describe("RegisterPageComponent", () => {
     mockAuth = {
       registerWithPassword: vi.fn(),
       saveToken: vi.fn(),
+      rememberReturnTo: vi.fn(),
+      consumeReturnTo: vi.fn(() => "/"),
       getAuthMode: vi
         .fn()
         .mockReturnValue(of({ mode: "workos", devUsers: [] })),
     };
-    mockRouter = { navigate: vi.fn() };
+    mockRouter = { navigate: vi.fn(), navigateByUrl: vi.fn() };
 
     await TestBed.configureTestingModule({
       declarations: [RegisterPageComponent],
@@ -119,7 +121,7 @@ describe("RegisterPageComponent", () => {
       );
       component.submit();
       expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
-      expect(mockRouter.navigate).toHaveBeenCalledWith(["/"]);
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
       expect(component.loading).toBe(false);
     });
   });
