@@ -1,0 +1,60 @@
+<div class="terrain-panel" *ngIf="feature as f">
+  <div class="terrain-panel-header">
+    <span class="terrain-panel-title" i18n>Terrain Feature</span>
+    <button
+      type="button"
+      class="terrain-panel-close"
+      (click)="close()"
+      aria-label="Close"
+      i18n-aria-label
+    >
+      ×
+    </button>
+  </div>
+
+  <div class="terrain-panel-body">
+    <div class="terrain-panel-row">
+      <img class="terrain-panel-icon" [src]="iconUrl" alt="" />
+      <div class="terrain-panel-text">
+        <div class="terrain-panel-name">{{ name }}</div>
+        <div class="terrain-panel-meta">
+          <span>{{ footprintLabel }}</span>
+          <span
+            *ngIf="activeTile as t"
+            i18n-pTooltip
+            pTooltip="The cell this feature acts on"
+            >erupts at {{ t.x }}, {{ t.y }}</span
+          >
+        </div>
+        <!-- An id we do not recognise is kept, not dropped: show it raw so the
+             user can see exactly what the file contains. -->
+        <div *ngIf="isUnknown" class="terrain-panel-unknown" i18n>
+          Unrecognized feature id
+        </div>
+      </div>
+    </div>
+
+    <p class="terrain-panel-hint" i18n>
+      Geysers and vents are annotations of what the map already has — no
+      materials, no build order. Press Delete, or use the button below, to
+      remove this one.
+    </p>
+
+    <button
+      type="button"
+      class="terrain-panel-delete"
+      (click)="deleteFeature()"
+      i18n
+    >
+      Delete feature
+    </button>
+    <button
+      type="button"
+      class="terrain-panel-link"
+      (click)="openTerrainTool()"
+      i18n
+    >
+      Place more terrain features…
+    </button>
+  </div>
+</div>
