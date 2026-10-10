@@ -12,6 +12,7 @@ describe("BlueprintService", () => {
   let mockAuth: any;
   let mockLocation: any;
   let mockContentLocale: any;
+  let mockUnsavedWork: any;
 
   beforeEach(() => {
     mockHttp = { get: vi.fn(), post: vi.fn() };
@@ -20,12 +21,117 @@ describe("BlueprintService", () => {
     // English reader: appendToUrl is the identity, which is the shape every
     // existing URL assertion below was written against.
     mockContentLocale = { appendToUrl: vi.fn((url: string) => url) };
+    mockUnsavedWork = {
+      schedule: vi.fn(),
+      store: vi.fn(() => true),
+      claim: vi.fn(),
+      discard: vi.fn(),
+      discardIfOwned: vi.fn(),
+    };
     service = new BlueprintService(
       mockHttp,
       mockAuth,
       mockLocation,
       mockContentLocale,
+      mockUnsavedWork,
     );
+  });
+
+  // One fake item is enough: the slot stores the undo snapshot, and an
+  // empty snapshot is never worth keeping
+  const oneItem = () =>
+    ({
+      blueprintItems: [{ id: "Ladder", position: { x: 0, y: 0 } }],
+    }) as any;
+  const edit = () => {
+    vi.spyOn(service.blueprint, "toMdbBlueprint").mockReturnValue(oneItem());
+    service.blueprintChanged();
+  };
+
+  describe("unsaved work", () => {
+    it("is clean after a load and dirty after an edit", () => {
+      expect(service.isDirty).toBe(false);
+      edit();
+      expect(service.isDirty).toBe(true);
+      expect(mockUnsavedWork.schedule).toHaveBeenCalledTimes(1);
+      const draft = mockUnsavedWork.schedule.mock.calls[0][0]();
+      expect(draft.mdb.blueprintItems).toHaveLength(1);
+      expect(draft.name).toBe("new blueprint");
+      expect(draft.id).toBeNull();
+    });
+
+    it("undoing back to the loaded state is clean again", () => {
+      edit();
+      service.undo();
+      expect(service.isDirty).toBe(false);
+      service.redo();
+      expect(service.isDirty).toBe(true);
+    });
+
+    it("a successful save makes the current state the clean one and drops the slot", () => {
+      edit();
+      mockHttp.post.mockReturnValue(of({ id: "bp-9" }));
+      service.saveBlueprint(false).subscribe();
+      expect(service.isDirty).toBe(false);
+      expect(mockUnsavedWork.discardIfOwned).toHaveBeenCalled();
+      edit();
+      expect(service.isDirty).toBe(true);
+    });
+
+    it("New asks before discarding edits and keeps the work on No", () => {
+      edit();
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+      service.blueprint.blueprintItems.push({} as any);
+      service.newBlueprint();
+      expect(confirm).toHaveBeenCalled();
+      expect(service.isDirty).toBe(true);
+      expect(mockLocation.replaceState).not.toHaveBeenCalledWith("/editor");
+      confirm.mockReturnValue(true);
+      service.newBlueprint();
+      expect(mockUnsavedWork.discardIfOwned).toHaveBeenCalled();
+      expect(mockLocation.replaceState).toHaveBeenCalledWith("/editor");
+      confirm.mockRestore();
+    });
+
+    it("New never asks when there is nothing to lose", () => {
+      const confirm = vi.spyOn(window, "confirm");
+      service.newBlueprint();
+      expect(confirm).not.toHaveBeenCalled();
+      confirm.mockRestore();
+    });
+
+    it("stashForLogin stores even an unedited blueprint", () => {
+      vi.spyOn(service.blueprint, "toMdbBlueprint").mockReturnValue(oneItem());
+      service.resetUndoStates();
+      expect(service.isDirty).toBe(false);
+      expect(service.stashForLogin()).toBe(true);
+      expect(
+        mockUnsavedWork.store.mock.calls[0][0].mdb.blueprintItems,
+      ).toHaveLength(1);
+    });
+
+    it("resumeUnsavedWork loads the snapshot as unsaved work and claims the slot", () => {
+      const observer = { blueprintChanged: vi.fn() };
+      service.subscribeBlueprintChanged(observer);
+      service.resumeUnsavedWork({
+        v: 1,
+        sessionId: "s",
+        savedAt: 1,
+        id: "bp-3",
+        name: "resumed",
+        isPublished: false,
+        metadata: { category: "base" },
+        mdb: { blueprintItems: [] },
+      });
+      expect(service.id).toBe("bp-3");
+      expect(service.name).toBe("resumed");
+      expect(service.isPublished).toBe(false);
+      expect(service.metadata.category).toBe("base");
+      expect(observer.blueprintChanged).toHaveBeenCalledTimes(1);
+      expect(mockLocation.replaceState).toHaveBeenCalledWith("/b/bp-3");
+      expect(service.isDirty).toBe(true);
+      expect(mockUnsavedWork.claim).toHaveBeenCalled();
+    });
   });
 
   describe("savedBlueprint getter", () => {
@@ -200,9 +306,9 @@ describe("BlueprintService", () => {
       expect(service.name).toBe("new blueprint");
     });
 
-    it("calls location.replaceState('/')", () => {
+    it("moves the URL to /editor (a reload of / would land on discover)", () => {
       service.newBlueprint();
-      expect(mockLocation.replaceState).toHaveBeenCalledWith("/");
+      expect(mockLocation.replaceState).toHaveBeenCalledWith("/editor");
     });
 
     it("notifies observers with a new Blueprint instance", () => {

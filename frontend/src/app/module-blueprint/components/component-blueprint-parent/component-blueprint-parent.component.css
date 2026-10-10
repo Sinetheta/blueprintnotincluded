@@ -47,3 +47,18 @@
 .corner-panels > * {
   pointer-events: auto;
 }
+
+.recovery-toast {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+.recovery-toast-summary {
+  font-weight: 600;
+}
+.recovery-toast-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

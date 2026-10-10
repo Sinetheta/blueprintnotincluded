@@ -80,16 +80,6 @@ export class ComponentMenuComponent
     if (this.cameraService) this.cameraService.subscribeCameraChange(this);
   }
 
-  get dynamicMenuItems() {
-    const bpGroup = this.menuItems.find((i) => i.id == "blueprint");
-    const blueprintMenuItems = bpGroup?.items as MenuItem[] | undefined;
-    if (blueprintMenuItems) {
-      const saveItem = blueprintMenuItems.find((i) => i.id == "save");
-      if (saveItem) saveItem.disabled = !this.authService.isLoggedIn();
-    }
-    return this.menuItems;
-  }
-
   ngOnInit() {
     const overlayList: { id: Overlay; name: string }[] = [
       {

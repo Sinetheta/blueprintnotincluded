@@ -4,6 +4,86 @@
   [style]="{ marginTop: '40px' }"
 ></p-toast>
 
+<!-- Unsaved work recovery: one sticky toast with the actions that apply -->
+<p-toast
+  *ngIf="!forceSize"
+  key="unsaved-work"
+  position="bottom-center"
+  [preventOpenDuplicates]="true"
+>
+  <ng-template let-message pTemplate="message">
+    <div class="recovery-toast">
+      <div class="recovery-toast-text">
+        <div class="recovery-toast-summary">{{ message.summary }}</div>
+        <div>{{ message.detail }}</div>
+      </div>
+      <div class="recovery-toast-actions">
+        <button
+          *ngIf="message.data?.actions?.includes('resume')"
+          type="button"
+          pButton
+          class="p-button-sm"
+          label="Resume"
+          i18n-label
+          (click)="recoveryAction('resume')"
+        ></button>
+        <button
+          *ngIf="message.data?.actions?.includes('newTab')"
+          type="button"
+          pButton
+          class="p-button-sm"
+          label="Open in new tab"
+          i18n-label
+          (click)="recoveryAction('newTab')"
+        ></button>
+        <button
+          *ngIf="message.data?.actions?.includes('discard')"
+          type="button"
+          pButton
+          class="p-button-sm p-button-text"
+          label="Discard"
+          i18n-label
+          (click)="recoveryAction('discard')"
+        ></button>
+      </div>
+    </div>
+  </ng-template>
+</p-toast>
+
+<!-- Save while logged out: the work is kept, go log in and come back -->
+<p-dialog
+  *ngIf="!forceSize"
+  header="Log in to save"
+  i18n-header
+  [(visible)]="loginPromptVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '26rem' }"
+>
+  <p i18n>
+    Saving a blueprint to the site needs an account. Your work is kept in this
+    browser and will be here when you come back.
+  </p>
+  <ng-template pTemplate="footer">
+    <button
+      type="button"
+      pButton
+      class="p-button-text"
+      label="Cancel"
+      i18n-label
+      (click)="loginPromptVisible = false"
+    ></button>
+    <button
+      type="button"
+      pButton
+      label="Log in"
+      i18n-label
+      (click)="goToLogin()"
+    ></button>
+  </ng-template>
+</p-dialog>
+
 <app-component-canvas #canvas [forceSize]="forceSize" [forcedSize]="forcedSize">
 </app-component-canvas>
 <div *ngIf="!forceSize" class="outer">

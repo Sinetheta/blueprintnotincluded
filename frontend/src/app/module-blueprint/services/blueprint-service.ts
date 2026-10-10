@@ -3,6 +3,11 @@ import { Location } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { AuthenticationService } from "./authentification-service";
 import { ContentLocaleService } from "./content-locale.service";
+import {
+  UnsavedWorkDraft,
+  UnsavedWorkService,
+  UnsavedWorkSnapshot,
+} from "./unsaved-work.service";
 import { firstValueFrom } from "rxjs";
 import { catchError, map, switchMap, tap } from "rxjs/operators";
 import {
@@ -84,6 +89,7 @@ export class BlueprintService implements IObsBlueprintChange {
     private authService: AuthenticationService,
     private location: Location,
     private contentLocale: ContentLocaleService,
+    private unsavedWork: UnsavedWorkService,
   ) {
     this.blueprint = new Blueprint();
 
@@ -126,6 +132,7 @@ export class BlueprintService implements IObsBlueprintChange {
 
   openBlueprintFromUpload(fileType: BlueprintFileType, fileList: FileList) {
     if (fileList.length > 0) {
+      if (!this.confirmDiscardUnsavedWork()) return;
       this.reset();
 
       if (fileType == BlueprintFileType.YAML)
@@ -219,6 +226,7 @@ export class BlueprintService implements IObsBlueprintChange {
     // Validate before touching any state: an invalid paste must leave the
     // currently open blueprint and its metadata untouched
     await BlueprintService.parseBniText(text);
+    if (!this.confirmDiscardUnsavedWork()) return;
     this.reset();
     await this.loadJsonBlueprint(text);
     this.resetUndoStates();
@@ -248,15 +256,90 @@ export class BlueprintService implements IObsBlueprintChange {
   }
 
   newBlueprint() {
+    if (!this.confirmDiscardUnsavedWork()) return;
     this.name = "new blueprint";
     this.reset();
     const newBlueprint = new Blueprint();
-    this.location.replaceState("/");
+    // "/editor", not "/": a reload of "/" lands on the discover page, which
+    // would strand the recovery slot behind a page that never offers it.
+    this.location.replaceState("/editor");
     this.observersBlueprintChanged.map((observer) => {
       observer.blueprintChanged(newBlueprint);
     });
     this.resetUndoStates();
     // TODO firing the observable and then restting the states is duplicated. fix this
+  }
+
+  // ─── Unsaved work (recovery slot) ───────────────────────────────────────
+
+  // Edits since the open blueprint last matched the server (or the file it
+  // was imported from): the undo index has moved away from the clean mark.
+  // -1 means "never clean" — resumed work is unsaved by definition.
+  private cleanUndoIndex = 0;
+  get isDirty(): boolean {
+    return this.undoIndex !== this.cleanUndoIndex;
+  }
+
+  // The one explicit "are you sure" in the editor: New, Upload and paste
+  // replace what is on the canvas in place, so the user is asked before
+  // unsaved work goes. Confirming also releases the recovery slot, which
+  // otherwise would offer the discarded work back on the next load.
+  private confirmDiscardUnsavedWork(): boolean {
+    if (!this.isDirty || this.blueprint.blueprintItems.length === 0)
+      return true;
+    const confirmed = window.confirm(
+      $localize`Discard your unsaved work? This blueprint has changes that have not been saved.`,
+    );
+    if (confirmed) this.unsavedWork.discardIfOwned();
+    return confirmed;
+  }
+
+  private unsavedWorkDraft(): UnsavedWorkDraft | null {
+    const mdb = this.undoStates[this.undoIndex];
+    if (mdb == null || mdb.blueprintItems.length === 0) return null;
+    return {
+      id: this.id,
+      name: this.name ?? "new blueprint",
+      isPublished: this.isPublished,
+      metadata: { ...this.metadata },
+      mdb,
+    };
+  }
+
+  // Called on every change: the undo snapshot just taken is what gets
+  // stored, so persistence costs one JSON.stringify per debounce window.
+  private persistUnsavedWork() {
+    if (!this.isDirty) return;
+    this.unsavedWork.schedule(() => this.unsavedWorkDraft());
+  }
+
+  // Store the open blueprint right now regardless of dirtiness — before the
+  // editor hands off to the login page, an unedited import or fork is just
+  // as lost as an edited one. Honours slot ownership like any other write.
+  stashForLogin(): boolean {
+    const draft = this.unsavedWorkDraft();
+    if (draft == null) return false;
+    return this.unsavedWork.store(draft);
+  }
+
+  // Load a recovery snapshot as the open blueprint. It is unsaved from the
+  // start (clean mark -1) so it keeps being persisted and the save dialog
+  // treats it as the edit it is.
+  resumeUnsavedWork(snapshot: UnsavedWorkSnapshot) {
+    this.reset();
+    this.id = snapshot.id;
+    this.name = snapshot.name;
+    this.isPublished = snapshot.isPublished;
+    this.metadata = { ...snapshot.metadata };
+    const blueprint = new Blueprint();
+    blueprint.importFromMdb(snapshot.mdb);
+    this.location.replaceState(this.id != null ? `/b/${this.id}` : "/editor");
+    this.observersBlueprintChanged.map((observer) => {
+      observer.blueprintChanged(blueprint);
+    });
+    this.resetUndoStates();
+    this.cleanUndoIndex = -1;
+    this.unsavedWork.claim();
   }
 
   reset() {
@@ -338,12 +421,15 @@ export class BlueprintService implements IObsBlueprintChange {
     this.blueprint.destroyAndCopyItems(newBlueprint);
     this.blueprint.refreshOverlayInfo();
     this.suppressChanges = false;
+    // Undo/redo moves the open state without a change event
+    this.persistUnsavedWork();
   }
 
   resetUndoStates() {
     this.suppressChanges = false;
     this.undoStates = [];
     this.undoIndex = 0;
+    this.cleanUndoIndex = 0;
 
     this.blueprintChanged();
   }
@@ -367,9 +453,15 @@ export class BlueprintService implements IObsBlueprintChange {
     }
     else */ this.undoStates.push(newState);
 
-    while (this.undoStates.length > 50) this.undoStates.splice(0, 1);
+    while (this.undoStates.length > 50) {
+      this.undoStates.splice(0, 1);
+      // The clean state fell off the stack: nothing on it is clean any more
+      this.cleanUndoIndex =
+        this.cleanUndoIndex > 0 ? this.cleanUndoIndex - 1 : -1;
+    }
 
     this.undoIndex = this.undoStates.length - 1;
+    this.persistUnsavedWork();
   }
 
   hashMdb(mdb: MdbBlueprint) {
@@ -989,6 +1081,9 @@ export class BlueprintService implements IObsBlueprintChange {
             this.serverRawSourceFormat = validRaw?.format ?? null;
             this.serverRawSourceMdbJson =
               validRaw != null ? this.rawSourceMdbJson : null;
+            // The server has this state now: nothing left to recover
+            this.cleanUndoIndex = this.undoIndex;
+            this.unsavedWork.discardIfOwned();
           }
           return response;
         }),
