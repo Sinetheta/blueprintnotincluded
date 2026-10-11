@@ -381,7 +381,10 @@ scenery under the blueprint, with the game's landed backdrop, so a visitor sees 
   resort, centring on the bounding box (`anchor: 'bounds'`), moves every time a brick is
   placed, which is exactly the hopping hull the first QA pass found. A single station still
   wins over a stored origin; the origin a station gave is stored too, so the hull stays put
-  if the station is later removed. A future nudge UI edits this field.
+  if the station is later removed. An *empty* blueprint has nothing to centre on, so the
+  service centres the hull on the middle of the editor viewport (`viewportCentreCell`) — the
+  world origin, with the hull spanning negative cells, landed wherever the camera was. A
+  future nudge UI edits this field.
 - **Blown-out walls** — the capture already says which hull pieces were gone: the mod writes a
   dig command for every non-solid cell of the selection, so a dig on a wall or window cell is a
   hole the player made (cheats, or escaping the hull). `placeRocketInterior` lists those as

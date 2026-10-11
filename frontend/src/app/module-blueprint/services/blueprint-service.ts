@@ -16,7 +16,11 @@ import {
   RawSourceFormat,
   RocketInteriorCell,
   RocketInteriorModule,
+  CameraService,
+  isBlueprintEmpty,
   placeRocketInterior,
+  rocketInteriorLayout,
+  rocketInteriorOriginCentredOnPoint,
   Blueprint,
   IObsBlueprintChange,
   BlueprintItem,
@@ -1063,15 +1067,39 @@ export class BlueprintService implements IObsBlueprintChange {
   private resolveRocketInteriorOrigin(
     module: RocketInteriorModule,
   ): RocketInteriorCell | null {
-    // oniItemsMap may be null in unit tests before the database loads; the
-    // placement needs it for the station lookup only through the items.
     if (this.blueprint == null) return null;
+    // An empty blueprint has nothing to centre on, so the hull goes in the
+    // middle of the view the author is looking at — not the world origin,
+    // which, with the hull spanning negative cells, lands wherever the camera
+    // happens to be and read as "stuck in the top-left corner".
+    if (isBlueprintEmpty(this.blueprint)) {
+      const centre = BlueprintService.viewportCentreCell();
+      if (centre != null)
+        return rocketInteriorOriginCentredOnPoint(
+          rocketInteriorLayout(module),
+          centre,
+        );
+    }
     const placement = placeRocketInterior(
       module,
       this.blueprint,
       this.metadata.rocketInteriorOrigin ?? null,
     );
     return { x: placement.origin.x, y: placement.origin.y };
+  }
+
+  // The world point (cell units) at the middle of the editor canvas, or null
+  // without a live camera or window (unit tests, server). Inverts the
+  // drawPixi mapping: sx = (px + offset.x) * zoom, sy = (offset.y + 1 - py) * zoom.
+  private static viewportCentreCell(): { x: number; y: number } | null {
+    const camera = CameraService.cameraService;
+    if (camera == null || typeof window === "undefined") return null;
+    const zoom = camera.currentZoom;
+    if (!(zoom > 0)) return null;
+    return {
+      x: window.innerWidth / 2 / zoom - camera.cameraOffset.x,
+      y: camera.cameraOffset.y + 1 - window.innerHeight / 2 / zoom,
+    };
   }
 
   // The server-derived `requiredDlcs` of the blueprint last opened from the

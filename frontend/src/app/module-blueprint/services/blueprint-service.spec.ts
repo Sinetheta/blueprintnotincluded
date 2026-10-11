@@ -1,6 +1,8 @@
 import { BlueprintService, BlueprintFileType } from "./blueprint-service";
 import {
   Blueprint,
+  CameraService,
+  Vector2,
   decodeBniShareString,
   encodeBniShareString,
 } from "../../../../../lib/index";
@@ -311,6 +313,31 @@ describe("BlueprintService", () => {
       expect(service.hashMdb(mdb1 as any)).not.toBe(
         service.hashMdb(mdb2 as any),
       );
+    });
+  });
+
+  describe("setRocketInterior()", () => {
+    it("centres an empty blueprint's hull on the viewport, not the world origin", () => {
+      // The static camera maps world x = sx/zoom - offset.x and
+      // y = offset.y + 1 - sy/zoom; the small hull's centre point is (1, 1),
+      // so the origin is the screen centre's cell less (1, 1), rounded.
+      const camera = new CameraService(null);
+      camera.makeCurrent();
+      camera.setHardZoom(32);
+      camera.cameraOffset = new Vector2(6, 7);
+      const centreX = window.innerWidth / 2 / 32 - 6;
+      const centreY = 7 + 1 - window.innerHeight / 2 / 32;
+
+      service.newBlueprint();
+      service.setRocketInterior("small");
+      expect(service.metadata.rocketInterior).toBe("small");
+      expect(service.metadata.rocketInteriorOrigin).toEqual({
+        x: Math.round(centreX - 1) || 0,
+        y: Math.round(centreY - 1) || 0,
+      });
+
+      service.setRocketInterior(null);
+      expect(service.metadata.rocketInteriorOrigin).toBeNull();
     });
   });
 

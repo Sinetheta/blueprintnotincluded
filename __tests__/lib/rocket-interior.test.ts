@@ -19,6 +19,8 @@ import {
   placeRocketInterior,
   rocketInteriorLayout,
   rocketInteriorOriginCentred,
+  rocketInteriorOriginCentredOnPoint,
+  isBlueprintEmpty,
   rocketInteriorOriginFromStation,
   rocketInteriorPlacementKey,
   rocketInteriorWorldBounds,
@@ -266,6 +268,28 @@ describe('Rocket interior', function () {
       expect(isRocketInteriorCell({ x: 1 })).to.equal(false);
       expect(isRocketInteriorCell(null)).to.equal(false);
       expect(isRocketInteriorCell('4,3')).to.equal(false);
+    });
+
+    it('centres on a world point, for the viewport an empty blueprint is looked at through', () => {
+      const small = rocketInteriorLayout('small');
+      // The small hull is cells -3..4 both ways, centre point (1, 1): to put
+      // that on (10.5, 20.5) the origin moves by (9.5, 19.5), rounded.
+      expect(rocketInteriorOriginCentredOnPoint(small, { x: 10.5, y: 20.5 })).to.deep.equal({
+        x: 10,
+        y: 20,
+      });
+      expect(rocketInteriorOriginCentredOnPoint(small, { x: 1, y: 1 })).to.deep.equal({
+        x: 0,
+        y: 0,
+      });
+      expect(rocketInteriorOriginCentredOnPoint(small, { x: 0.6, y: 0.6 })).to.deep.equal({
+        x: 0,
+        y: 0,
+      });
+      expect(isBlueprintEmpty(new Blueprint())).to.equal(true);
+      const full = new Blueprint();
+      full.importFromBni(capture);
+      expect(isBlueprintEmpty(full)).to.equal(false);
     });
 
     it('sits on the origin for an empty blueprint', () => {

@@ -66,6 +66,11 @@ export declare function rocketInteriorOriginCentred(layout: RocketInteriorLayout
     x: number;
     y: number;
 }): RocketInteriorCell;
+export declare function rocketInteriorOriginCentredOnPoint(layout: RocketInteriorLayout, point: {
+    x: number;
+    y: number;
+}): RocketInteriorCell;
+export declare function isBlueprintEmpty(blueprint: Blueprint): boolean;
 export declare function placeRocketInterior(module: RocketInteriorModule, blueprint: Blueprint, storedOrigin?: RocketInteriorCell | null): RocketInteriorPlacement;
 export declare function rocketInteriorPlacementKey(placement: RocketInteriorPlacement): string;
 export declare function rocketInteriorWorldPieces(placement: RocketInteriorPlacement): RocketInteriorPiece[];
