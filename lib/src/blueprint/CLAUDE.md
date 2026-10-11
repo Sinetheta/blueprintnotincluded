@@ -122,10 +122,11 @@ in the exported `buildings` array (a geyser written as a building resolves to a 
 - **Unknown ids survive**: single-cell footprint, placeholder glyph, raw id shown in the panel.
 - **Known gap (shared with Planning Tool shapes)**: the durable server-side preview
   (`app/api/services/preview-render-worker.ts`) now draws `blueprintItems`, terrain features
-  and world notes (z-order: buildings, then terrain, then notes on top), using the same
-  footprint/icon geometry as the editor overlay (`lib/src/drawing/terrain-markers.ts`) with no
-  selection state. Planning Tool shapes are still missing from this render — only the live
-  canvas and the client-side thumbnail/export snapshots draw those. The worker also still
+  and world notes (z-order: dig cells, buildings, then terrain, then notes on top), using the
+  same footprint/icon geometry as the editor overlay (`lib/src/drawing/terrain-markers.ts`)
+  with no selection state. Planning Tool shapes are still missing from this render — and,
+  despite the comment in `drawAll()`, from the client-side thumbnail and image export too:
+  only the live canvas draws them. The worker also still
   rejects a blueprint with zero `blueprintItems` (even if it has terrain), so an
   annotation-only blueprint gets no stored preview.
 
@@ -390,8 +391,9 @@ scenery under the blueprint, with the game's landed backdrop, so a visitor sees 
   hole the player made (cheats, or escaping the hull). `placeRocketInterior` lists those as
   `removed` and the scenery leaves them out, with the neighbouring tiles un-joining. Dig
   commands only cover the selection rectangle, so a wall outside it is unknown and stays. A
-  blueprint built from scratch on the site has no dig commands; a manual "Edit hull" toggle
-  (removed template cells stored beside the origin) is the follow-up for that case.
+  blueprint built on the site opens a wall the same way: paint a dig on it with the Dig tool
+  (see "Dig tool and overlay"). The placement is recomputed every frame and keyed on the
+  removed cells, so the wall goes as the cell is painted and comes back on erase or undo.
 - **Window art** — the rocket window's own sprite is a small pane that joins only to other
   rocket windows, so a lone window between walls read as an undersized square. Hull pieces
   draw as `ROCKET_INTERIOR_ART` says (windows as the plain `GlassTile`); the layout and the
@@ -429,14 +431,54 @@ upload is served byte-exact — so this is about blueprints edited or authored o
   on export, and deleting the shape takes its dig with it. Export order is the file's own
   digs, then shape cells not already present. Omitted from the MDB shape when empty, so
   stored fingerprints are unchanged. They are re-origined by `bpv2-sanitize` with everything
-  else. **Not drawn or editable yet**: an imported blueprint's digs ride along unseen, which
-  also means they stay behind if its buildings are deleted.
+  else. Drawn and edited since the Dig tool (next section); deleting an imported blueprint's
+  buildings still leaves its digs behind, now visibly, for the author to erase.
 - **`userdesc`** — `toBniBlueprint(friendlyname, userdesc?)`. The site keeps a description
   beside the blueprint data rather than in it, so the caller passes it: the editor's
   `metadata.description`, the details page's and the mod endpoint's stored `description`.
   Written only when non-blank (the mod omits empty keys), verbatim, and it bumps
   `blueprintVersion` to 3 like every other v3 key. An imported `userdesc` already prefilled
   that description, so this closes the loop.
+
+### Dig tool and overlay
+
+`ToolType.dig` (`frontend/.../common/tools/dig-tool.ts`, panel `components/side-bar/dig-tool/`,
+toolbar button with the game's own `digIcon.png`, Tools menu, `G` — the game's Dig key, so it
+is bound by default where the other click-to-edit tools are not). Modelled on the Planning
+Tool: click or drag paints cells into `Blueprint.digCommands`, an Erase toggle removes them,
+right-click or Escape returns to Select.
+
+- **One undo step per gesture.** Cells change in place as the pointer moves (every renderer
+  reads `digCommands` each frame); `emitBlueprintChanged` fires once, on `dragStop` — which
+  every pointer-up produces, a plain click included, as does the pointer leaving the canvas —
+  or on `switchFrom` mid-stroke. A drag fills the cells between two pointer samples
+  (Bresenham), so a fast stroke has no gaps. One entry per cell.
+- **A Planning Tool shape's cell is refused** (the cursor turns red). `toBniBlueprint` already
+  writes a dig for every shape cell and `realDigCommands` hands any dig there back to the shape
+  on import, so a dig of its own would be redundant and then silently gone. The reverse — a
+  shape painted over an existing dig — is the Planning Tool's business and still collapses
+  the same way; the export is unchanged by it, only a later shape deletion takes the dig.
+- **Look** (`lib/src/drawing/dig-markers.ts`, shared by all three renderers): a faint amber
+  fill, `/` hatching whose stripes continue across neighbouring cells, and one solid outline
+  per dug region (cell sides with no dug neighbour), so a capture's hundreds of digs read as an
+  area, not a second grid. Distinct from Planning shapes (solid coloured shapes) and terrain
+  (dashed cyan).
+- **Under the buildings at rest, on top while editing.** A capture carries a dig on every empty
+  cell of its selection, so over the art the hatch would cover every captured blueprint. At
+  rest (editor, thumbnail, image export, server preview) the cells sit between the rocket hull
+  (zIndex -10000) and the buildings (`DrawDigOverlay.UNDER_BUILDINGS_Z`, -5000) at
+  `DIG_AT_REST_ALPHA`; while the Dig tool is active the editor draws them at full strength on
+  the stage above the buildings instead, so a dig under a building can be seen and erased. The
+  worker composites them in a pass of their own after the hull and before the first building
+  batch. `PREVIEW_RENDER_VERSION` went to 3 for this, since every stored capture preview lacks
+  them.
+- **"Show dig cells"** in the panel is view-only, live-editor-only, like the terrain and note
+  toggles; switching to the tool or painting turns it back on.
+- **Framing**: `getBoundingBox` includes dig cells (and `isBlueprintEmpty` counts them), so a
+  dig-only region frames, and a capture now frames its whole selection rectangle rather than
+  just its buildings.
+- The editor overlay caches its geometry by zoom + cell signature and only moves the Graphics
+  on pan: a large capture can carry thousands of digs.
 
 ### Range-carrying settings (Prioritizable, Door, Valve, LimitValve, capacity, name)
 
