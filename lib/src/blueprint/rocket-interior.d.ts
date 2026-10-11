@@ -49,6 +49,7 @@ export interface RocketInteriorPlacement {
     layout: RocketInteriorLayout;
     origin: RocketInteriorCell;
     anchor: RocketInteriorAnchor;
+    removed: RocketInteriorCell[];
 }
 export interface RocketInteriorAnchorItem {
     id: string;

@@ -46,6 +46,10 @@ Shipped: the habitat facade (hull + landed backdrop) behind a blueprint whose re
   match a blueprint's dig commands against the layout's `room` cells around the station
   (the small nose cone narrows, the medium does not) and fill `rocketInterior` where it is
   null/absent, as a batch like `derive-rooms`. Never overwrite a stored module.
+- **Manual "Edit hull" toggle** — a capture's dig commands already remove blown-out walls
+  from the scenery, but a blueprint built on the site has none. If someone needs a hole in a
+  hull they built here: a Rocket interior menu entry where clicking a hull piece hides it,
+  stored as removed template cells beside `rocketInteriorOrigin`. Author edit, not visitor.
 - **In-flight / night / orbit backdrops** — the handoff carries the art; only the landed day
   set is wired. Which one the game shows when was not established.
 - **Interior wall panelling** — the game draws a patterned panel texture inside the hull; it

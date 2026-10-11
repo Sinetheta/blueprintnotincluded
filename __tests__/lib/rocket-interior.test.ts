@@ -280,8 +280,38 @@ describe('Rocket interior', function () {
       const blueprint = new Blueprint();
       blueprint.importFromBni(capture);
       expect(rocketInteriorPlacementKey(placeRocketInterior('small', blueprint))).to.equal(
-        'small:4,3'
+        'small:4,3:'
       );
+    });
+
+    it('drops the hull pieces the blueprint dug out', () => {
+      // The real capture digs nothing on the hull (checked above): every piece
+      // stands. Blow out the bottom-left corner wall at world (1, 0) and the
+      // window at (1, 3), plus a dig on a room cell, which is not a piece.
+      const blueprint = new Blueprint();
+      blueprint.importFromBni({
+        ...capture,
+        digcommands: [...capture.digcommands!, { x: 1, y: 3 }, { x: 1, y: 0 }, { x: 5, y: 3 }],
+      });
+      const placement = placeRocketInterior('small', blueprint);
+      expect(placement.anchor).to.equal('station');
+      expect(placement.removed).to.deep.equal([
+        { x: 1, y: 0 },
+        { x: 1, y: 3 },
+      ]);
+      const pieces = rocketInteriorWorldPieces(placement);
+      expect(pieces).to.have.length(placement.layout.pieces.length - 2);
+      expect(pieces.some(p => p.x === 1 && p.y === 0)).to.equal(false);
+      expect(pieces.some(p => p.x === 1 && p.y === 3)).to.equal(false);
+      // Distinct scenery, so a per-frame renderer rebuilds.
+      expect(rocketInteriorPlacementKey(placement)).to.equal('small:4,3:1,0;1,3');
+      const scenery = buildRocketInteriorScenery(placement);
+      expect(scenery.blueprintItems).to.have.length(pieces.length);
+      // The neighbouring wall above the hole no longer joins downward.
+      const above = scenery.blueprintItems.find(
+        i => i.id === 'RocketWallTile' && i.position.x === 1 && i.position.y === 1
+      ) as any;
+      expect(above.tileConnections & 8).to.equal(0);
     });
 
     it('translates the door and widens a bounding box to the hull', () => {
