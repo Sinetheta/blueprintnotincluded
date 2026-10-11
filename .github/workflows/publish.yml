@@ -112,20 +112,20 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          
-      - name: Log in to DO Container Registry
-        run: doctl registry login --expiry-seconds 3600
-        
+
       # :latest is staging's image. Production is promoted from it by the
       # "Promote to production" workflow, which names the manifest :prod.
       - name: Tag image
         run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
-      # The registry is read-only while a garbage collection runs (one started
-      # by the previous deploy, or by a promotion), and a collection first
-      # waits up to 15 minutes for outstanding write credentials to expire
-      # before it does its (quick) work. A push into that window fails, so
-      # wait it out rather than fail the deploy.
+      # The registry is read-only while a garbage collection runs (the daily
+      # registry-gc.yml, at a quiet hour), and a collection first waits up to
+      # 15 minutes for outstanding write credentials to expire before it does
+      # its (quick) work. A push into that window fails, so wait it out
+      # rather than fail the deploy. This only needs the API token, so it
+      # comes before the registry login: a write credential minted now would
+      # be one more for the collection to wait on, and could expire before
+      # the push.
       - name: Wait for any running garbage collection
         run: |
           # The API answers 404 when nothing is running, which doctl reports
@@ -148,24 +148,13 @@ jobs:
           echo "::error::Could not confirm the registry is writable after 20 minutes; re-run this workflow later."
           exit 1
 
+      # The push takes a few minutes; the token's lifetime is also how long a
+      # garbage collection started afterwards waits before it can run (capped
+      # at 15 minutes), which is why the collection is scheduled for hours
+      # later and not started here. Untagged manifests this push leaves
+      # behind are collected by registry-gc.yml.
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 3600
+
       - name: Push image to DO Container Registry
         run: docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
-
-      # DOCR never frees space on its own: every push of :latest leaves the
-      # previous manifest behind, untagged but still billed, and garbage
-      # collection only runs when something starts it. Everything worth
-      # keeping has a tag (latest, prod, prod-previous), so collecting the
-      # untagged manifests is exactly "delete what we can't afford to keep".
-      # The image is already pushed by now and the registry is merely
-      # read-only while a collection runs, so this must never fail a deploy.
-      - name: Garbage-collect untagged manifests
-        continue-on-error: true
-        run: |
-          if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1) && [ -n "$active" ]; then
-            echo "A garbage collection is already running; it will pick up this deploy's leftovers next time."
-            exit 0
-          elif [ -n "$active" ] && ! echo "$active" | grep -qiE '404|not found'; then
-            echo "::warning::Could not query garbage collection: $active"
-            exit 1
-          fi
-          doctl registry garbage-collection start --include-untagged-manifests --force
