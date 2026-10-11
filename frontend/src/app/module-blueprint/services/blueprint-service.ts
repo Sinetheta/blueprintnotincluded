@@ -15,8 +15,13 @@ import {
   encodeBniShareString,
   RawSourceFormat,
   RocketInteriorCell,
+  RocketInteriorFit,
   RocketInteriorModule,
   CameraService,
+  fitRocketInterior,
+  fitRocketInteriorModule,
+  rocketInteriorOriginFromStation,
+  OniItem,
   isBlueprintEmpty,
   placeRocketInterior,
   rocketInteriorLayout,
@@ -358,6 +363,7 @@ export class BlueprintService implements IObsBlueprintChange {
     this.rating = 0;
     this.nbRatings = 0;
     this.metadata = {};
+    this.stationOrigin = null;
     this.requiredDlcs = null;
     this.clearRawSource();
   }
@@ -444,6 +450,9 @@ export class BlueprintService implements IObsBlueprintChange {
   itemDestroyed() {}
   itemAdded(_blueprintItem: BlueprintItem) {}
   blueprintChanged() {
+    // Before the undo/redo early return: undoing a station move moves the hull back too
+    this.followStation();
+
     // We don't want to add a state if the changes come from the undo / redo action
     if (this.suppressChanges) return;
 
@@ -544,6 +553,8 @@ export class BlueprintService implements IObsBlueprintChange {
               rocketInterior: response.rocketInterior ?? null,
               rocketInteriorOrigin: response.rocketInteriorOrigin ?? null,
             };
+            // Measured afresh against this blueprint on its first change event
+            this.stationOrigin = null;
             this.requiredDlcs = response.requiredDlcs ?? [];
             blueprint.importFromMdb(response.data);
             // Serialize the opened content through the same serializer the
@@ -1056,18 +1067,78 @@ export class BlueprintService implements IObsBlueprintChange {
   // and the hull would hop each time a brick was placed. Resolved from the
   // blueprint as it is when the module is picked; the origin a station gives
   // is stored too, so the hull stays put even if the station is later removed.
+  // A stored origin outranks the station when drawing (placeRocketInterior),
+  // so followStation keeps a station-given origin moving with its station.
+  // `origin` is for a caller that already knows it (the fitter's suggestion).
   readonly rocketInteriorChanged$ = new Subject<RocketInteriorModule | null>();
-  setRocketInterior(module: RocketInteriorModule | null) {
+  setRocketInterior(
+    module: RocketInteriorModule | null,
+    origin?: RocketInteriorCell,
+  ) {
     this.metadata.rocketInterior = module;
     this.metadata.rocketInteriorOrigin =
-      module != null ? this.resolveRocketInteriorOrigin(module) : null;
+      module == null
+        ? null
+        : origin != null
+          ? { x: origin.x, y: origin.y }
+          : this.resolveRocketInteriorOrigin(module);
+    this.stationOrigin = this.currentStationOrigin();
     this.rocketInteriorChanged$.next(module);
+  }
+
+  // The module and hull origin the blueprint itself makes plain (a capture, a
+  // hand-drawn hull, or a station with everything around it), or null. Offered
+  // on a blueprint's first save; never applied over a choice already made.
+  suggestRocketInterior(): RocketInteriorFit | null {
+    if (this.blueprint == null || OniItem.oniItemsMap == null) return null;
+    return fitRocketInterior(
+      this.blueprint.blueprintItems,
+      this.blueprint.digCommands,
+    );
+  }
+
+  // Where the station put the hull at the last change, for followStation.
+  private stationOrigin: RocketInteriorCell | null = null;
+
+  private currentStationOrigin(): RocketInteriorCell | null {
+    const module = this.metadata.rocketInterior;
+    if (module == null || this.blueprint == null) return null;
+    return rocketInteriorOriginFromStation(
+      rocketInteriorLayout(module),
+      this.blueprint.blueprintItems,
+    );
+  }
+
+  // The stored origin wins over the station when the hull is drawn, which is
+  // what keeps a hand-drawn hull put while its station sits wherever the
+  // author left it. But a stored origin that the station gave should keep
+  // following the station, as it did when the station won outright: moving a
+  // capture's station (or undoing a move) takes the hull with it.
+  private followStation() {
+    const previous = this.stationOrigin;
+    const current = this.currentStationOrigin();
+    this.stationOrigin = current;
+    const stored = this.metadata.rocketInteriorOrigin;
+    if (previous == null || current == null || stored == null) return;
+    if (stored.x !== previous.x || stored.y !== previous.y) return;
+    if (current.x === previous.x && current.y === previous.y) return;
+    this.metadata.rocketInteriorOrigin = { x: current.x, y: current.y };
   }
 
   private resolveRocketInteriorOrigin(
     module: RocketInteriorModule,
   ): RocketInteriorCell | null {
     if (this.blueprint == null) return null;
+    // A hull the author drew out of tiles: put the template on it. Most rocket
+    // blueprints stored before the facade existed are drawn like this, with
+    // the station wherever the author liked.
+    if (OniItem.oniItemsMap != null) {
+      const drawn = fitRocketInteriorModule(
+        module,
+        this.blueprint.blueprintItems,
+      );
+      if (drawn != null) return drawn;
+    }
     // An empty blueprint has nothing to centre on, so the hull goes in the
     // middle of the view the author is looking at — not the world origin,
     // which, with the hull spanning negative cells, lands wherever the camera
@@ -1080,6 +1151,11 @@ export class BlueprintService implements IObsBlueprintChange {
           centre,
         );
     }
+    const fromStation = rocketInteriorOriginFromStation(
+      rocketInteriorLayout(module),
+      this.blueprint.blueprintItems,
+    );
+    if (fromStation != null) return fromStation;
     const placement = placeRocketInterior(
       module,
       this.blueprint,
