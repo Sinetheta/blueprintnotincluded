@@ -316,10 +316,12 @@ export class ComponentSaveDialogComponent {
         });
       }
       // First save of a rocket interior: offer the habitat the blueprint
-      // plainly fits, the way the category is offered. Only over "none" — a
-      // module already picked from the Display menu stays — and the setter
-      // puts the hull up behind the dialog, so the author sees what is offered.
-      if (this.blueprintService.metadata.rocketInterior == null) {
+      // plainly fits, the way the category is offered. Only while nothing has
+      // been chosen — the key is absent until the Display menu (or an earlier
+      // offer) sets it, so a module picked there stays, and so does an
+      // explicit None — and the setter puts the hull up behind the dialog, so
+      // the author sees what is offered.
+      if (!("rocketInterior" in this.blueprintService.metadata)) {
         const fit = this.blueprintService.suggestRocketInterior();
         if (fit != null) {
           this.blueprintService.setRocketInterior(fit.module, fit.origin);
