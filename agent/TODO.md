@@ -39,13 +39,11 @@ it — it was once found inexplicably empty and had to be restored from a dump.
 ## Rocket interiors — follow-ups
 
 Shipped: the habitat facade (hull + landed backdrop) behind a blueprint whose record carries
-`rocketInterior` (`lib/src/blueprint/CLAUDE.md` → "Rocket interiors"). Look-and-feel knobs:
+`rocketInterior`, the `rocketInterior` category, and the fitter that fills the choice in for
+stored blueprints (`npm run derive-rocket-interiors`) — `lib/src/blueprint/CLAUDE.md` →
+"Rocket interiors". Look-and-feel knobs:
 `lib/src/drawing/rocket-backdrop.ts`.
 
-- **Auto-detect the module** — today the author picks none/small/medium. A detector can
-  match a blueprint's dig commands against the layout's `room` cells around the station
-  (the small nose cone narrows, the medium does not) and fill `rocketInterior` where it is
-  null/absent, as a batch like `derive-rooms`. Never overwrite a stored module.
 - **In-flight / night / orbit backdrops** — the handoff carries the art; only the landed day
   set is wired. Which one the game shows when was not established.
 - **Interior wall panelling** — the game draws a patterned panel texture inside the hull; it
