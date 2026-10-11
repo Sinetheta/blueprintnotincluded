@@ -8,12 +8,13 @@ import {
   UnsavedWorkService,
   UnsavedWorkSnapshot,
 } from "./unsaved-work.service";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, Subject } from "rxjs";
 import { catchError, map, switchMap, tap } from "rxjs/operators";
 import {
   decodeBniShareString,
   encodeBniShareString,
   RawSourceFormat,
+  RocketInteriorModule,
   Blueprint,
   IObsBlueprintChange,
   BlueprintItem,
@@ -534,6 +535,7 @@ export class BlueprintService implements IObsBlueprintChange {
               subcategory: response.subcategory ?? null,
               description: response.description ?? null,
               modded: response.modded ?? null,
+              rocketInterior: response.rocketInterior ?? null,
             };
             this.requiredDlcs = response.requiredDlcs ?? [];
             blueprint.importFromMdb(response.data);
@@ -1027,9 +1029,19 @@ export class BlueprintService implements IObsBlueprintChange {
   metadata: Partial<
     Pick<
       SaveBlueprintMessage,
-      "category" | "subcategory" | "description" | "modded"
+      "category" | "subcategory" | "description" | "modded" | "rocketInterior"
     >
   > = {};
+
+  // The rocket-interior choice is the one piece of metadata with a live
+  // rendering, so it has a setter that announces the change: the editor menu
+  // and the save dialog both offer it, and whichever one changed it, the
+  // other's state has to follow. Emits the new value (null = none).
+  readonly rocketInteriorChanged$ = new Subject<RocketInteriorModule | null>();
+  setRocketInterior(module: RocketInteriorModule | null) {
+    this.metadata.rocketInterior = module;
+    this.rocketInteriorChanged$.next(module);
+  }
 
   // The server-derived `requiredDlcs` of the blueprint last opened from the
   // site, as the editor-open response reported it. null for anything that did
@@ -1170,6 +1182,10 @@ export class SaveBlueprintMessage {
   subcategory?: string | null;
   description?: string | null;
   modded?: boolean | null;
+  // The habitat module the blueprint was built in, for the rocket-interior
+  // facade (lib rocket-interior.ts); null = none. Lives on the site's record,
+  // not in the blueprint data, so it rides with the other metadata.
+  rocketInterior?: RocketInteriorModule | null;
   // Verbatim BlueprintsV2 import text, present only when the saved data still
   // equals the imported content (byte-exact round-trip, §8)
   rawSource?: string;

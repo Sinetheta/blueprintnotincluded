@@ -21,7 +21,9 @@ import {
   BuildMenuCategory,
   BuildMenuItem,
   CategoryLookup,
+  ROCKET_INTERIOR_MODULES,
 } from "../../../../../../../lib/index";
+import { rocketInteriorLabel } from "../../../common/rocket-interior-label";
 
 @Component({
   selector: "app-component-save-dialog",
@@ -35,6 +37,16 @@ export class ComponentSaveDialogComponent {
   @Output() updateThumbnail = new EventEmitter();
 
   readonly categoryOptions = CATEGORIES.map((c) => ({ label: c, value: c }));
+
+  // "None" is a real option, not a cleared select: the stored value is null
+  // either way, but the author should see that no interior is a choice.
+  readonly rocketInteriorOptions = [
+    { label: rocketInteriorLabel(null), value: null },
+    ...ROCKET_INTERIOR_MODULES.map((m) => ({
+      label: rocketInteriorLabel(m),
+      value: m,
+    })),
+  ];
 
   readonly dlcLabel = dlcLabel;
   /** Derived from the blueprint's content on open; [] = base game only, null =
@@ -53,6 +65,14 @@ export class ComponentSaveDialogComponent {
     this.saveBlueprintForm.patchValue({ subcategory: null });
   }
 
+  // Applied immediately so the canvas behind the dialog shows the facade the
+  // moment it is picked; the save then stores what is already on screen.
+  onRocketInteriorChange() {
+    this.blueprintService.setRocketInterior(
+      this.saveBlueprintForm.value.rocketInterior ?? null,
+    );
+  }
+
   saveBlueprintForm = new UntypedFormGroup({
     thumbnailType: new UntypedFormControl("Color", [Validators.required]),
     name: new UntypedFormControl("", [
@@ -62,6 +82,7 @@ export class ComponentSaveDialogComponent {
     description: new UntypedFormControl(null),
     category: new UntypedFormControl(null),
     subcategory: new UntypedFormControl(null),
+    rocketInterior: new UntypedFormControl(null),
     modded: new UntypedFormControl({ value: null, disabled: true }),
   });
 
@@ -162,6 +183,7 @@ export class ComponentSaveDialogComponent {
       subcategory: v.subcategory ?? null,
       description: v.description?.trim() || null,
       modded: v.modded ?? null,
+      rocketInterior: v.rocketInterior ?? null,
     };
   }
 
@@ -254,6 +276,12 @@ export class ComponentSaveDialogComponent {
     this.saveBlueprintForm.patchValue({ thumbnailType: "Color" });
     if (this.blueprintService.name != null && this.blueprintService.name != "")
       this.saveBlueprintForm.patchValue({ name: this.blueprintService.name });
+
+    // The interior choice can be made live from the Display menu before the
+    // first save, so it is restored for new and updated blueprints alike.
+    this.saveBlueprintForm.patchValue({
+      rocketInterior: this.blueprintService.metadata.rocketInterior ?? null,
+    });
 
     if (this.isUpdate) {
       this._originalName = this.blueprintService.name ?? null;

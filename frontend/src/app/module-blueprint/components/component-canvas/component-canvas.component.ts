@@ -28,6 +28,8 @@ import {
   SpriteTag,
   BniWorldNote,
   BniTerrainFeature,
+  expandBoundsForRocketInterior,
+  placeRocketInterior,
 } from "../../../../../../lib/index";
 
 import { DrawPixi } from "../../drawing/draw-pixi";
@@ -36,6 +38,7 @@ import { DrawRoomOverlay } from "../../drawing/draw-room-overlay";
 import { DrawNotesOverlay } from "../../drawing/draw-notes-overlay";
 import { DrawPlanningOverlay } from "../../drawing/draw-planning-overlay";
 import { DrawTerrainOverlay } from "../../drawing/draw-terrain-overlay";
+import { DrawRocketInterior } from "../../drawing/draw-rocket-interior";
 import { drawAreaOfEffects } from "../../drawing/draw-area-of-effect";
 import { RoomDetectionService } from "../../services/room-detection-service";
 import {
@@ -125,6 +128,7 @@ export class ComponentCanvasComponent
   drawNotesOverlay!: DrawNotesOverlay;
   drawPlanningOverlay!: DrawPlanningOverlay;
   drawTerrainOverlay!: DrawTerrainOverlay;
+  drawRocketInterior!: DrawRocketInterior;
 
   private cameraService: CameraService;
 
@@ -169,6 +173,14 @@ export class ComponentCanvasComponent
       this.drawNotesOverlay = new DrawNotesOverlay(this.drawPixi);
       this.drawPlanningOverlay = new DrawPlanningOverlay(this.drawPixi);
       this.drawTerrainOverlay = new DrawTerrainOverlay(this.drawPixi);
+      // Hull into the blueprint container (sorted under every building);
+      // backdrop under the grid lines, as the stage's first child.
+      this.drawRocketInterior = new DrawRocketInterior(
+        this.drawPixi,
+        this.drawPixi.blueprintContainer,
+        this.drawPixi.pixiApp.stage,
+        true,
+      );
 
       if (this.forceSize) {
         const miniUi = new DrawMiniUi();
@@ -1021,7 +1033,16 @@ export class ComponentCanvasComponent
     if (clone.blueprintItems.length == 0)
       throw new Error("No buildings to export");
 
-    const boundingBox = clone.getBoundingBox();
+    // A rocket blueprint is framed with its hull, not just its buildings.
+    const rocketInterior = this.blueprintService.metadata.rocketInterior;
+    const rocketPlacement =
+      rocketInterior != null
+        ? placeRocketInterior(rocketInterior, clone)
+        : null;
+    const boundingBox = expandBoundsForRocketInterior(
+      clone.getBoundingBox(),
+      rocketPlacement,
+    );
     const topLeft = boundingBox[0];
     const bottomRight = boundingBox[1];
 
@@ -1053,6 +1074,15 @@ export class ComponentCanvasComponent
     //graphics.beginFill(0x00000000);
     //graphics.drawRect(0, 0, thumbnailSize, thumbnailSize);
     //graphics.endFill();
+
+    // The rocket-interior facade, under the buildings — its containers carry
+    // the lowest zIndex in this sortable scratch container.
+    new DrawRocketInterior(this.drawPixi, exportCamera.container).draw(
+      rocketInterior,
+      clone,
+      exportCamera,
+      { width: thumbnailSize, height: thumbnailSize },
+    );
 
     clone.blueprintItems.map((item) => {
       item.updateTileables(clone);
@@ -1107,7 +1137,15 @@ export class ComponentCanvasComponent
     if (clone.blueprintItems.length == 0)
       throw new Error("No buildings to export");
 
-    const boundingBox = clone.getBoundingBox();
+    const rocketInterior = this.blueprintService.metadata.rocketInterior;
+    const rocketPlacement =
+      rocketInterior != null
+        ? placeRocketInterior(rocketInterior, clone)
+        : null;
+    const boundingBox = expandBoundsForRocketInterior(
+      clone.getBoundingBox(),
+      rocketPlacement,
+    );
     const topLeft = boundingBox[0];
     const bottomRight = boundingBox[1];
 
@@ -1131,9 +1169,12 @@ export class ComponentCanvasComponent
     exportCamera.container.addChild(graphics);
 
     // TODO color in parameter
-    graphics.beginFill(0x007ad9);
-    graphics.drawRect(0, 0, sizeInPixels.x, sizeInPixels.y);
-    graphics.endFill();
+    // With a rocket interior the star field is the background instead.
+    if (rocketPlacement == null) {
+      graphics.beginFill(0x007ad9);
+      graphics.drawRect(0, 0, sizeInPixels.x, sizeInPixels.y);
+      graphics.endFill();
+    }
 
     ComponentCanvasComponent.zip = new JSZip();
     ComponentCanvasComponent.nbBlob = 0;
@@ -1155,9 +1196,19 @@ export class ComponentCanvasComponent
       this.drawPixi,
       exportCamera.container,
     );
+    const rocketOverlay = new DrawRocketInterior(
+      this.drawPixi,
+      exportCamera.container,
+    );
 
     exportOptions.selectedOverlays.map((overlay) => {
       exportCamera.overlay = overlay;
+
+      // Under the buildings; follows the overlay like they do.
+      rocketOverlay.draw(rocketInterior, clone, exportCamera, {
+        width: sizeInPixels.x,
+        height: sizeInPixels.y,
+      });
 
       clone.blueprintItems.map((item) => {
         item.updateTileables(clone);
@@ -1224,8 +1275,21 @@ export class ComponentCanvasComponent
 
     this.drawPixi.clearGraphics();
 
+    // The rocket-interior facade, when the open blueprint has one: drawn
+    // first, under the grid and the buildings. It replaces the flat
+    // background fill (the star field is opaque); the grid lines still draw
+    // over it so the editor stays an editor.
+    const rocketInterior = this.drawRocketInterior.draw(
+      this.blueprintService.metadata.rocketInterior,
+      this.blueprint,
+      this.cameraService,
+      { width: this.width, height: this.height },
+    );
+
     //if (this.cameraService.visualization == Visualization.temperature) this.drawPixi.FillRect(0x909090, 0, 0, this.width, this.height);
-    if (this.cameraService.display == Display.blueprint)
+    if (rocketInterior != null) {
+      // no fill: the backdrop is the background
+    } else if (this.cameraService.display == Display.blueprint)
       this.drawPixi.FillRect(0x007ad9, 0, 0, this.width, this.height);
     else this.drawPixi.FillRect(0x909090, 0, 0, this.width, this.height);
 
