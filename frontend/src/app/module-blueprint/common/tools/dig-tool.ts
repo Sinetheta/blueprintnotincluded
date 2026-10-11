@@ -147,11 +147,14 @@ export class DigTool implements ITool {
   draw(drawPixi: DrawPixi, camera: CameraService) {
     let preview = this.preview;
     if (preview == null) {
-      const created = drawPixi.getNewGraphics() as PIXI.Graphics;
-      drawPixi.pixiApp.stage.addChild(created);
-      this.preview = created;
-      preview = created;
+      preview = drawPixi.getNewGraphics() as PIXI.Graphics;
+      this.preview = preview;
     }
+    // The tool outlives the canvas: re-entering the editor makes a new
+    // DrawPixi with a new stage, and the preview has to follow it there.
+    // addChild re-parents, so nothing is left behind on the old stage.
+    if (preview.parent !== drawPixi.pixiApp.stage)
+      drawPixi.pixiApp.stage.addChild(preview);
     preview.clear();
     const hover = this.hoverTile;
     preview.visible = hover != null && this.showDigCommands;

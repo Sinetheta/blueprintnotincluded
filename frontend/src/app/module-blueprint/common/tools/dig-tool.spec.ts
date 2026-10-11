@@ -225,6 +225,25 @@ describe("DigTool", () => {
       expect(lineColors()).toEqual([DIG_BLOCKED_COLOR]);
     });
 
+    it("follows the editor onto a new canvas's stage", () => {
+      const stage = (drawPixi as any).pixiApp.stage;
+      stage.addChild.mockImplementation((child: any) => (child.parent = stage));
+      tool.draw(drawPixi, camera);
+      tool.draw(drawPixi, camera);
+      expect(stage.addChild).toHaveBeenCalledOnce();
+
+      const nextStage = {
+        addChild: vi.fn((child: any) => (child.parent = nextStage)),
+      };
+      const nextCanvas = {
+        getNewGraphics: vi.fn(),
+        pixiApp: { stage: nextStage },
+      } as unknown as DrawPixi;
+      tool.draw(nextCanvas, camera);
+      expect(nextStage.addChild).toHaveBeenCalledWith(graphics);
+      expect(nextCanvas.getNewGraphics).not.toHaveBeenCalled();
+    });
+
     it("crosses the cell out in the dig colour while erasing", () => {
       tool.erase = true;
       tool.hover(new Vector2(1, 1));
