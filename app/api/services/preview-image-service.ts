@@ -41,7 +41,9 @@ const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
 // write time only: the ephemeral L1 disk cache doesn't carry a version (it's
 // wiped on every redeploy anyway; see the file header), just the durable L2
 // Mongo rows that actually outlive a deploy.
-export const PREVIEW_RENDER_VERSION = 2;
+// 3: dig commands are drawn — every captured blueprint carries them, so its
+// stored preview is out of date even though the blueprint itself is not.
+export const PREVIEW_RENDER_VERSION = 3;
 
 const RENDER_TIMEOUT_MS = 30_000;
 const WORKER_START_TIMEOUT_MS = 60_000;
