@@ -1035,9 +1035,10 @@ export class ComponentCanvasComponent
 
     // A rocket blueprint is framed with its hull, not just its buildings.
     const rocketInterior = this.blueprintService.metadata.rocketInterior;
+    const rocketOrigin = this.blueprintService.metadata.rocketInteriorOrigin;
     const rocketPlacement =
       rocketInterior != null
-        ? placeRocketInterior(rocketInterior, clone)
+        ? placeRocketInterior(rocketInterior, clone, rocketOrigin)
         : null;
     const boundingBox = expandBoundsForRocketInterior(
       clone.getBoundingBox(),
@@ -1082,6 +1083,7 @@ export class ComponentCanvasComponent
       clone,
       exportCamera,
       { width: thumbnailSize, height: thumbnailSize },
+      rocketOrigin,
     );
 
     clone.blueprintItems.map((item) => {
@@ -1138,9 +1140,10 @@ export class ComponentCanvasComponent
       throw new Error("No buildings to export");
 
     const rocketInterior = this.blueprintService.metadata.rocketInterior;
+    const rocketOrigin = this.blueprintService.metadata.rocketInteriorOrigin;
     const rocketPlacement =
       rocketInterior != null
-        ? placeRocketInterior(rocketInterior, clone)
+        ? placeRocketInterior(rocketInterior, clone, rocketOrigin)
         : null;
     const boundingBox = expandBoundsForRocketInterior(
       clone.getBoundingBox(),
@@ -1205,10 +1208,13 @@ export class ComponentCanvasComponent
       exportCamera.overlay = overlay;
 
       // Under the buildings; follows the overlay like they do.
-      rocketOverlay.draw(rocketInterior, clone, exportCamera, {
-        width: sizeInPixels.x,
-        height: sizeInPixels.y,
-      });
+      rocketOverlay.draw(
+        rocketInterior,
+        clone,
+        exportCamera,
+        { width: sizeInPixels.x, height: sizeInPixels.y },
+        rocketOrigin,
+      );
 
       clone.blueprintItems.map((item) => {
         item.updateTileables(clone);
@@ -1284,6 +1290,7 @@ export class ComponentCanvasComponent
       this.blueprint,
       this.cameraService,
       { width: this.width, height: this.height },
+      this.blueprintService.metadata.rocketInteriorOrigin,
     );
 
     //if (this.cameraService.visualization == Visualization.temperature) this.drawPixi.FillRect(0x909090, 0, 0, this.width, this.height);

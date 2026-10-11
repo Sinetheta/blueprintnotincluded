@@ -10,9 +10,11 @@ import {
   ROCKET_INTERIOR_LAYOUT_SOURCES,
   ROCKET_INTERIOR_GLYPHS,
   ROCKET_CONTROL_STATION_ID,
+  ROCKET_INTERIOR_ART,
   buildRocketInteriorScenery,
   expandBoundsForRocketInterior,
   isRocketInteriorModule,
+  isRocketInteriorCell,
   parseRocketInteriorLayout,
   placeRocketInterior,
   rocketInteriorLayout,
@@ -240,6 +242,32 @@ describe('Rocket interior', function () {
       expect(placement.origin).to.deep.equal({ x: 4, y: 3 });
     });
 
+    it('keeps a stored origin ahead of centring, but a single station ahead of both', () => {
+      const stationless = new Blueprint();
+      stationless.importFromBni({
+        ...capture,
+        buildings: capture.buildings.filter(b => b.buildingdef !== ROCKET_CONTROL_STATION_ID),
+      });
+      const stored = placeRocketInterior('small', stationless, { x: -7, y: 9 });
+      expect(stored.anchor).to.equal('stored');
+      expect(stored.origin).to.deep.equal({ x: -7, y: 9 });
+
+      const withStation = new Blueprint();
+      withStation.importFromBni(capture);
+      const placement = placeRocketInterior('small', withStation, { x: -7, y: 9 });
+      expect(placement.anchor).to.equal('station');
+      expect(placement.origin).to.deep.equal({ x: 4, y: 3 });
+    });
+
+    it('type-guards a stored origin', () => {
+      expect(isRocketInteriorCell({ x: 1, y: -2 })).to.equal(true);
+      expect(isRocketInteriorCell({ x: 1.5, y: 0 })).to.equal(false);
+      expect(isRocketInteriorCell({ x: '1', y: 0 })).to.equal(false);
+      expect(isRocketInteriorCell({ x: 1 })).to.equal(false);
+      expect(isRocketInteriorCell(null)).to.equal(false);
+      expect(isRocketInteriorCell('4,3')).to.equal(false);
+    });
+
     it('sits on the origin for an empty blueprint', () => {
       const placement = placeRocketInterior('medium', new Blueprint());
       expect(placement.anchor).to.equal('bounds');
@@ -283,6 +311,14 @@ describe('Rocket interior', function () {
       const placement = placeRocketInterior('small', blueprint);
       const scenery = buildRocketInteriorScenery(placement);
       expect(scenery.blueprintItems).to.have.length(placement.layout.pieces.length);
+      // Windows draw as the plain Window Tile (edge-to-edge glass); the layout
+      // itself still names the rocket window.
+      expect(ROCKET_INTERIOR_ART.RocketEnvelopeWindowTile).to.equal('GlassTile');
+      expect(scenery.blueprintItems.filter(i => i.id === 'GlassTile')).to.have.length(4);
+      expect(scenery.blueprintItems.some(i => i.id === 'RocketEnvelopeWindowTile')).to.equal(false);
+      expect(
+        placement.layout.pieces.filter(p => p.id === 'RocketEnvelopeWindowTile')
+      ).to.have.length(4);
       // Bottom-left corner wall at world (1, 0): a wall to its right and above,
       // so the tile joins right (+2) and up (+4).
       const corner = scenery.blueprintItems.find(

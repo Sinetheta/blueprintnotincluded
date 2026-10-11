@@ -1,4 +1,4 @@
-import { RocketInteriorModule } from '../blueprint/rocket-interior';
+import { RocketInteriorCell, RocketInteriorModule } from '../blueprint/rocket-interior';
 import { ForkedFromDto } from './blueprint-version';
 import { RawSourceFormat } from '../io/bni/bni-share-string';
 
@@ -61,8 +61,11 @@ export interface BlueprintListItem extends TranslatedTitleFields {
   // null = never derived or too large for detection
   rooms?: string[] | null;
   // The habitat module this blueprint was built inside, drawn as scenery
-  // behind it (see rocket-interior.ts); null/absent = none.
+  // behind it (see rocket-interior.ts); null/absent = none. The origin is the
+  // hull's template origin cell, resolved when the module was chosen; it only
+  // matters for a blueprint without exactly one control station.
   rocketInterior?: RocketInteriorModule | null;
+  rocketInteriorOrigin?: RocketInteriorCell | null;
   isPublished: boolean;
   nbForks: number;
   // Approximate by design: served from throttled write-behind counters
@@ -157,6 +160,7 @@ export interface BlueprintResponse extends TranslatedTitleFields {
   mods?: string[];
   rooms?: string[] | null;
   rocketInterior?: RocketInteriorModule | null;
+  rocketInteriorOrigin?: RocketInteriorCell | null;
   isPublished: boolean;
   // True when the server holds the verbatim BlueprintsV2 upload — downloads
   // should fetch GET /api/blueprints/:id/raw instead of regenerating the

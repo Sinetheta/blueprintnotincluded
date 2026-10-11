@@ -19,6 +19,7 @@ export interface RocketInteriorCell {
     x: number;
     y: number;
 }
+export declare function isRocketInteriorCell(value: unknown): value is RocketInteriorCell;
 export interface RocketInteriorPiece extends RocketInteriorCell {
     id: string;
 }
@@ -41,7 +42,8 @@ export interface RocketInteriorLayout {
 }
 export declare function parseRocketInteriorLayout(source: RocketInteriorLayoutSource): RocketInteriorLayout;
 export declare function rocketInteriorLayout(module: RocketInteriorModule): RocketInteriorLayout;
-export type RocketInteriorAnchor = 'station' | 'bounds';
+export declare const ROCKET_INTERIOR_ART: Record<string, string>;
+export type RocketInteriorAnchor = 'station' | 'stored' | 'bounds';
 export interface RocketInteriorPlacement {
     module: RocketInteriorModule;
     layout: RocketInteriorLayout;
@@ -63,7 +65,7 @@ export declare function rocketInteriorOriginCentred(layout: RocketInteriorLayout
     x: number;
     y: number;
 }): RocketInteriorCell;
-export declare function placeRocketInterior(module: RocketInteriorModule, blueprint: Blueprint): RocketInteriorPlacement;
+export declare function placeRocketInterior(module: RocketInteriorModule, blueprint: Blueprint, storedOrigin?: RocketInteriorCell | null): RocketInteriorPlacement;
 export declare function rocketInteriorPlacementKey(placement: RocketInteriorPlacement): string;
 export declare function rocketInteriorWorldPieces(placement: RocketInteriorPlacement): RocketInteriorPiece[];
 export declare function rocketInteriorWorldDoor(placement: RocketInteriorPlacement): RocketInteriorCell;

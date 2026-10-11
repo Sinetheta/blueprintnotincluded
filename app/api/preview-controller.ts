@@ -94,17 +94,20 @@ export class PreviewController {
   public static async loadRenderData(id: string): Promise<PreviewRenderData | null> {
     const doc = await BlueprintModel.model
       .findById(id)
-      .select('data currentVersionId rocketInterior')
+      .select('data currentVersionId rocketInterior rocketInteriorOrigin')
       .lean();
     if (doc == null) return null;
-    const rocketInterior = doc.rocketInterior ?? null;
+    const facade = {
+      rocketInterior: doc.rocketInterior ?? null,
+      rocketInteriorOrigin: doc.rocketInteriorOrigin ?? null,
+    };
     if (doc.currentVersionId != null) {
       const version = await BlueprintVersionModel.model
         .findById(doc.currentVersionId)
         .select('data')
         .lean();
-      if (version?.data != null) return { ...version.data, rocketInterior };
+      if (version?.data != null) return { ...version.data, ...facade };
     }
-    return doc.data != null ? { ...doc.data, rocketInterior } : null;
+    return doc.data != null ? { ...doc.data, ...facade } : null;
   }
 }

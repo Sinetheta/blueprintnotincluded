@@ -375,8 +375,17 @@ scenery under the blueprint, with the game's landed backdrop, so a visitor sees 
 - **Alignment** — on the control station, which is fixed in both templates and always
   present: template origin = station cell − `stationOrigin` (`(0,-2)` small, `(0,-3)`
   medium). Mod offsets and site cells are the same y-up space, so nothing is transformed. A
-  blueprint with no station or more than one (cheats, hand edits) falls back to centring the
-  hull on the blueprint's bounding box (`anchor: 'bounds'`).
+  blueprint without exactly one station (cheats, hand edits, a fresh blueprint) uses the
+  **stored origin** (`rocketInteriorOrigin` on the record, `anchor: 'stored'`), which
+  `BlueprintService.setRocketInterior` resolves once when the module is picked — the last
+  resort, centring on the bounding box (`anchor: 'bounds'`), moves every time a brick is
+  placed, which is exactly the hopping hull the first QA pass found. A single station still
+  wins over a stored origin; the origin a station gave is stored too, so the hull stays put
+  if the station is later removed. A future nudge UI edits this field.
+- **Window art** — the rocket window's own sprite is a small pane that joins only to other
+  rocket windows, so a lone window between walls read as an undersized square. Hull pieces
+  draw as `ROCKET_INTERIOR_ART` says (windows as the plain `GlassTile`); the layout and the
+  alignment keep the real prefab ids.
 - **Scenery, not content** — `buildRocketInteriorScenery` makes a throwaway `Blueprint` of
   real `BlueprintItem`s so the hull renders through the ordinary `drawPixi` pipeline (joined
   wall tiles, the real port art, overlay/display treatment), through a private camera into a

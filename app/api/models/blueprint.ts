@@ -7,6 +7,7 @@ import {
   RawSourceFormat,
   ROCKET_INTERIOR_MODULES,
   RocketInteriorModule,
+  RocketInteriorCell,
   MAX_BLUEPRINT_NAME_LENGTH,
   isCanonicalBlueprintName,
 } from '../../../lib/index';
@@ -85,6 +86,12 @@ export interface Blueprint extends Document {
   // none. Absent on legacy docs. A future auto-detector would fill in docs
   // where this is null/absent and leave a stored module alone.
   rocketInterior?: RocketInteriorModule | null;
+  // The hull's template origin cell, resolved by the editor when the module
+  // was chosen and kept so the hull never moves as the blueprint grows. A
+  // blueprint with exactly one control station is aligned on it regardless;
+  // this is what anchors the others. null = none stored (pre-origin docs
+  // fall back to centring, which is what moved).
+  rocketInteriorOrigin?: RocketInteriorCell | null;
   currentVersionId?: mongoose.Types.ObjectId | null;
   forkedFrom?: {
     blueprintId: mongoose.Types.ObjectId;
@@ -183,6 +190,13 @@ export class BlueprintModel {
       rooms: { type: [String], enum: ROOM_TYPE_IDS, default: undefined },
       // No default (see the field comment): absent on legacy docs.
       rocketInterior: { type: String, enum: [...ROCKET_INTERIOR_MODULES, null] },
+      rocketInteriorOrigin: {
+        type: new Schema(
+          { x: { type: Number, required: true }, y: { type: Number, required: true } },
+          { _id: false }
+        ),
+        default: undefined,
+      },
       currentVersionId: {
         type: Schema.Types.ObjectId,
         ref: 'BlueprintVersion',

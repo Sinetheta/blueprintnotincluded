@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import mongoose from 'mongoose';
 import sharp from 'sharp';
-import { RocketInteriorModule } from '../../../lib';
+import { RocketInteriorCell, RocketInteriorModule } from '../../../lib';
 import { PreviewImageModel } from '../models/preview-image';
 import { buildPreviewGridSvg, PreviewFraming } from './preview-grid';
 import { resolveMaxOldSpaceMb } from './render-memory';
@@ -159,6 +159,7 @@ export type MasterImage = Buffer | RawMaster;
  */
 export type PreviewRenderData = Record<string, unknown> & {
   rocketInterior?: RocketInteriorModule | null;
+  rocketInteriorOrigin?: RocketInteriorCell | null;
 };
 
 /**

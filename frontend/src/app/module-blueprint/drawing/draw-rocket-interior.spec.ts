@@ -207,6 +207,33 @@ describe("DrawRocketInterior", () => {
     }
   });
 
+  it("keeps a station-less hull where the stored origin says as bricks are added", () => {
+    const camera = makeCamera();
+    const blueprint = new Blueprint();
+    const brick = (x: number, y: number) => {
+      const tile = BlueprintHelpers.createInstance("Tile")!;
+      tile.importMdbBuilding({ id: "Tile", position: new Vector2(x, y) });
+      blueprint.addBlueprintItem(tile);
+    };
+    brick(0, 0);
+    const stored = { x: 4, y: 3 };
+    const first = overlay.draw("small", blueprint, camera, viewport, stored)!;
+    expect(first.anchor).toBe("stored");
+    expect(first.origin).toEqual(stored);
+    const hull = overlay.hullItems;
+
+    // Without a stored origin the bounds fallback would re-centre on the new
+    // extent; with one, nothing moves and nothing is rebuilt.
+    brick(30, 25);
+    const second = overlay.draw("small", blueprint, camera, viewport, stored)!;
+    expect(second.origin).toEqual(stored);
+    expect(overlay.hullItems).toBe(hull);
+
+    const moved = overlay.draw("small", blueprint, camera, viewport, null)!;
+    expect(moved.anchor).toBe("bounds");
+    expect(moved.origin).not.toEqual(stored);
+  });
+
   it("keeps its hull while the placement is unchanged and rebuilds when the station moves", () => {
     const camera = makeCamera();
     const blueprint = stationBlueprint();
