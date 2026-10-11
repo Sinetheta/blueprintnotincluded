@@ -64,6 +64,15 @@ describe("BlueprintService", () => {
       expect(draft.id).toBeNull();
     });
 
+    it("opening a blueprint does not store it once the debounce fires", () => {
+      // A load copies the items in (a change, so dirty and scheduled) and
+      // only then resets the undo stack
+      edit();
+      service.resetUndoStates();
+      const provide = mockUnsavedWork.schedule.mock.calls[0][0];
+      expect(provide()).toBeNull();
+    });
+
     it("undoing back to the loaded state is clean again", () => {
       edit();
       service.undo();

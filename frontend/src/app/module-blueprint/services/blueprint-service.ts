@@ -320,9 +320,15 @@ export class BlueprintService implements IObsBlueprintChange {
 
   // Called on every change: the undo snapshot just taken is what gets
   // stored, so persistence costs one JSON.stringify per debounce window.
+  // Dirtiness is checked again when the debounce fires: opening a blueprint
+  // emits changes (dirty) and only then resets the undo stack (clean), and
+  // the write scheduled in between would otherwise park every blueprint that
+  // was merely viewed in the slot.
   private persistUnsavedWork() {
     if (!this.isDirty) return;
-    this.unsavedWork.schedule(() => this.unsavedWorkDraft());
+    this.unsavedWork.schedule(() =>
+      this.isDirty ? this.unsavedWorkDraft() : null,
+    );
   }
 
   // Store the open blueprint right now regardless of dirtiness — before the
