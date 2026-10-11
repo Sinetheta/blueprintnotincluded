@@ -307,12 +307,25 @@ export class ComponentSaveDialogComponent {
         subcategory: m.subcategory ?? null,
         description: m.description ?? null,
       });
-    } else if (this.blueprintService.metadata.description) {
-      // First save of an imported BlueprintsV2 file: its userdesc was mapped
-      // onto metadata.description at import — offer it as the description
-      this.saveBlueprintForm.patchValue({
-        description: this.blueprintService.metadata.description,
-      });
+    } else {
+      if (this.blueprintService.metadata.description) {
+        // First save of an imported BlueprintsV2 file: its userdesc was mapped
+        // onto metadata.description at import — offer it as the description
+        this.saveBlueprintForm.patchValue({
+          description: this.blueprintService.metadata.description,
+        });
+      }
+      // First save of a rocket interior: offer the habitat the blueprint
+      // plainly fits, the way the category is offered. Only over "none" — a
+      // module already picked from the Display menu stays — and the setter
+      // puts the hull up behind the dialog, so the author sees what is offered.
+      if (this.blueprintService.metadata.rocketInterior == null) {
+        const fit = this.blueprintService.suggestRocketInterior();
+        if (fit != null) {
+          this.blueprintService.setRocketInterior(fit.module, fit.origin);
+          this.saveBlueprintForm.patchValue({ rocketInterior: fit.module });
+        }
+      }
     }
 
     this.computeDerivedMetadata();

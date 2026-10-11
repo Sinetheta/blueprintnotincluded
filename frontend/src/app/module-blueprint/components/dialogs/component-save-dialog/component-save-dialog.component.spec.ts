@@ -155,6 +155,58 @@ describe("ComponentSaveDialogComponent", () => {
     });
   });
 
+  describe("rocket interior offer", () => {
+    const fit = {
+      module: "medium" as const,
+      origin: { x: 20, y: -7 },
+      evidence: "hull" as const,
+      hullCoverage: 1,
+      strays: 0,
+    };
+
+    it("offers the habitat the blueprint fits on a first save, hull and all", () => {
+      const blueprintService = TestBed.inject(BlueprintService);
+      vi.spyOn(blueprintService, "suggestRocketInterior").mockReturnValue(fit);
+
+      component.showDialog();
+
+      expect(component.saveBlueprintForm.value.rocketInterior).toBe("medium");
+      expect(blueprintService.metadata.rocketInteriorOrigin).toEqual({
+        x: 20,
+        y: -7,
+      });
+    });
+
+    it("keeps a module already picked from the Display menu", () => {
+      const blueprintService = TestBed.inject(BlueprintService);
+      const suggest = vi
+        .spyOn(blueprintService, "suggestRocketInterior")
+        .mockReturnValue(fit);
+      blueprintService.metadata = {
+        rocketInterior: "small",
+        rocketInteriorOrigin: { x: 1, y: 1 },
+      };
+
+      component.showDialog();
+
+      expect(suggest).not.toHaveBeenCalled();
+      expect(component.saveBlueprintForm.value.rocketInterior).toBe("small");
+    });
+
+    it("never offers on an update: none there is the author's choice", () => {
+      const blueprintService = TestBed.inject(BlueprintService);
+      const suggest = vi
+        .spyOn(blueprintService, "suggestRocketInterior")
+        .mockReturnValue(fit);
+      blueprintService.id = "existing-id";
+
+      component.showDialog();
+
+      expect(suggest).not.toHaveBeenCalled();
+      expect(component.saveBlueprintForm.value.rocketInterior).toBeNull();
+    });
+  });
+
   describe("computeDerivedMetadata category pre-fill", () => {
     afterEach(() => {
       (OniItem as any).oniItemsMap = undefined;
