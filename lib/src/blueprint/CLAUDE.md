@@ -373,19 +373,39 @@ scenery under the blueprint, with the game's landed backdrop, so a visitor sees 
   `rocket-interior-layouts.ts` — one two-character glyph per cell, readable in a diff — and
   asserts every solid cell carries a building. The door (`ClustercraftInteriorDoor`) is an
   entity with no `OniItem`; it is drawn from its PNG.
-- **Alignment** — on the control station, which is fixed in both templates and always
-  present: template origin = station cell − `stationOrigin` (`(0,-2)` small, `(0,-3)`
-  medium). Mod offsets and site cells are the same y-up space, so nothing is transformed. A
-  blueprint without exactly one station (cheats, hand edits, a fresh blueprint) uses the
-  **stored origin** (`rocketInteriorOrigin` on the record, `anchor: 'stored'`), which
-  `BlueprintService.setRocketInterior` resolves once when the module is picked — the last
-  resort, centring on the bounding box (`anchor: 'bounds'`), moves every time a brick is
-  placed, which is exactly the hopping hull the first QA pass found. A single station still
-  wins over a stored origin; the origin a station gave is stored too, so the hull stays put
-  if the station is later removed. An *empty* blueprint has nothing to centre on, so the
-  service centres the hull on the middle of the editor viewport (`viewportCentreCell`) — the
-  world origin, with the hull spanning negative cells, landed wherever the camera was. A
-  future nudge UI edits this field.
+- **Alignment** — `placeRocketInterior` takes, in order: the **stored origin**
+  (`rocketInteriorOrigin` on the record, `anchor: 'stored'`), the control station
+  (`'station'`: template origin = station cell − `stationOrigin`, `(0,-2)` small, `(0,-3)`
+  medium; mod offsets and site cells are the same y-up space, so nothing is transformed), and
+  last the bounding box (`'bounds'`), which moves every time a brick is placed — the hopping
+  hull the first QA pass found. The stored origin used to rank *below* the station; it was
+  raised because most stored rocket blueprints are hand-drawn hulls whose station sits
+  wherever the author put it (often rows above the floor), and there the station puts the
+  hull in the wrong place. `BlueprintService.setRocketInterior` resolves the origin once when
+  the module is picked — a drawn hull (`fitRocketInteriorModule`), else the station, else the
+  bounds — and `followStation` keeps an origin *the station gave* moving with the station
+  (undo included), so a capture behaves as it did when the station won outright. An *empty*
+  blueprint has nothing to centre on, so the service centres the hull on the middle of the
+  editor viewport (`viewportCentreCell`). A future nudge UI edits this field.
+- **Fitting stored blueprints** (`rocket-interior-fit.ts`) — `fitRocketInterior(items, digs)`
+  says which habitat a blueprint was built in and where its hull sits, or null. Only a
+  blueprint with a control station is considered (without one, any tile-walled 12×10 room
+  would pass as a drawn hull). Three kinds of evidence, tried in order:
+  **capture** (one station and dig commands: the station gives the origin, and the digs pick
+  the module — under the wrong template a real wall is a solid, undug, unoccupied room cell,
+  and a real room cell is a dug "wall"); **hull** (every placement that puts a wall-like
+  building — the game's Tile build rule: tiles, doors, airflow tiles, the hull's own pieces —
+  on a hull piece; ≥ 60% of the hull covered, the best coverage wins, an exact tie is null);
+  **station** (no hull drawn: the module whose room around the station holds everything; a
+  build that fits either says nothing). Every non-capture fit tolerates a few strays (4 or
+  3% of cells; the pipe drawn out of a port does not count) and only within 2 cells of the
+  hull — one part left far off frames the rocket into a corner of its own preview, with the
+  vignette blacking out the rest. On 59 production blueprints found by title, 22 of the 33
+  with a station fit; the rest are sheets (an empty hull with the parts laid out beside it),
+  several interiors in one blueprint, or custom hull shapes. Those still get the category.
+- **Category** — `deriveCategory` returns `rocketInterior` for any blueprint with a control
+  station, ahead of every function vote: a cabin with beds is a rocket, not a room. The
+  category has no subcategories.
 - **Blown-out walls** — the capture already says which hull pieces were gone: the mod writes a
   dig command for every non-solid cell of the selection, so a dig on a wall or window cell is a
   hole the player made (cheats, or escaping the hull). `placeRocketInterior` lists those as
@@ -407,9 +427,15 @@ scenery under the blueprint, with the game's landed backdrop, so a visitor sees 
 - **Stored choice** — `Blueprint.rocketInterior` on the website record (`'small' |
   'medium' | null`), author-picked in the save dialog or the editor's Rocket interior menu
   and sent with the other metadata; `null`/absent = none. Chosen over the file's `metadata`
-  block because it is presentation, not blueprint content, and because a later auto-detector
-  is a server-side derivation like `rooms` — it should fill null/absent and leave a stored
-  module alone. The preview worker receives it beside the data (`PreviewRenderData`).
+  block because it is presentation, not blueprint content. **Absent and null differ**: a save
+  under the current editor always writes the field, so *absent* means "never decided" and
+  `null` means "the author chose none". The fitter only ever fills the absent case — the
+  save dialog offers its answer on a blueprint's *first* save (like the category), and
+  `npm run derive-rocket-interiors` backfills stored blueprints whose field is absent (it also
+  moves their category to `rocketInterior`, clears the subcategory and bumps `modifiedAt` so
+  the previews re-render). A blueprint with no plain fit keeps the field absent, so a better
+  fitter can reach it on a later run. The preview worker receives the choice beside the data
+  (`PreviewRenderData`).
 - **The look lives in one place** — `lib/src/drawing/rocket-backdrop.ts`: star layers
   (scale, parallax, alpha), moon (size in cells, crest above the floor, horizontal offset),
   vignette (radii and centre per module; the fade curve is baked into `vignette.png` by
