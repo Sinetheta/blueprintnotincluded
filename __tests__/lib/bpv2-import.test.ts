@@ -475,6 +475,63 @@ describe('BlueprintsV2 import', function () {
       expect(source.toBniBlueprint('overlap').digcommands).to.deep.equal([{ x: 5, y: 5 }]);
     });
 
+    // What the Dig tool writes: cells pushed onto the model. They go out in the
+    // file and come back unchanged, through the stored model and an import.
+    it('round-trips dig cells painted on the site', () => {
+      // Well clear of the capture's own digs, so none of them is a repeat.
+      const painted = [
+        { x: 203, y: 202 },
+        { x: 204, y: 202 },
+        { x: 204, y: 203 },
+      ];
+      const source = new Blueprint();
+      source.importFromBni(fixture);
+      source.digCommands.push(...painted);
+
+      const stored = new Blueprint();
+      stored.importFromMdb(source.toMdbBlueprint());
+      expect(stored.digCommands).to.deep.equal(source.digCommands);
+
+      const exported = stored.toBniBlueprint('painted');
+      const reimported = new Blueprint();
+      reimported.importFromBni(exported);
+      expect(reimported.toBniBlueprint('painted').digcommands).to.deep.equal(exported.digcommands);
+      expect(reimported.digCommands).to.have.length(fixture.digcommands!.length + painted.length);
+    });
+
+    it('round-trips a blueprint built on the site with only painted digs and shapes', () => {
+      const source = new Blueprint();
+      source.digCommands = [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+      ];
+      source.planningToolShapes = [{ x: 3, y: 3, shape: 1, color: 2 }];
+      const exported = source.toBniBlueprint('site');
+      expect(exported.digcommands).to.deep.equal([
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 3, y: 3 },
+      ]);
+      const reimported = new Blueprint();
+      reimported.importFromBni(exported);
+      expect(reimported.digCommands).to.deep.equal(source.digCommands);
+      expect(reimported.planningToolShapes).to.deep.equal(source.planningToolShapes);
+      expect(reimported.toBniBlueprint('site')).to.deep.equal(exported);
+    });
+
+    // Why the Dig tool refuses a shape cell: a dig of its own there is written
+    // once (the shape already digs it) and handed to the shape on import, so
+    // it would vanish with the shape later.
+    it('collapses a dig on a shape cell into the shape on re-import', () => {
+      const source = new Blueprint();
+      source.digCommands = [{ x: 5, y: 5 }];
+      source.planningToolShapes = [{ x: 5, y: 5, shape: 0, color: 0 }];
+      const reimported = new Blueprint();
+      reimported.importFromBni(source.toBniBlueprint('collapsed'));
+      expect(reimported.digCommands).to.deep.equal([]);
+      expect(reimported.toBniBlueprint('collapsed').digcommands).to.deep.equal([{ x: 5, y: 5 }]);
+    });
+
     it('re-origins dig commands with the buildings on a sanitized export', () => {
       const source = new Blueprint();
       source.importFromBni({
