@@ -1,3 +1,4 @@
+import { RocketInteriorModule } from '../blueprint/rocket-interior';
 import { ForkedFromDto } from './blueprint-version';
 import { RawSourceFormat } from '../io/bni/bni-share-string';
 
@@ -59,6 +60,9 @@ export interface BlueprintListItem extends TranslatedTitleFields {
   // Server-derived room types contained in the blueprint (see RoomTypeId);
   // null = never derived or too large for detection
   rooms?: string[] | null;
+  // The habitat module this blueprint was built inside, drawn as scenery
+  // behind it (see rocket-interior.ts); null/absent = none.
+  rocketInterior?: RocketInteriorModule | null;
   isPublished: boolean;
   nbForks: number;
   // Approximate by design: served from throttled write-behind counters
@@ -152,6 +156,7 @@ export interface BlueprintResponse extends TranslatedTitleFields {
   modded?: boolean | null;
   mods?: string[];
   rooms?: string[] | null;
+  rocketInterior?: RocketInteriorModule | null;
   isPublished: boolean;
   // True when the server holds the verbatim BlueprintsV2 upload — downloads
   // should fetch GET /api/blueprints/:id/raw instead of regenerating the

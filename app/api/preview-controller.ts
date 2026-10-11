@@ -4,6 +4,7 @@ import { BlueprintModel } from './models/blueprint';
 import { BlueprintVersionModel } from './models/blueprint-version';
 import {
   PreviewImageService,
+  PreviewRenderData,
   PreviewVariant,
   PREVIEW_VARIANTS,
 } from './services/preview-image-service';
@@ -85,16 +86,25 @@ export class PreviewController {
   // rewriting the Blueprint's cached `data`), else the cached `data` for
   // documents predating versioning — the lean twin of resolveCurrentData.
   // Public: the preview backfill script feeds the render queue with it too.
-  public static async loadRenderData(id: string): Promise<unknown | null> {
-    const doc = await BlueprintModel.model.findById(id).select('data currentVersionId').lean();
+  //
+  // The rocket-interior choice rides along as `rocketInterior` on the render
+  // data (PreviewRenderData): it lives on the blueprint document, not in
+  // `data`, but the worker draws from it, and a save that changes it bumps
+  // modifiedAt, which is what makes the cached variants stale.
+  public static async loadRenderData(id: string): Promise<PreviewRenderData | null> {
+    const doc = await BlueprintModel.model
+      .findById(id)
+      .select('data currentVersionId rocketInterior')
+      .lean();
     if (doc == null) return null;
+    const rocketInterior = doc.rocketInterior ?? null;
     if (doc.currentVersionId != null) {
       const version = await BlueprintVersionModel.model
         .findById(doc.currentVersionId)
         .select('data')
         .lean();
-      if (version?.data != null) return version.data;
+      if (version?.data != null) return { ...version.data, rocketInterior };
     }
-    return doc.data ?? null;
+    return doc.data != null ? { ...doc.data, rocketInterior } : null;
   }
 }

@@ -706,6 +706,8 @@ describe('Blueprint preview images', function () {
   describe('render on write', function () {
     let cacheDir: string;
     let renderCount: number;
+    // What the renderer is fed: the blueprint data plus the rocket-interior
+    // choice (null here — none of these fixtures set one).
     let renderedMdbs: unknown[];
 
     beforeEach(async function () {
@@ -788,7 +790,7 @@ describe('Blueprint preview images', function () {
 
       await waitFor(() => fs.existsSync(path.join(cacheDir, savedId, 'og.png')));
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal(data);
+      expect(renderedMdbs[0]).to.deep.equal({ ...data, rocketInterior: null });
     });
 
     it('forking pre-renders the fork with the source version data', async function () {
@@ -801,7 +803,10 @@ describe('Blueprint preview images', function () {
 
       await waitFor(() => fs.existsSync(path.join(cacheDir, forkId, 'og.png')));
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal(testData.blueprints.popularBlueprint.data);
+      expect(renderedMdbs[0]).to.deep.equal({
+        ...testData.blueprints.popularBlueprint.data,
+        rocketInterior: null,
+      });
     });
 
     it('restoring a version bumps modifiedAt and pre-renders the restored data', async function () {
@@ -825,7 +830,7 @@ describe('Blueprint preview images', function () {
 
       await waitFor(() => fs.existsSync(path.join(cacheDir, blueprintId, 'og.png')));
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal(restoredData);
+      expect(renderedMdbs[0]).to.deep.equal({ ...restoredData, rocketInterior: null });
     });
 
     it('the preview endpoint renders the current version data, not the stale blueprint cache', async function () {
@@ -848,7 +853,7 @@ describe('Blueprint preview images', function () {
       );
       expect(response.status).to.equal(200);
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal(versionData);
+      expect(renderedMdbs[0]).to.deep.equal({ ...versionData, rocketInterior: null });
     });
   });
 

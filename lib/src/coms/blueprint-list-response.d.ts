@@ -1,3 +1,4 @@
+import { RocketInteriorModule } from '../blueprint/rocket-interior';
 import { ForkedFromDto } from './blueprint-version';
 import { RawSourceFormat } from '../io/bni/bni-share-string';
 export interface BlueprintListResponse {
@@ -28,6 +29,7 @@ export interface BlueprintListItem extends TranslatedTitleFields {
     modded?: boolean | null;
     mods?: string[];
     rooms?: string[] | null;
+    rocketInterior?: RocketInteriorModule | null;
     isPublished: boolean;
     nbForks: number;
     nbViews: number;
@@ -80,6 +82,7 @@ export interface BlueprintResponse extends TranslatedTitleFields {
     modded?: boolean | null;
     mods?: string[];
     rooms?: string[] | null;
+    rocketInterior?: RocketInteriorModule | null;
     isPublished: boolean;
     hasRawSource?: boolean;
     rawSourceFormat?: RawSourceFormat | null;

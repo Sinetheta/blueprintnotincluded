@@ -12,6 +12,9 @@
 // the parent — sharp ingests the raw buffer directly.
 //   parent -> worker: { type: 'render', requestId, mdb, size, blueprintId, itemCount,
 //                       distinctPrefabs }
+//   `mdb` is the blueprint's stored data plus `rocketInterior` (the habitat
+//   module to draw the rocket-interior facade for, or null) — see
+//   PreviewController.loadRenderData.
 //   worker -> parent: { type: 'ready' }
 //                     { type: 'rendered', requestId, raw: Buffer, width, height, timings }
 //                     { type: 'error', requestId, message }
@@ -49,6 +52,16 @@ import {
   noteMarkerSprite,
   drawTerrainFeature,
   terrainIconUrl,
+  RocketInteriorPlacement,
+  isRocketInteriorModule,
+  placeRocketInterior,
+  buildRocketInteriorScenery,
+  expandBoundsForRocketInterior,
+  rocketBackdropGeometry,
+  rocketBackdropImageUrls,
+  placeSprite,
+  drawVignetteBands,
+  stableSortChildren,
 } from '../../../lib';
 import { PixiNodeUtil } from '../pixi-node-util';
 import { startMemoryHeartbeat } from './memory-heartbeat';
@@ -373,6 +386,104 @@ async function drawWorldNotes(
   }
 }
 
+// Backdrop art for the rocket-interior facade (star field, moon, vignette,
+// door), decoded on first use and kept for the life of the worker — a fixed
+// set of six images, like the note markers. Not ImageSource-registered ids,
+// so ensureTextures cannot carry them.
+const backdropTextures = new Map<string, any>();
+
+async function getBackdropTexture(pixi: PixiNodeUtil, baseDir: string, url: string): Promise<any> {
+  let texture = backdropTextures.get(url);
+  if (texture === undefined) {
+    let baseTexture;
+    try {
+      baseTexture = await pixi.getImageFromCanvas(path.join(baseDir, url));
+    } catch {
+      console.warn(`preview-render-worker: backdrop image ${url} missing, using placeholder`);
+      baseTexture = pixi.getNewBaseRenderTexture({ width: 1, height: 1 });
+    }
+    // A whole-image Texture, not the BaseTexture — see getMarkerTexture.
+    texture = pixi.getNewTextureWhole(baseTexture);
+    backdropTextures.set(url, texture);
+  }
+  return texture;
+}
+
+// The rocket-interior facade, drawn before (so under) the blueprint: the
+// landed backdrop, then the habitat module's fixed interior aligned on the
+// blueprint's control station. Same geometry as the editor overlay
+// (lib/src/drawing/rocket-backdrop.ts) and the same building art as the
+// blueprint itself — the hull is a throwaway Blueprint of real BlueprintItems
+// drawn through drawPixi with its own camera. Both layers are composited into
+// the render texture and released before the blueprint's batches run.
+async function drawRocketInterior(
+  pixi: PixiNodeUtil,
+  baseDir: string,
+  placement: RocketInteriorPlacement,
+  camera: CameraService,
+  size: number,
+  renderTexture: any
+): Promise<void> {
+  const geometry = rocketBackdropGeometry(
+    placement,
+    { zoom: camera.currentZoom, offsetX: camera.cameraOffset.x, offsetY: camera.cameraOffset.y },
+    { width: size, height: size }
+  );
+  for (const url of rocketBackdropImageUrls()) await getBackdropTexture(pixi, baseDir, url);
+  const sprite = (placed: { url: string }) => pixi.getSpriteFrom(backdropTextures.get(placed.url));
+
+  // Back to front: star layers, moon, vignette (sprite + the black bands that
+  // continue it to the frame's edge).
+  const backdrop = pixi.getNewContainer();
+  for (const layer of geometry.stars) {
+    const s = sprite(layer);
+    placeSprite(s, layer);
+    backdrop.addChild(s);
+  }
+  const moon = sprite(geometry.moon);
+  placeSprite(moon, geometry.moon);
+  backdrop.addChild(moon);
+  const vignette = sprite(geometry.vignette);
+  placeSprite(vignette, geometry.vignette);
+  backdrop.addChild(vignette);
+  const bands = pixi.getNewGraphics();
+  drawVignetteBands(bands, geometry.vignetteBands, geometry.vignette.alpha);
+  backdrop.addChild(bands);
+  pixi.pixiApp.renderer.render(backdrop, renderTexture, false);
+  backdrop.destroy({ children: true });
+
+  // The hull. Its own camera so its items land in their own sortable
+  // container; the door is a plain sprite under everything else in it.
+  const hullContainer = pixi.getNewContainer();
+  hullContainer.sortableChildren = true;
+  const hullCamera = new CameraService(hullContainer);
+  hullCamera.setHardZoom(camera.currentZoom);
+  hullCamera.cameraOffset = camera.cameraOffset;
+  hullCamera.overlay = camera.overlay;
+  hullCamera.display = camera.display;
+  const door = sprite(geometry.door);
+  placeSprite(door, geometry.door);
+  door.zIndex = -1e6;
+  hullContainer.addChild(door);
+
+  const scenery = buildRocketInteriorScenery(placement);
+  await ensureTextures(pixi, baseDir, collectImageIds(scenery));
+  for (const item of scenery.blueprintItems) item.cameraChanged(hullCamera);
+  for (const item of scenery.blueprintItems) item.drawPixi(hullCamera, pixi);
+  stableSortChildren(hullContainer);
+  pixi.pixiApp.renderer.render(hullContainer, renderTexture, false);
+  for (const item of scenery.blueprintItems) {
+    item.utilitySprites = [];
+    item.destroy();
+    for (const part of item.drawParts) {
+      part.sprite = null;
+      part.isReady = false;
+    }
+    item.drawParts.length = 0;
+  }
+  hullContainer.destroy({ children: true });
+}
+
 interface RenderTimings {
   importMs: number;
   texturesMs: number;
@@ -427,9 +538,19 @@ async function renderMaster(
   sampleRss();
   await ensureTextures(pixi, assetBaseDir, collectImageIds(blueprint));
 
+  // The facade is framed with the blueprint: a rocket blueprint's items sit
+  // inside the hull, and the whole hull has to be in the picture.
+  const rocketInterior = (mdb as { rocketInterior?: unknown }).rocketInterior;
+  const placement = isRocketInteriorModule(rocketInterior)
+    ? placeRocketInterior(rocketInterior, blueprint)
+    : null;
+
   const rasterizeStart = Date.now();
   sampleRss();
-  const [topLeft, bottomRight] = blueprint.getBoundingBox();
+  const [topLeft, bottomRight] = expandBoundsForRocketInterior(
+    blueprint.getBoundingBox(),
+    placement
+  );
   const totalTileSize = new Vector2(bottomRight.x - topLeft.x + 3, bottomRight.y - topLeft.y + 3);
   // Never fewer cells than MIN_FRAME_CELLS, which is the same thing as never
   // drawing a cell larger than size / MIN_FRAME_CELLS.
@@ -457,6 +578,11 @@ async function renderMaster(
   // Then depth, which drawPixi would otherwise resolve lazily per item — it
   // has to be known up front because it is what the draw order sorts on.
   blueprint.blueprintItems.forEach(item => item.cameraChanged(exportCamera));
+
+  // The rocket-interior facade goes under everything, so it is composited
+  // first — on its own, before the first batch.
+  if (placement != null)
+    await drawRocketInterior(pixi, assetBaseDir, placement, exportCamera, size, renderTexture);
 
   // Rasterize in depth-ordered batches, compositing each into the same render
   // texture and releasing it before building the next.

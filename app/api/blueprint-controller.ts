@@ -17,6 +17,9 @@ import {
   CATEGORIES,
   SUBCATEGORIES,
   RESEARCH_TIERS,
+  ROCKET_INTERIOR_MODULES,
+  RocketInteriorModule,
+  isRocketInteriorModule,
   RAW_SOURCE_FORMATS,
   RawSourceFormat,
   validateBlueprintName,
@@ -47,7 +50,11 @@ import { deriveMods } from './services/mod-derivation-service';
 import { deriveDlcs } from './services/dlc-derivation-service';
 import { detectLanguage } from './services/language-detection-service';
 import { TranslationService } from './services/translation-service';
-import { upsertSearchRow, syncMachineTitle, syncSearchRowStatus } from './services/search-index-service';
+import {
+  upsertSearchRow,
+  syncMachineTitle,
+  syncSearchRowStatus,
+} from './services/search-index-service';
 import {
   resolveTitles,
   resolveOneTitle,
@@ -223,11 +230,26 @@ export class BlueprintController {
 
       const modded = req.body.modded != null ? Boolean(req.body.modded) : null;
 
+      // The habitat module the blueprint was built in, for the rocket-interior
+      // facade. Author-chosen; null (or absent) = none.
+      const rocketInterior = req.body.rocketInterior ?? null;
+      if (rocketInterior != null && !isRocketInteriorModule(rocketInterior)) {
+        res
+          .status(400)
+          .json(
+            apiError(
+              400,
+              `Invalid rocketInterior: must be one of ${ROCKET_INTERIOR_MODULES.join(', ')}`
+            )
+          );
+        return;
+      }
+
       // publish: true = publish as part of this save; absent = keep current
       // state (new blueprints start as drafts via the schema default)
       const publish = req.body.publish != null ? Boolean(req.body.publish) : null;
 
-      const metadata = { category, subcategory, description, researchTier, modded };
+      const metadata = { category, subcategory, description, researchTier, modded, rocketInterior };
 
       // Verbatim BlueprintsV2 source for byte-exact re-download (§8). The
       // client only sends it when the saved data still equals the imported
@@ -577,6 +599,7 @@ export class BlueprintController {
         modded: blueprint.modded ?? null,
         mods: blueprint.mods ?? [],
         rooms: blueprint.rooms ?? null,
+        rocketInterior: blueprint.rocketInterior ?? null,
         isPublished: blueprint.isPublished !== false,
         hasRawSource: blueprint.rawSource != null,
         rawSourceFormat: blueprint.rawSourceFormat ?? null,
@@ -991,7 +1014,12 @@ export class BlueprintController {
     // setting).
     const searchIds =
       (
-        await BlueprintController.resolveSearchMatches(parsed.filterName, req, userId || null, false)
+        await BlueprintController.resolveSearchMatches(
+          parsed.filterName,
+          req,
+          userId || null,
+          false
+        )
       )?.map(match => match.id) ?? null;
 
     const isAdmin = userJwt?.role === 'admin';
@@ -1222,6 +1250,7 @@ export class BlueprintController {
       modded: blueprint.modded ?? null,
       mods: blueprint.mods ?? [],
       rooms: blueprint.rooms ?? null,
+      rocketInterior: blueprint.rocketInterior ?? null,
       isPublished: blueprint.isPublished !== false,
       nbForks: blueprint.forkCount ?? 0,
       nbViews: blueprint.viewCount ?? 0,
@@ -1549,6 +1578,7 @@ export class BlueprintController {
         modded: blueprint.modded ?? null,
         mods: blueprint.mods ?? [],
         rooms: blueprint.rooms ?? null,
+        rocketInterior: blueprint.rocketInterior ?? null,
         isPublished: blueprint.isPublished !== false,
         nbForks: blueprint.forkCount ?? 0,
         nbViews: blueprint.viewCount ?? 0,
@@ -1686,6 +1716,7 @@ export class BlueprintController {
       description: string | null;
       researchTier: string | null;
       modded: boolean | null;
+      rocketInterior: RocketInteriorModule | null;
     },
     publish?: boolean | null,
     forkSource?: { source: Blueprint; versionId: mongoose.Types.ObjectId } | null,
@@ -1751,6 +1782,7 @@ export class BlueprintController {
       blueprint.description = metadata.description;
       blueprint.researchTier = metadata.researchTier;
       blueprint.modded = metadata.modded;
+      blueprint.rocketInterior = metadata.rocketInterior;
       // A blueprint using known-mod buildings is modded regardless of what the
       // client derived (protects against stale clients shipping the old heuristic).
       if (blueprint.mods.length > 0) blueprint.modded = true;
@@ -1844,11 +1876,12 @@ export class BlueprintController {
 
     // Render-on-write: warm the preview cache so the first browse view of
     // this save doesn't pay the render (preview-images-perf-2.md Phase 2).
-    PreviewImageService.instance.prerender(
-      newBlueprint.id,
-      newBlueprint.modifiedAt,
-      async () => data
-    );
+    // The render data carries the rocket-interior choice beside the blueprint
+    // data, as PreviewController.loadRenderData does for on-demand renders.
+    PreviewImageService.instance.prerender(newBlueprint.id, newBlueprint.modifiedAt, async () => ({
+      ...data,
+      rocketInterior: newBlueprint.rocketInterior ?? null,
+    }));
 
     try {
       BatchUtils.UpdatePositionCorrection(newBlueprint);

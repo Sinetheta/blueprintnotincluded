@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import mongoose from 'mongoose';
 import sharp from 'sharp';
+import { RocketInteriorModule } from '../../../lib';
 import { PreviewImageModel } from '../models/preview-image';
 import { buildPreviewGridSvg, PreviewFraming } from './preview-grid';
 import { resolveMaxOldSpaceMb } from './render-memory';
@@ -150,6 +151,15 @@ export interface RawMaster {
 
 /** A master render: raw pixels from the worker, or an encoded image (tests). */
 export type MasterImage = Buffer | RawMaster;
+
+/**
+ * What a render is fed: the blueprint's stored MDB data plus the document
+ * fields the worker draws from but `data` does not hold. Typed loosely
+ * because `data` is schemaless on the document.
+ */
+export type PreviewRenderData = Record<string, unknown> & {
+  rocketInterior?: RocketInteriorModule | null;
+};
 
 /**
  * Identifies the render to the worker so a crash is self-identifying in the

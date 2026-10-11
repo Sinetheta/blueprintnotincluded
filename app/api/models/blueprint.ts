@@ -5,6 +5,8 @@ import {
   ROOM_TYPE_IDS,
   RAW_SOURCE_FORMATS,
   RawSourceFormat,
+  ROCKET_INTERIOR_MODULES,
+  RocketInteriorModule,
   MAX_BLUEPRINT_NAME_LENGTH,
   isCanonicalBlueprintName,
 } from '../../../lib/index';
@@ -76,6 +78,13 @@ export interface Blueprint extends Document {
   // (never client-supplied). null/absent = never derived or blueprint too large
   // for detection; [] = derived, no rooms found.
   rooms?: string[] | null;
+  // The habitat module this blueprint was built inside ('small' = the nose
+  // cone, 'medium'), so the site can draw the module's fixed interior and the
+  // landed backdrop behind it (lib rocket-interior.ts). Presentation, not
+  // content: never in `data`, never exported. Author-chosen for now; null =
+  // none. Absent on legacy docs. A future auto-detector would fill in docs
+  // where this is null/absent and leave a stored module alone.
+  rocketInterior?: RocketInteriorModule | null;
   currentVersionId?: mongoose.Types.ObjectId | null;
   forkedFrom?: {
     blueprintId: mongoose.Types.ObjectId;
@@ -172,6 +181,8 @@ export class BlueprintModel {
       // No default: absent means "never derived", distinct from [] = "derived,
       // none found" (mirrors the requiredDlcs nullability convention).
       rooms: { type: [String], enum: ROOM_TYPE_IDS, default: undefined },
+      // No default (see the field comment): absent on legacy docs.
+      rocketInterior: { type: String, enum: [...ROCKET_INTERIOR_MODULES, null] },
       currentVersionId: {
         type: Schema.Types.ObjectId,
         ref: 'BlueprintVersion',
