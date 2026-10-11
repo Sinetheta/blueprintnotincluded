@@ -36,6 +36,7 @@ interface SignatureVote {
     weight: number;
 }
 export declare const SIGNATURE_PREFABS: Record<string, SignatureVote[]>;
+export declare const ROCKET_CONTROL_STATION_ID = "RocketControlStation";
 export declare function deriveCategory(prefabIds: string[], lookup: CategoryLookup): Category | null;
 export interface RocketStackPart {
     prefabId: string;

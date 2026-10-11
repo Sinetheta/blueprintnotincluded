@@ -282,11 +282,21 @@ const MIN_CATEGORY_SCORE = 2;
 // votes are deliberately left uncapped — they're curated per prefab.
 const MAX_FALLBACK_SCORE = MIN_CATEGORY_SCORE;
 
+// Every habitat interior has exactly one, and the game captures it with the
+// interior. Defined here rather than in rocket-interior.ts, which re-exports
+// it, so this module stays free of the Blueprint model.
+export const ROCKET_CONTROL_STATION_ID = 'RocketControlStation';
+
 // Returns the best-scoring function category for a blueprint's buildings, or
 // null ("Untagged") when there isn't enough signal. Duplicate prefabs count
 // once — a SPOM with 4 electrolyzers isn't 4x more oxygen-y than one with 1.
 export function deriveCategory(prefabIds: string[], lookup: CategoryLookup): Category | null {
   const uniqueIds = new Set(prefabIds);
+  // A rocket interior is a place, not a function, and it is the one thing the
+  // file says outright: the game captures the control station with every
+  // habitat interior (and a rocket cannot launch without exactly one). Whatever
+  // the cabin holds — beds, a research station, a scrubber — it is a rocket.
+  if (uniqueIds.has(ROCKET_CONTROL_STATION_ID)) return 'rocketInterior';
   const signatureScores = new Map<Category, number>();
   const fallbackScores = new Map<Category, number>();
   const addScore = (target: Map<Category, number>, category: Category, weight: number) =>

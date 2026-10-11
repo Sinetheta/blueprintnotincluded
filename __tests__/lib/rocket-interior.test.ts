@@ -244,7 +244,7 @@ describe('Rocket interior', function () {
       expect(placement.origin).to.deep.equal({ x: 4, y: 3 });
     });
 
-    it('keeps a stored origin ahead of centring, but a single station ahead of both', () => {
+    it('keeps a stored origin ahead of the station, and the station ahead of centring', () => {
       const stationless = new Blueprint();
       stationless.importFromBni({
         ...capture,
@@ -254,11 +254,14 @@ describe('Rocket interior', function () {
       expect(stored.anchor).to.equal('stored');
       expect(stored.origin).to.deep.equal({ x: -7, y: 9 });
 
+      // A hand-drawn hull's station sits wherever its author put it, so the
+      // origin fitted to the drawn walls must outrank it.
       const withStation = new Blueprint();
       withStation.importFromBni(capture);
       const placement = placeRocketInterior('small', withStation, { x: -7, y: 9 });
-      expect(placement.anchor).to.equal('station');
-      expect(placement.origin).to.deep.equal({ x: 4, y: 3 });
+      expect(placement.anchor).to.equal('stored');
+      expect(placement.origin).to.deep.equal({ x: -7, y: 9 });
+      expect(placeRocketInterior('small', withStation).anchor).to.equal('station');
     });
 
     it('type-guards a stored origin', () => {
