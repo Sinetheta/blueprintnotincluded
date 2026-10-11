@@ -1114,14 +1114,29 @@ export class BlueprintService implements IObsBlueprintChange {
   // author left it. But a stored origin that the station gave should keep
   // following the station, as it did when the station won outright: moving a
   // capture's station (or undoing a move) takes the hull with it.
+  //
+  // "The station gave it" is read off the blueprint, not remembered: the
+  // stored origin sat on the station, and no hull drawn out of tiles holds it
+  // there. A hand-drawn hull whose station happens to be in the template's
+  // spot stays on its walls when the station moves — and that holds after a
+  // reload too, where no record of how the origin was chosen survives.
   private followStation() {
     const previous = this.stationOrigin;
     const current = this.currentStationOrigin();
     this.stationOrigin = current;
     const stored = this.metadata.rocketInteriorOrigin;
+    const module = this.metadata.rocketInterior;
     if (previous == null || current == null || stored == null) return;
+    if (module == null) return;
     if (stored.x !== previous.x || stored.y !== previous.y) return;
     if (current.x === previous.x && current.y === previous.y) return;
+    if (OniItem.oniItemsMap != null) {
+      const drawn = fitRocketInteriorModule(
+        module,
+        this.blueprint.blueprintItems,
+      );
+      if (drawn != null && drawn.x === stored.x && drawn.y === stored.y) return;
+    }
     this.metadata.rocketInteriorOrigin = { x: current.x, y: current.y };
   }
 

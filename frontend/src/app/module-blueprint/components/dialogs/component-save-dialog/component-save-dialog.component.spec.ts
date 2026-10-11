@@ -193,6 +193,19 @@ describe("ComponentSaveDialogComponent", () => {
       expect(component.saveBlueprintForm.value.rocketInterior).toBe("small");
     });
 
+    it("keeps None picked from the Display menu before the first save", () => {
+      const blueprintService = TestBed.inject(BlueprintService);
+      const suggest = vi
+        .spyOn(blueprintService, "suggestRocketInterior")
+        .mockReturnValue(fit);
+      blueprintService.setRocketInterior(null);
+
+      component.showDialog();
+
+      expect(suggest).not.toHaveBeenCalled();
+      expect(component.saveBlueprintForm.value.rocketInterior).toBeNull();
+    });
+
     it("never offers on an update: none there is the author's choice", () => {
       const blueprintService = TestBed.inject(BlueprintService);
       const suggest = vi

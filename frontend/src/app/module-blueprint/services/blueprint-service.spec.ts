@@ -173,6 +173,23 @@ describe("BlueprintService", () => {
       (service.blueprint as any).blueprintItems = items;
     };
 
+    // The medium hull's walls drawn around origin (10, 10).
+    const mediumWalls = () => {
+      const walls: any[] = [];
+      for (let x = 5; x <= 16; x++)
+        for (const y of [6, 15])
+          walls.push({ id: "MetalTile", position: { x, y } });
+      for (let y = 7; y <= 14; y++)
+        for (const x of [5, 16])
+          walls.push({ id: "MetalTile", position: { x, y } });
+      return walls;
+    };
+    const tilesAreWalls = () => {
+      (OniItem as any).oniItemsMap = new Map([
+        ["MetalTile", { buildLocationRule: BuildLocationRule.Tile }],
+      ]);
+    };
+
     beforeEach(() => {
       // The undo snapshot would serialize the plain records
       vi.spyOn(service.blueprint, "toMdbBlueprint").mockReturnValue(oneItem());
@@ -207,20 +224,22 @@ describe("BlueprintService", () => {
       expect(service.metadata.rocketInteriorOrigin).toEqual({ x: 20, y: -7 });
     });
 
+    it("keeps a drawn hull on its walls when its station moves, even from the template's spot", () => {
+      tilesAreWalls();
+      // On the floor where the template puts it: station and walls agree.
+      useItems([...mediumWalls(), station(10, 7)]);
+      service.setRocketInterior("medium");
+      expect(service.metadata.rocketInteriorOrigin).toEqual({ x: 10, y: 10 });
+
+      useItems([...mediumWalls(), station(12, 7)]);
+      service.blueprintChanged();
+      expect(service.metadata.rocketInteriorOrigin).toEqual({ x: 10, y: 10 });
+    });
+
     it("puts a picked module on a hull drawn out of tiles", () => {
-      (OniItem as any).oniItemsMap = new Map([
-        ["MetalTile", { buildLocationRule: BuildLocationRule.Tile }],
-      ]);
-      // The medium hull's walls drawn around origin (10, 10), station on the
-      // ceiling rather than the floor.
-      const walls: any[] = [];
-      for (let x = 5; x <= 16; x++)
-        for (const y of [6, 15])
-          walls.push({ id: "MetalTile", position: { x, y } });
-      for (let y = 7; y <= 14; y++)
-        for (const x of [5, 16])
-          walls.push({ id: "MetalTile", position: { x, y } });
-      useItems([...walls, station(10, 14)]);
+      tilesAreWalls();
+      // Station on the ceiling rather than the floor.
+      useItems([...mediumWalls(), station(10, 14)]);
 
       service.setRocketInterior("medium");
 
