@@ -88,11 +88,13 @@ to change. Icons downscale to the footprint; connection sprites are rendered at 
 ratio (see below). What breaks rendering is changing **framing**, not pixel count.
 
 1. **Icon naming:** `ui_image/<prefabId>.png`, filename == `building.json` `name` (the
-   prefab tag, e.g. `FabricatedWood.png` — **not** the display name). Verified 1241/1241
-   match by key.
+   prefab tag, e.g. `FabricatedWood.png` — **not** the display name). The import fails if any
+   building lacks its PNG (`buildings missing ui_image PNG`); 480/480 on U59-744825.
 2. **`uiImageRect`** (per building, cells, footprint-relative): required for any icon whose
    art overhangs its footprint; see next section. Emitted for 462/480 buildings and all 31
-   terrain features; the other 18 (the tiles and `CrewCapsule`) stretch to the footprint.
+   terrain features; the other 18 stretch to the footprint: 17 tiles, whose art fills the
+   cell, and `CrewCapsule`, a deprecated 5×19 prefab the menu never offers whose 137×41
+   legacy icon would distort if a legacy blueprint still placed it.
    **Every rect must match its own PNG's pixel aspect** — the import fails otherwise.
 3. **Connection sprites:** all 16 of `0–15` present, bitmask `left=1/right=2/up=4/down=8`.
 4. **Connectable signal:** the `connection_sprites/<prefabId>/` directory exists
