@@ -79,6 +79,17 @@ describe('Blueprint import: Planning Tool shapes', function () {
     blueprint.planningToolShapes = plans;
     expect(blueprint.getBoundingBox()).to.deep.equal([new Vector2(0, 0), new Vector2(2, 1)]);
   });
+
+  it('includes dig-only cells in the camera bounds', () => {
+    const blueprint = new Blueprint();
+    blueprint.digCommands = [
+      { x: -2, y: 4 },
+      { x: 3, y: -1 },
+    ];
+    expect(blueprint.getBoundingBox()).to.deep.equal([new Vector2(-2, -1), new Vector2(3, 4)]);
+    blueprint.planningToolShapes = plans;
+    expect(blueprint.getBoundingBox()).to.deep.equal([new Vector2(-2, -1), new Vector2(3, 4)]);
+  });
 });
 
 // importFromMdb used to emit a change event per added item, and every emit

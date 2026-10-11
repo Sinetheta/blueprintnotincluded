@@ -290,6 +290,9 @@ describe('Rocket interior', function () {
       const full = new Blueprint();
       full.importFromBni(capture);
       expect(isBlueprintEmpty(full)).to.equal(false);
+      const dugOnly = new Blueprint();
+      dugOnly.digCommands = [{ x: 2, y: 2 }];
+      expect(isBlueprintEmpty(dugOnly)).to.equal(false);
     });
 
     it('sits on the origin for an empty blueprint', () => {
@@ -336,6 +339,20 @@ describe('Rocket interior', function () {
         i => i.id === 'RocketWallTile' && i.position.x === 1 && i.position.y === 1
       ) as any;
       expect(above.tileConnections & 8).to.equal(0);
+    });
+
+    // The Dig tool pushes onto blueprint.digCommands in place; the editor
+    // places the hull every frame, so the wall opens as the cell is painted.
+    it('opens a wall dug in place, the way the Dig tool paints it', () => {
+      const blueprint = new Blueprint();
+      blueprint.importFromBni(capture);
+      const before = rocketInteriorPlacementKey(placeRocketInterior('small', blueprint));
+      blueprint.digCommands.push({ x: 1, y: 0 });
+      const placement = placeRocketInterior('small', blueprint);
+      expect(placement.removed).to.deep.equal([{ x: 1, y: 0 }]);
+      expect(rocketInteriorPlacementKey(placement)).to.not.equal(before);
+      blueprint.digCommands.pop();
+      expect(rocketInteriorPlacementKey(placeRocketInterior('small', blueprint))).to.equal(before);
     });
 
     it('translates the door and widens a bounding box to the hull', () => {

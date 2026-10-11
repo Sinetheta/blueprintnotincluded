@@ -275,7 +275,8 @@ export function isBlueprintEmpty(blueprint: Blueprint): boolean {
     blueprint.blueprintItems.length === 0 &&
     blueprint.worldNotes.length === 0 &&
     blueprint.terrainFeatures.length === 0 &&
-    blueprint.planningToolShapes.length === 0
+    blueprint.planningToolShapes.length === 0 &&
+    blueprint.digCommands.length === 0
   );
 }
 

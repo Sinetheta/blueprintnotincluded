@@ -50,6 +50,7 @@ export * from './src/drawing/pixi-util';
 export * from './src/drawing/note-markers';
 export * from './src/drawing/terrain-markers';
 export * from './src/drawing/rocket-backdrop';
+export * from './src/drawing/dig-markers';
 
 export * from './src/blueprint/blueprint';
 export * from './src/blueprint/blueprint-helpers';

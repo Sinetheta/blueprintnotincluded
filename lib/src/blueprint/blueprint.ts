@@ -52,8 +52,8 @@ export class Blueprint {
   // Cells the blueprint marks for digging -- the mod's `digcommands`, less the
   // ones that only mirror a Planning Tool shape (those are regenerated from
   // planningToolShapes on export, so a deleted shape takes its dig with it).
-  // Carried through the model so a site round-trip no longer drops them; not
-  // drawn or editable yet.
+  // Painted and erased with the editor's Dig tool, drawn by the dig overlay
+  // (lib/src/drawing/dig-markers.ts), and written back out on export.
   digCommands: BniDigCommand[] = [];
   // Natural terrain features (geysers, vents, volcanoes) annotated onto the
   // blueprint. Annotations, not construction: they never become BlueprintItems,
@@ -640,6 +640,15 @@ export class Blueprint {
       if (topLeft.y > shape.y) topLeft.y = shape.y;
       if (bottomRight.x < shape.x) bottomRight.x = shape.x;
       if (bottomRight.y < shape.y) bottomRight.y = shape.y;
+    });
+
+    // Dig cells are drawn content too, so a region that is only dug still
+    // frames (a rocket wall opened beside the buildings, say).
+    this.digCommands.forEach(dig => {
+      if (topLeft.x > dig.x) topLeft.x = dig.x;
+      if (topLeft.y > dig.y) topLeft.y = dig.y;
+      if (bottomRight.x < dig.x) bottomRight.x = dig.x;
+      if (bottomRight.y < dig.y) bottomRight.y = dig.y;
     });
 
     this.worldNotes.forEach(note => {
