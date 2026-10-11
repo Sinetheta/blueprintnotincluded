@@ -31087,8 +31087,8 @@
       "tileableTopBottom": false,
       "connectionSprites": true,
       "connectionScale": {
-        "x": 1,
-        "y": 1
+        "x": 1.5,
+        "y": 1.5
       },
       "dlcIds": [],
       "roomTags": [],
