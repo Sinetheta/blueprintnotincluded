@@ -121,6 +121,38 @@ describe("ComponentSaveDialogComponent", () => {
         modded: true,
       });
     });
+
+    it("keeps the stored rocket-interior origin across a save from the dialog", () => {
+      const blueprintService = TestBed.inject(BlueprintService);
+      blueprintService.saveBlueprint = vi
+        .fn()
+        .mockReturnValue(of({ id: "abc" }));
+      (blueprintService as any).thumbnail = "data:image/png;base64,test";
+      // A station-less blueprint's hull is anchored only by this origin; a
+      // save that rewrites the metadata must carry it, not drop it.
+      blueprintService.metadata = {
+        rocketInterior: "small",
+        rocketInteriorOrigin: { x: 4, y: 3 },
+      };
+      const setRocketInterior = vi.spyOn(blueprintService, "setRocketInterior");
+
+      component.showDialog();
+      component.saveBlueprintForm.patchValue({ name: "Rocket" });
+      component.onSubmit();
+
+      expect(setRocketInterior).not.toHaveBeenCalled();
+      expect(blueprintService.metadata.rocketInterior).toBe("small");
+      expect(blueprintService.metadata.rocketInteriorOrigin).toEqual({
+        x: 4,
+        y: 3,
+      });
+
+      // Switching to none from the form clears the origin with the choice.
+      component.saveBlueprintForm.patchValue({ rocketInterior: null });
+      component.onSubmit();
+      expect(blueprintService.metadata.rocketInterior).toBeNull();
+      expect(blueprintService.metadata.rocketInteriorOrigin).toBeNull();
+    });
   });
 
   describe("computeDerivedMetadata category pre-fill", () => {

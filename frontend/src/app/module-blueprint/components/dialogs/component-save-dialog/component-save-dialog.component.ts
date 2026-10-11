@@ -178,12 +178,28 @@ export class ComponentSaveDialogComponent {
 
   private applyMetadataToService() {
     const v = this.saveBlueprintForm.getRawValue();
+    // The rocket-interior choice travels with its resolved origin, which only
+    // the service's setter knows how to compute (it reads the live blueprint
+    // and camera). The select already routes through it on change; this
+    // covers a form value that got there any other way, and keeps the origin
+    // the service already holds when the choice is unchanged — rebuilding
+    // the metadata without it would reset a station-less hull to the moving
+    // bounds fallback on every save.
+    const rocketInterior = v.rocketInterior ?? null;
+    if (
+      rocketInterior !== (this.blueprintService.metadata.rocketInterior ?? null)
+    )
+      this.blueprintService.setRocketInterior(rocketInterior);
     this.blueprintService.metadata = {
       category: v.category ?? null,
       subcategory: v.subcategory ?? null,
       description: v.description?.trim() || null,
       modded: v.modded ?? null,
-      rocketInterior: v.rocketInterior ?? null,
+      rocketInterior,
+      rocketInteriorOrigin:
+        rocketInterior != null
+          ? (this.blueprintService.metadata.rocketInteriorOrigin ?? null)
+          : null,
     };
   }
 
