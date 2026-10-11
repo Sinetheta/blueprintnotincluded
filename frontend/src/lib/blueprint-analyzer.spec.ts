@@ -129,7 +129,13 @@ describe("deriveCategory", () => {
     refining: ["MetalRefinery"],
     rooms: ["Bed"],
     decor: ["FloorLamp", "CeilingLight"],
+    // The station outranks every function vote: a cabin with beds is a rocket.
+    rocketInterior: ["RocketControlStation", "Bed", "LuxuryBed"],
   };
+
+  it("the rocket control station is a real prefab", () => {
+    expect(buildingIds.has("RocketControlStation")).toBe(true);
+  });
 
   it("every signature prefab in the analyzer's table exists in the real database", () => {
     // Covers the full SIGNATURE_PREFABS table (not just the fixture below) so

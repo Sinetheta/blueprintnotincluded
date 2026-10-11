@@ -1,5 +1,5 @@
 export const CATEGORIES = ['oxygenGen', 'power', 'cooling', 'food', 'ranching',
-  'automation', 'transit', 'refining', 'rooms', 'decor'] as const;
+  'automation', 'transit', 'refining', 'rooms', 'decor', 'rocketInterior'] as const;
 export type Category = typeof CATEGORIES[number];
 
 export const SUBCATEGORIES: Record<Category, readonly string[]> = {
@@ -13,6 +13,7 @@ export const SUBCATEGORIES: Record<Category, readonly string[]> = {
   refining:  ['oil', 'metal', 'foodProcessing'],
   rooms:     ['barracks', 'hospital', 'recreation'],
   decor:     ['sculpture', 'plant', 'lighting'],
+  rocketInterior: [],
 };
 export type Subcategory = string;
 

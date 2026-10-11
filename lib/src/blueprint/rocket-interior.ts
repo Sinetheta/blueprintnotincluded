@@ -1,6 +1,7 @@
 import { Vector2 } from '../vector2';
 import { Blueprint } from './blueprint';
 import { BlueprintHelpers } from './blueprint-helpers';
+import { ROCKET_CONTROL_STATION_ID } from './blueprint-analyzer';
 import { ROCKET_INTERIOR_LAYOUT_SOURCES } from './rocket-interior-layouts';
 
 // Rocket interiors: the fixed walls, windows, ports, control station and door
@@ -18,9 +19,10 @@ import { ROCKET_INTERIOR_LAYOUT_SOURCES } from './rocket-interior-layouts';
 // the control station, whose cell is fixed in both templates.
 //
 // Which module a blueprint was built in is not derivable from the file with
-// certainty (the station is the same building in both), so for now it is a
-// stored choice on the website's blueprint record (`rocketInterior`), picked
-// by the author. Nothing here is blueprint content: the scenery is never a
+// certainty (the station is the same building in both), so it is a stored
+// choice on the website's blueprint record (`rocketInterior`): picked by the
+// author, or filled in by the fitter (rocket-interior-fit.ts) where the
+// blueprint makes it plain. Nothing here is blueprint content: the scenery is never a
 // BlueprintItem of the blueprint, never costed, never exported.
 
 export const ROCKET_INTERIOR_MODULES = ['small', 'medium'] as const;
@@ -30,7 +32,7 @@ export function isRocketInteriorModule(value: unknown): value is RocketInteriorM
   return (ROCKET_INTERIOR_MODULES as readonly unknown[]).includes(value);
 }
 
-export const ROCKET_CONTROL_STATION_ID = 'RocketControlStation';
+export { ROCKET_CONTROL_STATION_ID };
 
 // The door is an entity in the game, not a building, so it has no OniItem and
 // no database entry — only its icon in the regular export. Drawn straight from
@@ -183,10 +185,9 @@ export const ROCKET_INTERIOR_ART: Record<string, string> = {
   RocketEnvelopeWindowTile: 'GlassTile',
 };
 
-// How the template was aligned with the blueprint. 'station' is the real
-// alignment, read from the blueprint every time; 'stored' is an origin fixed
-// earlier and kept on the record; 'bounds' is the last resort when there is
-// neither — the template centred on the blueprint's extent *as it is now*,
+// How the template was aligned with the blueprint. 'stored' is an origin fixed
+// earlier and kept on the record; 'station' is read off the blueprint's control
+// station; 'bounds' is the last resort when there is neither — the template centred on the blueprint's extent *as it is now*,
 // which moves whenever the blueprint grows, so the editor resolves it once
 // and stores it rather than living with a hull that follows the bricks.
 export type RocketInteriorAnchor = 'station' | 'stored' | 'bounds';
@@ -265,10 +266,6 @@ function roundCell(value: number): number {
   return Math.round(value) || 0;
 }
 
-// `storedOrigin` is the record's rocketInteriorOrigin: the origin the editor
-// resolved when the module was chosen. A single control station still wins —
-// it is the one fact the blueprint itself carries — so a stored origin only
-// matters for a blueprint without one.
 // Whether a blueprint has anything to centre a hull on.
 export function isBlueprintEmpty(blueprint: Blueprint): boolean {
   return (
@@ -280,6 +277,15 @@ export function isBlueprintEmpty(blueprint: Blueprint): boolean {
   );
 }
 
+// `storedOrigin` is the record's rocketInteriorOrigin: where the hull was put
+// when the module was chosen — by the author in the editor, or by the fitter
+// (rocket-interior-fit.ts) for a stored blueprint. It wins over the station:
+// most rocket blueprints on the site were drawn by hand, hull and all, with the
+// station wherever the author liked, and there the station would put the hull
+// in the wrong place. A capture's stored origin is its station's anyway, and
+// the editor moves the stored origin along with a moved station
+// (BlueprintService.followStation). Without a stored origin the station
+// aligns; without either the hull is centred on the blueprint.
 export function placeRocketInterior(
   module: RocketInteriorModule,
   blueprint: Blueprint,
@@ -294,9 +300,9 @@ export function placeRocketInterior(
     removed: dugHullCells(layout, origin, blueprint.digCommands),
   });
 
+  if (storedOrigin != null) return place({ x: storedOrigin.x, y: storedOrigin.y }, 'stored');
   const fromStation = rocketInteriorOriginFromStation(layout, blueprint.blueprintItems);
   if (fromStation != null) return place(fromStation, 'station');
-  if (storedOrigin != null) return place({ x: storedOrigin.x, y: storedOrigin.y }, 'stored');
 
   // getBoundingBox is a sentinel pair on an empty blueprint; the template then
   // sits on the origin, which is where a new blueprint starts anyway.

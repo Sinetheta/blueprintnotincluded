@@ -54,6 +54,7 @@ export * from './src/blueprint/content-locale';
 export * from './src/blueprint/blueprint-analyzer';
 export * from './src/blueprint/rocket-stack';
 export * from './src/blueprint/rocket-interior';
+export * from './src/blueprint/rocket-interior-fit';
 export * from './src/blueprint/rocket-interior-layouts';
 export * from './src/blueprint/dlc';
 export * from './src/blueprint/terrain-metadata';

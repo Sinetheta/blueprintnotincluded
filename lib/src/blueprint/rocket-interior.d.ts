@@ -1,9 +1,10 @@
 import { Vector2 } from '../vector2';
 import { Blueprint } from './blueprint';
+import { ROCKET_CONTROL_STATION_ID } from './blueprint-analyzer';
 export declare const ROCKET_INTERIOR_MODULES: readonly ["small", "medium"];
 export type RocketInteriorModule = (typeof ROCKET_INTERIOR_MODULES)[number];
 export declare function isRocketInteriorModule(value: unknown): value is RocketInteriorModule;
-export declare const ROCKET_CONTROL_STATION_ID = "RocketControlStation";
+export { ROCKET_CONTROL_STATION_ID };
 export declare const ROCKET_INTERIOR_DOOR_ID = "ClustercraftInteriorDoor";
 export declare const ROCKET_INTERIOR_DOOR_URL = "assets/ui_image/ClustercraftInteriorDoor.png";
 export declare const ROCKET_INTERIOR_GLYPHS: Record<string, string>;
