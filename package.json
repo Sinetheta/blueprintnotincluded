@@ -28,6 +28,8 @@
     "derive-metadata:dry-run": "./scripts/batch.sh derive-blueprint-metadata --dry-run",
     "derive-rooms": "./scripts/batch.sh derive-rooms",
     "derive-rooms:dry-run": "./scripts/batch.sh derive-rooms --dry-run",
+    "derive-rocket-interiors": "./scripts/batch.sh derive-rocket-interiors",
+    "derive-rocket-interiors:dry-run": "./scripts/batch.sh derive-rocket-interiors --dry-run",
     "derive-language": "./scripts/batch.sh derive-language",
     "derive-language:dry-run": "./scripts/batch.sh derive-language --dry-run",
     "derive-search": "./scripts/batch.sh derive-search",
