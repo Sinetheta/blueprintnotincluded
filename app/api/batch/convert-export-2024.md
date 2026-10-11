@@ -292,8 +292,10 @@ real size) and copies the PNGs into the SpriteInfo image root
 (`frontend/src/assets/images/`) — `SpriteInfo` resolves `textureName` there, not under
 `ui_image/`. `drawPixiUtility` forces a fixed 0.5×0.5-cell draw size, so the icons render
 the same regardless of PNG resolution. The import fails when the array is absent or empty
-(`utilityIndicators declared: false` — an export older than #23) and when a named PNG is
-missing (`utility indicator PNGs missing: N`). The website side of the contract is checked
+(`utilityIndicators declared: false` — an export older than #23), when an entry is not a
+bare file name (`utility indicator names invalid: N` — a path separator, an empty or
+non-string value; such entries are skipped before any file is read or written) and when a
+named PNG is missing (`utility indicator PNGs missing: N`). The website side of the contract is checked
 by `__tests__/asset-processing/database-validation.test.ts`, which asserts the committed
 database registers every id the renderer asks for. This replaces the old approach of slicing
 the legacy packed-atlas pages (`hat_role_building1`, `1bed_1toilet_locked`,

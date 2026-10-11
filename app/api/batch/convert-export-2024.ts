@@ -466,7 +466,9 @@ function readConnectablePrefabs(connectionDir: string): {
 // Canvas-to-cell scale for a connectable's sprites. The all-connected state (15) is flush
 // on every side, so its alpha bounding box is exactly one cell; canvas/cell gives the factor
 // the renderer must apply (with a center anchor) so the cell maps to one tile and tiles join
-// flush. Tiles measure ~1.5, utilities ~1.05-1.15, RocketEnvelopeWindowTile 1.0.
+// flush. Tiles measure ~1.5, utilities ~1.05-1.15. (RocketEnvelopeWindowTile read 1.0 until
+// the 2026-10-11b export: its June sprites were drawn edge to edge because the exporter had
+// destroyed the texture it shared with GlassTile.)
 function measureConnectionScale(
   connectionDir: string,
   prefab: string
@@ -569,9 +571,23 @@ export function convertExport2024(opts: ConvertOptions): void {
   // root `utilityIndicators` names the ui_image/<name>.png files this run wrote. The names
   // are the ids ConnectionHelper.getConnectionSprite resolves, so we read the list rather
   // than assert it; an export too old to carry it fails the import below.
-  const hasUtilityIndicators =
-    Array.isArray(buildingFile.utilityIndicators) && buildingFile.utilityIndicators.length > 0;
-  const utilityIndicatorNames: string[] = hasUtilityIndicators ? buildingFile.utilityIndicators! : [];
+  // Each name becomes ui_image/<name>.png and frontend/src/assets/images/<name>.png, so it
+  // must be a bare file name: an entry carrying a path separator (or an empty or
+  // non-string one) would read or write outside those directories. Such entries never
+  // reach a file operation; they fail the import below the way a missing PNG does.
+  const declaredIndicators: unknown[] = Array.isArray(buildingFile.utilityIndicators)
+    ? buildingFile.utilityIndicators
+    : [];
+  const isBareFileName = (n: unknown): n is string =>
+    typeof n === 'string' &&
+    n.length > 0 &&
+    n !== '.' &&
+    n !== '..' &&
+    n === path.basename(n) &&
+    n === path.win32.basename(n);
+  const hasUtilityIndicators = declaredIndicators.length > 0;
+  const invalidIndicatorNames = declaredIndicators.filter((n) => !isBareFileName(n)).map(String);
+  const utilityIndicatorNames = declaredIndicators.filter(isBareFileName);
 
   const uiImageFiles = new Set(
     fs
@@ -1008,6 +1024,13 @@ export function convertExport2024(opts: ConvertOptions): void {
       ? `(${utilityIndicatorNames.length}: ${utilityIndicatorNames.join(', ')})`
       : '(building.json has no utilityIndicators — export predates OniExtract2024 #23; utility overlays would be blank)'
   );
+  console.log(
+    '  utility indicator names invalid    :',
+    invalidIndicatorNames.length,
+    invalidIndicatorNames.length
+      ? '(not bare file names, skipped: ' + invalidIndicatorNames.map((n) => JSON.stringify(n)).join(', ') + ')'
+      : ''
+  );
   console.log('  utility indicator PNGs missing     :', missingIndicatorPngs.length);
   if (missingIndicatorPngs.length)
     console.log('    missing from export/ui_image (utility overlays will be broken):', missingIndicatorPngs.join(', '));
@@ -1209,6 +1232,7 @@ export function convertExport2024(opts: ConvertOptions): void {
     unknownViewModes.size +
     unknownConnectionTypes.size +
     (hasUtilityIndicators ? 0 : 1) +
+    invalidIndicatorNames.length +
     missingIndicatorPngs.length +
     roomTagsUnmatched.length +
     roomTagsNotInVocabulary.length +
