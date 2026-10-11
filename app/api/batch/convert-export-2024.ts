@@ -76,19 +76,6 @@ const VIEW_MODE_TO_OVERLAY: { [name: string]: Overlay } = {
   Crop: Overlay.Unknown, // ditto
 };
 
-// The 8 utility-overlay port indicators, by id (== their ui_image/<name>.png filename and
-// the id ConnectionHelper.getConnectionSprite resolves). Shipped as flat PNGs since U59.
-const UTILITY_INDICATOR_NAMES = [
-  'input',
-  'output',
-  'electrical_disconnected',
-  'logicInput',
-  'logicOutput',
-  'logicResetUpdate',
-  'logic_ribbon_all_in',
-  'logic_ribbon_all_out',
-];
-
 // Flat-icon placement rectangle, in cells, footprint-relative (origin bottom-left, +y up).
 interface UiImageRect {
   x: number;
@@ -577,6 +564,15 @@ export function convertExport2024(opts: ConvertOptions): void {
   const elementsFile = readJson<BElementsFile2024>(path.join(dbDir, 'elements.json'));
   const uiSpriteFile = readJson<BUiSpriteInfoFile2024>(path.join(dbDir, 'uiSpriteInfo.json'));
 
+  // The utility-overlay port indicators (`input`, `output`, `electrical_disconnected`,
+  // `logicInput`, …) are declared by the export since OniExtract2024 #23: building.json's
+  // root `utilityIndicators` names the ui_image/<name>.png files this run wrote. The names
+  // are the ids ConnectionHelper.getConnectionSprite resolves, so we read the list rather
+  // than assert it; an export too old to carry it fails the import below.
+  const hasUtilityIndicators =
+    Array.isArray(buildingFile.utilityIndicators) && buildingFile.utilityIndicators.length > 0;
+  const utilityIndicatorNames: string[] = hasUtilityIndicators ? buildingFile.utilityIndicators! : [];
+
   const uiImageFiles = new Set(
     fs
       .readdirSync(uiImageDir)
@@ -853,13 +849,14 @@ export function convertExport2024(opts: ConvertOptions): void {
   ];
 
   // Utility-overlay port indicators drawn by ConnectionHelper.getConnectionSprite (resolved
-  // directly by id, no spriteModifier; tint applied at draw time). U59 now ships these as their
-  // own flat PNGs in export/ui_image/, so we register each as a whole-image sprite (uvMin 0,0,
-  // uvSize = the PNG's real size) instead of slicing the legacy packed-atlas pages we used to
-  // depend on. drawPixiUtility forces a fixed 0.5×0.5-cell draw size, so the icons render exactly
-  // as before. The PNGs are copied into the SpriteInfo image root (frontend/src/assets/images/)
-  // below — SpriteInfo resolves textureName there, not in ui_image/.
-  const indicatorSprites = UTILITY_INDICATOR_NAMES.map((name) => {
+  // directly by id, no spriteModifier; tint applied at draw time). U59 ships these as their
+  // own flat PNGs in export/ui_image/, named by building.json's `utilityIndicators`, so we
+  // register each as a whole-image sprite (uvMin 0,0, uvSize = the PNG's real size) instead
+  // of slicing the legacy packed-atlas pages we used to depend on. drawPixiUtility forces a
+  // fixed 0.5×0.5-cell draw size, so the icons render exactly as before. The PNGs are copied
+  // into the SpriteInfo image root (frontend/src/assets/images/) below — SpriteInfo resolves
+  // textureName there, not in ui_image/.
+  const indicatorSprites = utilityIndicatorNames.map((name) => {
     const size = readPngSize(path.join(uiImageDir, name + '.png')) ?? { x: 0, y: 0 };
     return {
       name, textureName: name, isIcon: true, isInputOutput: true,
@@ -867,10 +864,11 @@ export function convertExport2024(opts: ConvertOptions): void {
       realSize: { x: size.x, y: size.y }, pivot: { x: 0.5, y: 0.5 },
     };
   });
-  // Fail the import if the export is missing any indicator PNG — the DB would otherwise
-  // reference a texture that won't resolve and every utility overlay would go blank.
+  // Fail the import if the export declares no indicators or is missing a declared PNG —
+  // the DB would otherwise reference a texture that won't resolve (or none at all) and
+  // every utility overlay would go blank.
   const imagesDir = path.join(path.dirname(opts.out), '../../frontend/src/assets/images');
-  const missingIndicatorPngs = UTILITY_INDICATOR_NAMES.filter((n) => !uiImageFiles.has(n));
+  const missingIndicatorPngs = utilityIndicatorNames.filter((n) => !uiImageFiles.has(n));
 
   const overlayModifiers = [
     { name: 'element_tile_back', spriteInfoName: 'element_tile_back', translation: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, rotation: 0, tags: [27] },
@@ -1002,6 +1000,13 @@ export function convertExport2024(opts: ConvertOptions): void {
     elementsOverMaxMass.length
       ? '(' + elementsOverMaxMass.slice(0, 30).map((e) => e.id).join(', ') + ')'
       : ''
+  );
+  console.log(
+    '  utilityIndicators declared         :',
+    hasUtilityIndicators,
+    hasUtilityIndicators
+      ? `(${utilityIndicatorNames.length}: ${utilityIndicatorNames.join(', ')})`
+      : '(building.json has no utilityIndicators — export predates OniExtract2024 #23; utility overlays would be blank)'
   );
   console.log('  utility indicator PNGs missing     :', missingIndicatorPngs.length);
   if (missingIndicatorPngs.length)
@@ -1203,6 +1208,7 @@ export function convertExport2024(opts: ConvertOptions): void {
     connectableDirsNoBuilding.length +
     unknownViewModes.size +
     unknownConnectionTypes.size +
+    (hasUtilityIndicators ? 0 : 1) +
     missingIndicatorPngs.length +
     roomTagsUnmatched.length +
     roomTagsNotInVocabulary.length +
@@ -1261,7 +1267,7 @@ export function convertExport2024(opts: ConvertOptions): void {
   // Content-aware so unchanged icons keep their mtime.
   fs.mkdirSync(imagesDir, { recursive: true });
   let indicatorsCopied = 0;
-  for (const name of UTILITY_INDICATOR_NAMES) {
+  for (const name of utilityIndicatorNames) {
     const src = path.join(uiImageDir, name + '.png');
     const dest = path.join(imagesDir, name + '.png');
     if (fs.existsSync(src) && classifySprite(src, dest) === 'changed') {
@@ -1272,7 +1278,7 @@ export function convertExport2024(opts: ConvertOptions): void {
   console.log(
     '--- synced utility indicators ->',
     path.normalize(imagesDir),
-    `(updated ${indicatorsCopied}/${UTILITY_INDICATOR_NAMES.length}) ---`
+    `(updated ${indicatorsCopied}/${utilityIndicatorNames.length}) ---`
   );
 
   // Sync sprites into the served asset dirs (backend + frontend). The DB references

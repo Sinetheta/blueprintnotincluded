@@ -117,8 +117,9 @@ ratio (see below). What breaks rendering is changing **framing**, not pixel coun
 
 We inject 17 element-tile / info overlay sprites of our own (`element_tile_back`,
 `*_tile_front`, `info_back`, `info_front_0..11`) — **don't** provide these. The 8
-utility-port indicators, by contrast, now come from the export: ship them as
-`ui_image/<name>.png` (see "Utility connection ports" below).
+utility-port indicators, by contrast, come from the export: ship them as
+`ui_image/<name>.png` and list the names in `building.json`'s root `utilityIndicators`
+(see "Utility connection ports" below).
 
 ## `uiImageRect` — flat-icon placement
 
@@ -281,15 +282,23 @@ covered — their port geometry isn't derivable from this export. The real fix i
 `electrical_disconnected`, `logicInput`, `logicOutput`, `logicResetUpdate`,
 `logic_ribbon_all_in`, `logic_ribbon_all_out`) are resolved by id in
 `ConnectionHelper.getConnectionSprite` (tint applied at draw time, no spriteModifier). Since
-U59 the export ships each as its own flat PNG in `ui_image/<name>.png`, so the converter
-registers all 8 as whole-image sprites (`uvMin 0,0`, `uvSize` = the PNG's real size) and
-copies the PNGs into the SpriteInfo image root (`frontend/src/assets/images/`) — `SpriteInfo`
-resolves `textureName` there, not under `ui_image/`. `drawPixiUtility` forces a fixed
-0.5×0.5-cell draw size, so the icons render the same regardless of PNG resolution. The import
-fails (`utility indicator PNGs missing: N`) if the export drops any of the 8. This replaces
-the old approach of slicing the legacy packed-atlas pages (`hat_role_building1`,
-`1bed_1toilet_locked`, `action_follow_cam`, `all_artifacts_locked`, `Animal_friends_locked`);
-nothing references those pages anymore.
+U59 the export ships each as its own flat PNG in `ui_image/<name>.png`, and since
+OniExtract2024 #23 it declares the set: `building.json`'s root `utilityIndicators: string[]`
+lists the file names (without `.png`) the run wrote. The converter reads that array rather
+than carrying its own copy — the names are a contract between the exporter and the renderer,
+which keys on them by id, so there is nothing for the importer to assert beyond their
+presence. It registers one whole-image sprite per name (`uvMin 0,0`, `uvSize` = the PNG's
+real size) and copies the PNGs into the SpriteInfo image root
+(`frontend/src/assets/images/`) — `SpriteInfo` resolves `textureName` there, not under
+`ui_image/`. `drawPixiUtility` forces a fixed 0.5×0.5-cell draw size, so the icons render
+the same regardless of PNG resolution. The import fails when the array is absent or empty
+(`utilityIndicators declared: false` — an export older than #23) and when a named PNG is
+missing (`utility indicator PNGs missing: N`). The website side of the contract is checked
+by `__tests__/asset-processing/database-validation.test.ts`, which asserts the committed
+database registers every id the renderer asks for. This replaces the old approach of slicing
+the legacy packed-atlas pages (`hat_role_building1`, `1bed_1toilet_locked`,
+`action_follow_cam`, `all_artifacts_locked`, `Animal_friends_locked`); nothing references
+those pages anymore.
 
 ## Rocket modules and attachment
 
@@ -475,21 +484,21 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
 
 ## Open items to the export side
 
-- **Stale `ui_image/` leftovers:** the exporter never empties its output folder, so a
-  prefab dropped from the export (a mod disabled between runs) leaves its PNG and its
-  `ui_image_rects.json` entry behind, and the sprite sync — which prunes only what the export
-  lacks — keeps the orphan icon in both asset roots. Clear `ui_image/` per run, or prune
-  rects/PNGs for prefabs not in `building.json`. (The 2026-10-11 import deleted eight such
-  leftovers from High Pressure Applications by hand.)
-- **`RocketEnvelopeWindowTile` connection sprites** were not rewritten by the 2026-10-11
-  run (files dated 2026-06-21 while every other dir was fresh). Harmless if unchanged; worth
-  knowing why that dir is skipped.
-
 Resolved by the 2026-10-11 export (U59-744825): the wire bridges now ship real
 `PowerInput(-1,0)`+`PowerOutput(1,0)` ports (all five, the two `*HighWattage` ones
 included), so `SYNTHESIZED_BRIDGE_PORTS` no longer fires and stays only as a guard;
 `uiImageRect` is emitted for every building whose art deviates from its footprint;
 `ui_image_facade/` is no longer shipped.
+
+Resolved by the second 2026-10-11 export (OniExtract2024 #23): the exporter now prunes
+its output per run — `ui_image/` and `ui_image_rects.json` to the prefabs loaded at export
+time, `connection_sprites/` cleared before each write — so a prefab dropped between runs (a
+mod disabled, say) no longer leaves an orphan PNG and rect behind for the sprite sync to
+mirror. The eight High Pressure Applications leftovers the morning import deleted by hand are
+what the export now omits on its own, so the importer needs no stale-icon handling of its
+own. The `RocketEnvelopeWindowTile` connection sprites, stuck at their June date because the
+exporter destroyed a texture that tile shared with `GlassTile`, are rewritten every run
+again. And the indicator set is declared (`utilityIndicators`, above) rather than assumed.
 
 Still open:
 

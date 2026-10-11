@@ -220,6 +220,11 @@ export interface BBuildingFile2024 extends BExport2024Meta {
   // them. This is the modules' build menu: PLANORDER (buildingAndSubcategoryDataPairs)
   // never contains them.
   rocketModuleMenu?: string[];
+  // The utility-overlay port indicator PNGs this run wrote to ui_image/, by file name
+  // without `.png` (OniExtract2024 #23). These are the ids
+  // ConnectionHelper.getConnectionSprite resolves. Absent from older exports, which the
+  // converter refuses.
+  utilityIndicators?: string[];
 }
 
 // ---------------------------------------------------------------------------

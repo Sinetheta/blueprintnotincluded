@@ -321,6 +321,50 @@ describe('Database Asset Validation', () => {
     });
   });
 
+  // The website's half of the indicator contract. The export declares which indicator PNGs
+  // it wrote (building.json `utilityIndicators`, OniExtract2024 #23) and the converter
+  // registers whatever it declares; the renderer resolves these ids by name in
+  // ConnectionHelper.getConnectionSprite. So what must hold over the committed database is
+  // that every id the renderer asks for is registered as a whole-image indicator sprite
+  // whose PNG sits in the SpriteInfo image root — not that the converter knows the names.
+  describe('Utility port indicators', () => {
+    const RENDERER_INDICATOR_IDS = [
+      'input',
+      'output',
+      'electrical_disconnected',
+      'logicInput',
+      'logicOutput',
+      'logicResetUpdate',
+      'logic_ribbon_all_in',
+      'logic_ribbon_all_out',
+    ];
+    const imagesRoot = path.join(__dirname, '../../frontend/src/assets/images');
+
+    it('registers every indicator the renderer resolves as a whole-image sprite', () => {
+      const database = readDatabase();
+      const byName = new Map(
+        (database.uiSprites as BSpriteInfo[]).map(si => [si.name, si] as const)
+      );
+      for (const id of RENDERER_INDICATOR_IDS) {
+        const sprite = byName.get(id);
+        expect(sprite, `uiSprites has no indicator sprite "${id}"`).to.exist;
+        expect(sprite!.isInputOutput, `${id} is not flagged isInputOutput`).to.equal(true);
+        expect(sprite!.textureName, `${id} textureName`).to.equal(id);
+        expect(sprite!.uvMin, `${id} must be a whole-image sprite`).to.deep.equal({ x: 0, y: 0 });
+        expect(sprite!.uvSize.x, `${id} has no width`).to.be.greaterThan(0);
+        expect(sprite!.uvSize.y, `${id} has no height`).to.be.greaterThan(0);
+      }
+    });
+
+    it('ships every indicator PNG in the SpriteInfo image root', () => {
+      for (const id of RENDERER_INDICATOR_IDS) {
+        const png = path.join(imagesRoot, `${id}.png`);
+        expect(fs.existsSync(png), `missing ${path.relative(process.cwd(), png)}`).to.equal(true);
+        expect(fs.statSync(png).size, `${id}.png is empty`).to.be.greaterThan(0);
+      }
+    });
+  });
+
   describe('Flat Icon Assets', () => {
     it('should have ui_image directory with PNG files', () => {
       expect(fs.existsSync(uiImagePath), 'assets/ui_image should exist').to.be.true;

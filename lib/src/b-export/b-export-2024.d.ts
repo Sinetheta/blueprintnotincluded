@@ -139,6 +139,7 @@ export interface BBuildingFile2024 extends BExport2024Meta {
     }[];
     modMergeInfo?: unknown;
     rocketModuleMenu?: string[];
+    utilityIndicators?: string[];
 }
 export interface BElement2024 {
     name: string;
