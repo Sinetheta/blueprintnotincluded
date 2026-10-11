@@ -245,6 +245,21 @@ export function rocketInteriorOriginCentred(
   };
 }
 
+// The template origin that centres the hull on a world point (cell units,
+// fractional allowed) — what an empty blueprint gets: the middle of whatever
+// the author is looking at, instead of the world origin, which with the hull
+// spanning negative cells sits wherever the camera happens to have left it.
+export function rocketInteriorOriginCentredOnPoint(
+  layout: RocketInteriorLayout,
+  point: { x: number; y: number }
+): RocketInteriorCell {
+  const b = layout.bounds;
+  return {
+    x: roundCell(point.x - (b.left + b.right + 1) / 2),
+    y: roundCell(point.y - (b.bottom + b.top + 1) / 2),
+  };
+}
+
 // Math.round alone yields -0 for small negatives, which deep-equals nothing.
 function roundCell(value: number): number {
   return Math.round(value) || 0;
@@ -254,6 +269,16 @@ function roundCell(value: number): number {
 // resolved when the module was chosen. A single control station still wins —
 // it is the one fact the blueprint itself carries — so a stored origin only
 // matters for a blueprint without one.
+// Whether a blueprint has anything to centre a hull on.
+export function isBlueprintEmpty(blueprint: Blueprint): boolean {
+  return (
+    blueprint.blueprintItems.length === 0 &&
+    blueprint.worldNotes.length === 0 &&
+    blueprint.terrainFeatures.length === 0 &&
+    blueprint.planningToolShapes.length === 0
+  );
+}
+
 export function placeRocketInterior(
   module: RocketInteriorModule,
   blueprint: Blueprint,
@@ -274,16 +299,12 @@ export function placeRocketInterior(
 
   // getBoundingBox is a sentinel pair on an empty blueprint; the template then
   // sits on the origin, which is where a new blueprint starts anyway.
-  const origin =
-    blueprint.blueprintItems.length === 0 &&
-    blueprint.worldNotes.length === 0 &&
-    blueprint.terrainFeatures.length === 0 &&
-    blueprint.planningToolShapes.length === 0
-      ? { x: 0, y: 0 }
-      : (() => {
-          const [min, max] = blueprint.getBoundingBox();
-          return rocketInteriorOriginCentred(layout, min, max);
-        })();
+  const origin = isBlueprintEmpty(blueprint)
+    ? { x: 0, y: 0 }
+    : (() => {
+        const [min, max] = blueprint.getBoundingBox();
+        return rocketInteriorOriginCentred(layout, min, max);
+      })();
   return place(origin, 'bounds');
 }
 
