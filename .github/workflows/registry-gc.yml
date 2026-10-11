@@ -1,0 +1,78 @@
+# Reclaim registry storage by garbage-collecting the untagged manifests.
+#
+# DOCR never frees space on its own: every staging deploy pushes a new
+# :latest and leaves the previous manifest behind, untagged but still
+# billed, and garbage collection only runs when something starts it.
+# Everything worth keeping has a tag (latest, prod, prod-previous), so
+# collecting the untagged manifests is exactly "delete what we can't afford
+# to keep".
+#
+# A collection puts the whole registry into read-only mode and, before it
+# does its (quick) work, waits for every outstanding write credential to
+# expire: up to 15 minutes, and since the deploy's push token lives an hour,
+# in practice the full 15. Started from the deploy, as it used to be, that
+# window landed exactly where a promotion wants to happen: run 38175116486
+# polled through all of it and then failed on its own expired token. So it
+# runs here instead, daily at a quiet hour, and only when there is
+# something to collect. publish.yml and promote.yml still wait out a running
+# collection, so a deploy or promotion that does land in the window is
+# delayed, not failed.
+name: Registry garbage collection
+
+on:
+  schedule:
+    # 09:17 UTC daily: early morning in North America, when nobody deploys
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+
+# Nothing here talks to GitHub: the only credential this job needs is the
+# DigitalOcean API token.
+permissions: {}
+
+concurrency: registry-gc
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      # The read-only window is the whole cost of a collection, so do not
+      # open one for nothing.
+      - name: Count untagged manifests
+        id: count
+        env:
+          REPOSITORY: ${{ vars.IMAGE_NAME }}
+        run: |
+          set -euo pipefail
+          manifests=$(doctl registry repository list-manifests "$REPOSITORY" --output json)
+          untagged=$(jq '[(. // [])[] | select((.tags // []) | length == 0)] | length' <<< "$manifests")
+          bytes=$(jq '[(. // [])[] | select((.tags // []) | length == 0) | .compressed_size_bytes // 0] | add // 0' <<< "$manifests")
+          echo "$untagged untagged manifest(s), $((bytes / 1024 / 1024)) MiB compressed"
+          echo "untagged=$untagged" >> "$GITHUB_OUTPUT"
+          if [ "$untagged" = "0" ]; then
+            echo "Nothing to collect." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Collecting $untagged untagged manifest(s), $((bytes / 1024 / 1024)) MiB compressed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Start garbage collection
+        if: steps.count.outputs.untagged != '0'
+        run: |
+          set -euo pipefail
+          # The API answers 404 when nothing is running, which doctl reports
+          # as an error, so only that error means idle.
+          if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1); then
+            if [ -n "$active" ]; then
+              echo "A garbage collection is already running ($active); it will collect these."
+              exit 0
+            fi
+          elif ! echo "$active" | grep -qiE '404|not found'; then
+            echo "::error::Could not query garbage collection: $active"
+            exit 1
+          fi
+          doctl registry garbage-collection start --include-untagged-manifests --force

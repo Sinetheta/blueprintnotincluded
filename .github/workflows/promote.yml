@@ -8,8 +8,7 @@
 #
 # The old :prod moves to :prod-previous first, so "rollback" is the same
 # button swapping the two. The registry therefore never holds more than
-# three named manifests, and publish.yml's garbage collection removes the
-# rest.
+# three named manifests, and the daily registry-gc.yml removes the rest.
 #
 # Gated by the "production" GitHub Environment, which requires an approving
 # reviewer before the job runs. It uses the same registry token as the
@@ -47,16 +46,15 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Log in to DO Container Registry
-        run: doctl registry login --expiry-seconds 900
-
-      - name: Set up Docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      # The registry is read-only while a garbage collection runs (publish.yml
-      # starts one after each staging deploy), and a collection first waits
-      # up to 15 minutes for outstanding write credentials to expire before
-      # it does its (quick) work. Wait rather than fail.
+      # The registry is read-only while a garbage collection runs (the daily
+      # registry-gc.yml, at a quiet hour), and a collection first waits up to
+      # 15 minutes for outstanding write credentials to expire before it does
+      # its (quick) work. Wait rather than fail. This only needs the API
+      # token, so it comes before the registry login: the docker credential
+      # is minted right before the retag that uses it, because one minted
+      # before a 15-minute wait is expired by the end of it (run
+      # 38175116486), and is itself one more credential for the collection
+      # to wait on.
       - name: Wait for any running garbage collection
         run: |
           # The API answers 404 when nothing is running, which doctl reports
@@ -78,6 +76,12 @@ jobs:
           done
           echo "::error::Could not confirm the registry is writable after 20 minutes; try again later."
           exit 1
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 900
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: ${{ inputs.action == 'rollback' && 'Roll production back' || 'Promote staging to production' }}
         env:
