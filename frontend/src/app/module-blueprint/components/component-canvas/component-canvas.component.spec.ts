@@ -16,9 +16,9 @@ import { CameraService, Overlay } from "../../../../../../lib/index";
 
 // The real DrawPixi constructs a PIXI.Application (WebGL) in Init(), which jsdom
 // cannot provide. Inject a mock so the renderer never boots in the unit test.
-// DrawRoomOverlay/DrawNotesOverlay (created in ngOnInit) need container/
-// graphics/text/sprite/texture factories and the stage to attach to — plain
-// stubs keep them inert.
+// DrawRoomOverlay/DrawNotesOverlay/DrawRocketInterior (created in ngOnInit)
+// need container/graphics/text/sprite/texture factories and the stage and
+// blueprint container to attach to — plain stubs keep them inert.
 function mockDrawPixi(): Partial<DrawPixi> {
   return {
     getNewContainer: () => ({ addChild: () => {}, visible: true }) as any,
@@ -28,9 +28,9 @@ function mockDrawPixi(): Partial<DrawPixi> {
     getSpriteFrom: () => ({ anchor: { set: () => {} }, visible: true }) as any,
     Init: () => {},
     InitAnimation: () => {},
-    blueprintContainer: {} as any,
+    blueprintContainer: { addChild: () => {} } as any,
     pixiApp: {
-      stage: { addChild: () => {} },
+      stage: { addChild: () => {}, addChildAt: () => {} },
       renderer: { width: 0, height: 0 },
     } as any,
   };

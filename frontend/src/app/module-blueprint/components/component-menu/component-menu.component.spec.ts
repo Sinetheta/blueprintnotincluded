@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { LOCALE_ID, NO_ERRORS_SCHEMA } from "@angular/core";
 import { Router } from "@angular/router";
 import { MessageService } from "primeng/api";
+import { Subject } from "rxjs";
 
 import { CameraService, Overlay } from "../../../../../../lib/index";
 import { AuthenticationService } from "src/app/module-blueprint/services/authentification-service";
@@ -35,7 +36,15 @@ describe("ComponentMenuComponent", () => {
             getTool: () => ({ visible: false }),
           },
         },
-        { provide: BlueprintService, useValue: {} },
+        {
+          provide: BlueprintService,
+          useValue: {
+            metadata: {},
+            rocketInteriorChanged$: new Subject<unknown>(),
+            subscribeBlueprintChanged: () => {},
+            setRocketInterior: () => {},
+          },
+        },
         { provide: Router, useValue: { navigate: () => {} } },
         { provide: LOCALE_ID, useValue: "en-US" },
       ],

@@ -91,6 +91,20 @@
         </div>
       </div>
 
+      <div class="save-row">
+        <div class="save-field">
+          <label for="save-rocket-interior" i18n>Rocket interior</label>
+          <p-select
+            inputId="save-rocket-interior"
+            formControlName="rocketInterior"
+            [options]="rocketInteriorOptions"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="onRocketInteriorChange()"
+          ></p-select>
+        </div>
+      </div>
+
       <div class="save-detected">
         <div class="save-detected-caption" i18n>
           Auto-detected from blueprint content

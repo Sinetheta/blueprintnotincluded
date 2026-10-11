@@ -8,22 +8,31 @@ import {
 } from "@angular/core";
 import { MenuItem } from "primeng/api";
 import {
+  Blueprint,
   CameraService,
   Display,
   IObsCameraChanged,
   Overlay,
+  ROCKET_INTERIOR_MODULES,
+  RocketInteriorModule,
   Visualization,
 } from "../../../../../../lib/index";
+import { rocketInteriorLabel } from "../../common/rocket-interior-label";
 import { ToolType } from "../../common/tools/tool";
 import {
   BlueprintFileType,
   BlueprintService,
+  IObsBlueprintChanged,
 } from "../../services/blueprint-service";
 import { IObsToolChanged, ToolService } from "../../services/tool-service";
 import { AuthenticationService } from "../../services/authentification-service";
 import { BrowseData } from "../user-menu/user-menu.component";
 
 export { BrowseData } from "../user-menu/user-menu.component";
+
+// Menu item ids for the rocket-interior choice: the prefix plus the module,
+// or "none".
+const ROCKET_INTERIOR_MENU_PREFIX = "rocket-interior:";
 
 const ALL_LANGUAGES = [
   {
@@ -51,13 +60,14 @@ const ALL_LANGUAGES = [
   standalone: false,
 })
 export class ComponentMenuComponent
-  implements OnInit, IObsToolChanged, IObsCameraChanged
+  implements OnInit, IObsToolChanged, IObsCameraChanged, IObsBlueprintChanged
 {
   @Output() menuCommand = new EventEmitter<MenuCommand>();
 
   menuItems!: MenuItem[];
   overlayMenuItems!: MenuItem[];
   displayMenuItems!: MenuItem[];
+  rocketInteriorMenuItems!: MenuItem[];
   visualizationMenuItems!: MenuItem[];
   toolMenuItems!: MenuItem[];
   languagesMenuItems!: MenuItem[];
@@ -78,6 +88,14 @@ export class ComponentMenuComponent
     this.toolService.subscribeToolChanged(this);
     this.cameraService = CameraService.cameraService;
     if (this.cameraService) this.cameraService.subscribeCameraChange(this);
+    this.blueprintService.rocketInteriorChanged$.subscribe(() =>
+      this.updateRocketInteriorIcon(),
+    );
+    this.blueprintService.subscribeBlueprintChanged(this);
+  }
+
+  blueprintChanged(_blueprint: Blueprint) {
+    this.updateRocketInteriorIcon();
   }
 
   ngOnInit() {
@@ -131,6 +149,18 @@ export class ComponentMenuComponent
         this.clickDisplay(event);
       },
     });
+
+    // Rocket interior: which habitat module's hull and landed backdrop to
+    // draw behind the blueprint. A choice about the blueprint (stored with
+    // its metadata on save), offered here so it can be previewed live.
+    this.rocketInteriorMenuItems = [null, ...ROCKET_INTERIOR_MODULES].map(
+      (module) => ({
+        label: rocketInteriorLabel(module),
+        id: ROCKET_INTERIOR_MENU_PREFIX + (module ?? "none"),
+        command: (_event: any) => this.clickRocketInterior(module),
+      }),
+    );
+    this.updateRocketInteriorIcon();
 
     this.visualizationMenuItems = [];
     this.visualizationMenuItems.push({
@@ -343,6 +373,10 @@ export class ComponentMenuComponent
         items: this.displayMenuItems,
       },
       {
+        label: $localize`Rocket interior`,
+        items: this.rocketInteriorMenuItems,
+      },
+      {
         label:
           ALL_LANGUAGES.find((l) => l.code === this.locale)?.name ||
           this.locale,
@@ -417,6 +451,23 @@ export class ComponentMenuComponent
   clickDisplay(event: any) {
     if (this.cameraService)
       this.cameraService.display = event.item.id as Display;
+  }
+
+  clickRocketInterior(module: RocketInteriorModule | null) {
+    this.blueprintService.setRocketInterior(module);
+  }
+
+  // The checkmark follows whatever the open blueprint carries, wherever it
+  // was set: here, in the save dialog (rocketInteriorChanged$), or by opening
+  // a blueprint (blueprintChanged).
+  updateRocketInteriorIcon() {
+    if (this.rocketInteriorMenuItems == null) return;
+    const current = this.blueprintService.metadata?.rocketInterior ?? null;
+    for (const menuItem of this.rocketInteriorMenuItems)
+      menuItem.icon =
+        menuItem.id === ROCKET_INTERIOR_MENU_PREFIX + (current ?? "none")
+          ? "pi pi-fw pi-check"
+          : "pi pi-fw pi-none";
   }
 
   clickVisualization(event: any) {
