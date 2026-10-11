@@ -29,6 +29,7 @@ export const ShortcutAction = {
   toolScissors: "tool.scissors",
   toolNotes: "tool.notes",
   toolTerrain: "tool.terrain",
+  toolDig: "tool.dig",
 
   // Build tool
   buildRotate: "build.rotate",
@@ -190,6 +191,15 @@ export const SHORTCUT_ACTIONS: ShortcutActionDefinition[] = [
     category: "tools",
     label: $localize`:keyboard shortcut:Terrain annotation tool`,
     defaults: [],
+  },
+  {
+    // Game: "Dig" (G). It edits on a single click like the tools above, but
+    // unlike them the game has this exact control, so the default mirrors it
+    // the way B mirrors "Copy Building".
+    id: ShortcutAction.toolDig,
+    category: "tools",
+    label: $localize`:keyboard shortcut:Dig tool`,
+    defaults: ["KeyG"],
   },
 
   {

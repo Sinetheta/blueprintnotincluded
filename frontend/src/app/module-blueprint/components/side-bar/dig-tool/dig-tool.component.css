@@ -1,0 +1,35 @@
+.dig-card {
+  padding: 12px;
+  width: 260px;
+}
+.mode-row {
+  display: flex;
+  gap: 7px;
+  margin-top: 12px;
+}
+.mode-button {
+  flex: 1;
+  padding: 8px 10px;
+  border: 2px solid #6a6256;
+  border-radius: 4px;
+  background: #d5c5a7;
+  cursor: pointer;
+}
+.selected {
+  outline: 3px solid #fff;
+  box-shadow: 0 0 0 5px #3b82f6;
+}
+.count {
+  margin: 12px 0 0;
+}
+.visibility-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+.hint {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+}

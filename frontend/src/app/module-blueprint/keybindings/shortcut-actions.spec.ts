@@ -86,6 +86,7 @@ describe("shortcut action catalogue", () => {
       [ShortcutAction.cameraHome, "KeyH"],
       [ShortcutAction.buildRotate, "KeyO"],
       [ShortcutAction.toolBuild, "KeyB"],
+      [ShortcutAction.toolDig, "KeyG"],
     ])("binds %s to the game's %s", (actionId, code) => {
       expect(getShortcutAction(actionId)?.defaults).toContain(code);
     });

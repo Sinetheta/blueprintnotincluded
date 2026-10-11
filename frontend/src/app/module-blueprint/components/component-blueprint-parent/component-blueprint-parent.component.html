@@ -110,6 +110,7 @@
       <app-terrain-tool
         [hidden]="!toolService.terrainTool.visible"
       ></app-terrain-tool>
+      <app-dig-tool [hidden]="!toolService.digTool.visible"></app-dig-tool>
     </div>
     <div class="side-panel-right">
       <app-element-report-tool *ngIf="showElementReport" #elementReportTool>
@@ -141,6 +142,13 @@
       i18n-label
       [active]="toolService.planningTool.visible"
       (buttonClick)="toolService.changeTool(ToolType.planning)"
+    ></app-toolbar-button>
+    <app-toolbar-button
+      iconUrl="assets/images/digIcon.png"
+      label="Dig"
+      i18n-label
+      [active]="toolService.digTool.visible"
+      (buttonClick)="toolService.changeTool(ToolType.dig)"
     ></app-toolbar-button>
     <app-toolbar-button
       iconUrl="assets/images/icon-scissors.png"
