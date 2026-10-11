@@ -52,6 +52,8 @@ import {
   noteMarkerSprite,
   drawTerrainFeature,
   terrainIconUrl,
+  drawDigCells,
+  DIG_AT_REST_ALPHA,
   RocketInteriorPlacement,
   isRocketInteriorModule,
   isRocketInteriorCell,
@@ -485,6 +487,33 @@ async function drawRocketInterior(
   hullContainer.destroy({ children: true });
 }
 
+// Dig cells: the same hatched regions the editor and the client-side exports
+// draw (lib/src/drawing/dig-markers.ts). Composited on their own, after the
+// rocket hull and before the first building batch, so they land under the
+// buildings as they do everywhere at rest: a capture carries a dig on every
+// empty cell of its selection, and over the art the hatch would cover the
+// whole picture.
+function drawDigCommands(
+  pixi: PixiNodeUtil,
+  blueprint: SharedBlueprint,
+  camera: CameraService,
+  renderTexture: any
+): void {
+  if (blueprint.digCommands.length === 0) return;
+  const zoom = camera.currentZoom;
+  const graphics = pixi.getNewGraphics();
+  drawDigCells(
+    graphics,
+    blueprint.digCommands,
+    zoom,
+    camera.cameraOffset.x * zoom,
+    camera.cameraOffset.y * zoom,
+    DIG_AT_REST_ALPHA
+  );
+  pixi.pixiApp.renderer.render(graphics, renderTexture, false);
+  graphics.destroy();
+}
+
 interface RenderTimings {
   importMs: number;
   texturesMs: number;
@@ -591,6 +620,7 @@ async function renderMaster(
   // first — on its own, before the first batch.
   if (placement != null)
     await drawRocketInterior(pixi, assetBaseDir, placement, exportCamera, size, renderTexture);
+  drawDigCommands(pixi, blueprint, exportCamera, renderTexture);
 
   // Rasterize in depth-ordered batches, compositing each into the same render
   // texture and releasing it before building the next.
