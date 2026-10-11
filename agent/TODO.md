@@ -48,8 +48,6 @@ Open items:
 
 - **Rename `import:2024`** to a version-neutral name — "2024" leaked everywhere from the
   milestone. Keep an alias for one cycle (`convert:2024` already aliases it).
-- **`uiImageRect` rollout (export side):** 342/488 buildings carry it; the rest fall back to
-  stretch-to-footprint. Emit it for the deviating buildings.
 - **Unread export JSONs (7 of 13):** `items`, `food`, `recipe`, `multiEntities`, `tags`,
   `attribute`, `db` — future capabilities (critters/recipes/etc.), nothing wired yet.
   `geyser` and `entities` are read for the terrain catalogue only. Non-English i18n still
@@ -146,8 +144,7 @@ dormant `uiScreens` model; Angular standalone migration (unblocks bundle splitti
 1. **Jargon guard for Google translation passes** (top of Search section) — do before any
    full `derive-search` re-derive.
 2. Rename `import:2024` to a version-neutral script name (keep alias one cycle).
-3. Export side: emit `uiImageRect` for the buildings still missing it.
-4. Monitor WorkOS legacy-user migration (`GET /api/migration/status`); retire the legacy
+3. Monitor WorkOS legacy-user migration (`GET /api/migration/status`); retire the legacy
    migration path when counts hit zero — see `agent/WORKOS_PLAN.md`.
-5. Pick the next product increment: blueprint forks, or wiring one of the unread export
+4. Pick the next product increment: blueprint forks, or wiring one of the unread export
    JSONs (critters/recipes/i18n).

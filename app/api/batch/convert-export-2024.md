@@ -56,15 +56,15 @@ unchanged pixels stay byte-identical and git shows only genuine changes.
 |---|---|
 | `database/*.json` (13 files) | building/element data — we read `building.json`, `elements.json`, `uiSpriteInfo.json`, `po_string.json`, plus `geyser.json` + `entities.json` for the terrain catalogue |
 | `ui_image_rects.json` (export **root**) | flat-icon placement rects by prefab id — the only delivery path for terrain features' rects (see below) |
-| `ui_image/<prefabId>.png` | the single flat icon per building (1,241 files) |
+| `ui_image/<prefabId>.png` | the single flat icon per building (1,361 files) |
 | `connection_sprites/<prefabId>/<0..15>.png` | the 16 tiling states for connectables |
 | `ui_image_facade/` | nothing today (not copied) |
 
-Current output (488 buildings): 212 elements, 412 build-menu items (403 plan-order entries
-less the 23 deprecated/debug-only ones, plus the 32 rocket modules), 15 categories,
-513 uiSprites (488 building icons + 17 injected element/info overlays + 8 utility-port
-indicators registered from the export's `ui_image/` PNGs), 33 connectables, 322 buildings
-with utility ports.
+Current output (480 buildings, U59-744825): 212 elements, 404 build-menu items (395
+plan-order entries less the 23 deprecated/debug-only ones, plus the 32 rocket modules),
+15 categories, 505 uiSprites (480 building icons + 17 injected element/info overlays + 8
+utility-port indicators registered from the export's `ui_image/` PNGs), 31 connectables,
+316 buildings with utility ports.
 
 ## Image model — two kinds, used differently
 
@@ -91,8 +91,8 @@ ratio (see below). What breaks rendering is changing **framing**, not pixel coun
    prefab tag, e.g. `FabricatedWood.png` — **not** the display name). Verified 1241/1241
    match by key.
 2. **`uiImageRect`** (per building, cells, footprint-relative): required for any icon whose
-   art overhangs its footprint; see next section. Currently emitted for 342/488 buildings
-   and all 31 terrain features; the other 146 buildings fall back to stretch-to-footprint.
+   art overhangs its footprint; see next section. Emitted for 462/480 buildings and all 31
+   terrain features; the other 18 (the tiles and `CrewCapsule`) stretch to the footprint.
    **Every rect must match its own PNG's pixel aspect** — the import fails otherwise.
 3. **Connection sprites:** all 16 of `0–15` present, bitmask `left=1/right=2/up=4/down=8`.
 4. **Connectable signal:** the `connection_sprites/<prefabId>/` directory exists
@@ -148,7 +148,7 @@ This is the same information the 2020/2023 atlas carried as `pivot` + `realSize`
 converter passes it through and the renderer draws into the rect (unit-tested in
 `__tests__/lib/draw-part-placement.test.ts`); buildings without it keep the old behaviour
 so nothing regresses mid-rollout. The import log prints
-`buildings with uiImageRect placement: N / 488`.
+`buildings with uiImageRect placement: N / 480`.
 
 ### Two delivery paths
 
@@ -335,7 +335,7 @@ buildings, and a module offers a `Rocket` hardpoint exactly when it is not `TopO
 
 Which user settings a completed building accepts, and their bounds (OniExtract2024 #9). All
 omit-when-absent in the export; the converter gathers them under one `settings` key on the
-building record, omitted when the building has none (194 of 488 carry it):
+building record, omitted when the building has none (194 of 480 carry it):
 
 | `settings.*` | Buildings | Notes |
 |---|---|---|
@@ -447,7 +447,7 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
 - **Types**: `lib/src/b-export/b-export-2024.ts` — raw 2024 export shapes (13 files).
 - **Import**: `convert-export-2024.ts` (`npm run import:2024`) → consolidated
   `database-2024.json` written to both asset roots (committed; the `.zip` is a gitignored
-  build derivative); content-aware syncs `ui_image/` (1,241 flat PNGs) and
+  build derivative); content-aware syncs `ui_image/` (1,361 flat PNGs) and
   `connection_sprites/` into both asset roots.
 - **Render**: each building is one flat icon — `OniItem.flatIconId`, `DrawPart.flatIconId`,
   no UV slice. `uiImageRect` (when present) places overhanging art relative to the
@@ -457,7 +457,7 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
   derived from dir presence; `BlueprintItem` builds 16 tagged flat-icon draw-parts;
   per-building `connectionScale` is measured from `15.png` at import time. The build/select
   menu keeps the single canonical icon (`iconUrl`).
-- **Utility ports** (275/449 buildings): `BBuildingDef2024.utilities[]` carries each
+- **Utility ports** (316/480 buildings): `BBuildingDef2024.utilities[]` carries each
   input/output port as `{offset, type, isSecondary}`. The U59 export emits `type` as the
   `ConnectionType` enum _name_ (string); the converter maps it to the int via
   `CONNECTION_TYPE_BY_NAME`. Offsets are pre-rotation/y-up/footprint-relative and already
@@ -473,14 +473,24 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
 
 ## Open items to the export side
 
-- **Power-bridge `utilities[]`:** the wire bridges ship an empty `utilities[]` while every
-  other conduit bridge emits `Input(-1,0)`+`Output(1,0)`. Emit the power ports for
-  `WireBridge`/`WireRefinedBridge`/`WireRubberBridge` (and the 1×1 `*HighWattage` bridges,
-  whose offsets we can't derive) so the converter's `SYNTHESIZED_BRIDGE_PORTS` workaround can
-  be removed.
-- **`uiImageRect` rollout:** emit it for the remaining buildings whose art deviates
-  from the footprint (146 have none today; the rest can omit it).
-- **`ui_image_facade/`:** drop it to shrink the handoff, or tell us what it's for.
+- **Stale `ui_image/` leftovers:** the exporter never empties its output folder, so a
+  prefab dropped from the export (a mod disabled between runs) leaves its PNG and its
+  `ui_image_rects.json` entry behind, and the sprite sync — which prunes only what the export
+  lacks — keeps the orphan icon in both asset roots. Clear `ui_image/` per run, or prune
+  rects/PNGs for prefabs not in `building.json`. (The 2026-10-11 import deleted eight such
+  leftovers from High Pressure Applications by hand.)
+- **`RocketEnvelopeWindowTile` connection sprites** were not rewritten by the 2026-10-11
+  run (files dated 2026-06-21 while every other dir was fresh). Harmless if unchanged; worth
+  knowing why that dir is skipped.
+
+Resolved by the 2026-10-11 export (U59-744825): the wire bridges now ship real
+`PowerInput(-1,0)`+`PowerOutput(1,0)` ports (all five, the two `*HighWattage` ones
+included), so `SYNTHESIZED_BRIDGE_PORTS` no longer fires and stays only as a guard;
+`uiImageRect` is emitted for every building whose art deviates from its footprint;
+`ui_image_facade/` is no longer shipped.
+
+Still open:
+
 - **Overlay tint (`backColor`):** emit the building's overlay/outline tint so
   `BACK_COLOR_BY_PREFAB` (see above) can be retired in favour of real per-import data instead
   of a hand-recovered table.
