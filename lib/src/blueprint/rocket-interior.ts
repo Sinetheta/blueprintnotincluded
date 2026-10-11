@@ -71,6 +71,13 @@ export interface RocketInteriorCell {
   y: number;
 }
 
+// Shape check for a stored origin coming off the wire: a pair of integer cells.
+export function isRocketInteriorCell(value: unknown): value is RocketInteriorCell {
+  if (value == null || typeof value !== 'object') return false;
+  const { x, y } = value as { x?: unknown; y?: unknown };
+  return Number.isInteger(x) && Number.isInteger(y);
+}
+
 export interface RocketInteriorPiece extends RocketInteriorCell {
   id: string;
 }
@@ -167,11 +174,22 @@ export function rocketInteriorLayout(module: RocketInteriorModule): RocketInteri
   return layout;
 }
 
+// Which building draws each hull piece. The rocket window's own art is a
+// small rounded pane that joins only to other rocket windows, so a lone window
+// between two walls reads as an undersized square; the plain Window Tile is
+// edge-to-edge glass and reads as the game's does. Rendering only — the
+// layout, the alignment and the tests still speak of the real prefab ids.
+export const ROCKET_INTERIOR_ART: Record<string, string> = {
+  RocketEnvelopeWindowTile: 'GlassTile',
+};
+
 // How the template was aligned with the blueprint. 'station' is the real
-// alignment; 'bounds' is the fallback when the blueprint has no control
-// station or more than one (a cheated or hand-edited capture), in which case
-// the template is simply centred on the blueprint's extent.
-export type RocketInteriorAnchor = 'station' | 'bounds';
+// alignment, read from the blueprint every time; 'stored' is an origin fixed
+// earlier and kept on the record; 'bounds' is the last resort when there is
+// neither — the template centred on the blueprint's extent *as it is now*,
+// which moves whenever the blueprint grows, so the editor resolves it once
+// and stores it rather than living with a hull that follows the bricks.
+export type RocketInteriorAnchor = 'station' | 'stored' | 'bounds';
 
 export interface RocketInteriorPlacement {
   module: RocketInteriorModule;
@@ -227,13 +245,20 @@ function roundCell(value: number): number {
   return Math.round(value) || 0;
 }
 
+// `storedOrigin` is the record's rocketInteriorOrigin: the origin the editor
+// resolved when the module was chosen. A single control station still wins —
+// it is the one fact the blueprint itself carries — so a stored origin only
+// matters for a blueprint without one.
 export function placeRocketInterior(
   module: RocketInteriorModule,
-  blueprint: Blueprint
+  blueprint: Blueprint,
+  storedOrigin?: RocketInteriorCell | null
 ): RocketInteriorPlacement {
   const layout = rocketInteriorLayout(module);
   const fromStation = rocketInteriorOriginFromStation(layout, blueprint.blueprintItems);
   if (fromStation != null) return { module, layout, origin: fromStation, anchor: 'station' };
+  if (storedOrigin != null)
+    return { module, layout, origin: { x: storedOrigin.x, y: storedOrigin.y }, anchor: 'stored' };
 
   // getBoundingBox is a sentinel pair on an empty blueprint; the template then
   // sits on the origin, which is where a new blueprint starts anyway.
@@ -309,14 +334,15 @@ export function expandBoundsForRocketInterior(
 //
 // Pieces the loaded database does not know are skipped rather than failing:
 // the scenery is flavour, and a database that predates a prefab should lose
-// one wall, not the whole facade.
+// one wall, not the whole facade. Pieces draw as ROCKET_INTERIOR_ART says.
 export function buildRocketInteriorScenery(placement: RocketInteriorPlacement): Blueprint {
   const scenery = new Blueprint();
   scenery.pauseChangeEvents();
   for (const piece of rocketInteriorWorldPieces(placement)) {
-    const item = BlueprintHelpers.createInstance(piece.id);
+    const artId = ROCKET_INTERIOR_ART[piece.id] ?? piece.id;
+    const item = BlueprintHelpers.createInstance(artId);
     if (item == null) continue;
-    item.importMdbBuilding({ id: piece.id, position: new Vector2(piece.x, piece.y) });
+    item.importMdbBuilding({ id: artId, position: new Vector2(piece.x, piece.y) });
     scenery.addBlueprintItem(item);
   }
   scenery.resumeChangeEvents(false);

@@ -14,7 +14,9 @@ import {
   decodeBniShareString,
   encodeBniShareString,
   RawSourceFormat,
+  RocketInteriorCell,
   RocketInteriorModule,
+  placeRocketInterior,
   Blueprint,
   IObsBlueprintChange,
   BlueprintItem,
@@ -536,6 +538,7 @@ export class BlueprintService implements IObsBlueprintChange {
               description: response.description ?? null,
               modded: response.modded ?? null,
               rocketInterior: response.rocketInterior ?? null,
+              rocketInteriorOrigin: response.rocketInteriorOrigin ?? null,
             };
             this.requiredDlcs = response.requiredDlcs ?? [];
             blueprint.importFromMdb(response.data);
@@ -1029,7 +1032,12 @@ export class BlueprintService implements IObsBlueprintChange {
   metadata: Partial<
     Pick<
       SaveBlueprintMessage,
-      "category" | "subcategory" | "description" | "modded" | "rocketInterior"
+      | "category"
+      | "subcategory"
+      | "description"
+      | "modded"
+      | "rocketInterior"
+      | "rocketInteriorOrigin"
     >
   > = {};
 
@@ -1037,10 +1045,33 @@ export class BlueprintService implements IObsBlueprintChange {
   // rendering, so it has a setter that announces the change: the editor menu
   // and the save dialog both offer it, and whichever one changed it, the
   // other's state has to follow. Emits the new value (null = none).
+  //
+  // The hull's origin is resolved HERE, once, and stored with the choice: a
+  // blueprint with one control station is aligned on it either way, but one
+  // without would otherwise be re-centred on its bounding box every frame,
+  // and the hull would hop each time a brick was placed. Resolved from the
+  // blueprint as it is when the module is picked; the origin a station gives
+  // is stored too, so the hull stays put even if the station is later removed.
   readonly rocketInteriorChanged$ = new Subject<RocketInteriorModule | null>();
   setRocketInterior(module: RocketInteriorModule | null) {
     this.metadata.rocketInterior = module;
+    this.metadata.rocketInteriorOrigin =
+      module != null ? this.resolveRocketInteriorOrigin(module) : null;
     this.rocketInteriorChanged$.next(module);
+  }
+
+  private resolveRocketInteriorOrigin(
+    module: RocketInteriorModule,
+  ): RocketInteriorCell | null {
+    // oniItemsMap may be null in unit tests before the database loads; the
+    // placement needs it for the station lookup only through the items.
+    if (this.blueprint == null) return null;
+    const placement = placeRocketInterior(
+      module,
+      this.blueprint,
+      this.metadata.rocketInteriorOrigin ?? null,
+    );
+    return { x: placement.origin.x, y: placement.origin.y };
   }
 
   // The server-derived `requiredDlcs` of the blueprint last opened from the
@@ -1186,6 +1217,9 @@ export class SaveBlueprintMessage {
   // facade (lib rocket-interior.ts); null = none. Lives on the site's record,
   // not in the blueprint data, so it rides with the other metadata.
   rocketInterior?: RocketInteriorModule | null;
+  // The hull's template origin cell as resolved when the module was chosen
+  // (BlueprintService.setRocketInterior); null with no module.
+  rocketInteriorOrigin?: RocketInteriorCell | null;
   // Verbatim BlueprintsV2 import text, present only when the saved data still
   // equals the imported content (byte-exact round-trip, §8)
   rawSource?: string;

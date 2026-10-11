@@ -790,7 +790,11 @@ describe('Blueprint preview images', function () {
 
       await waitFor(() => fs.existsSync(path.join(cacheDir, savedId, 'og.png')));
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal({ ...data, rocketInterior: null });
+      expect(renderedMdbs[0]).to.deep.equal({
+        ...data,
+        rocketInterior: null,
+        rocketInteriorOrigin: null,
+      });
     });
 
     it('forking pre-renders the fork with the source version data', async function () {
@@ -806,6 +810,7 @@ describe('Blueprint preview images', function () {
       expect(renderedMdbs[0]).to.deep.equal({
         ...testData.blueprints.popularBlueprint.data,
         rocketInterior: null,
+        rocketInteriorOrigin: null,
       });
     });
 
@@ -830,7 +835,11 @@ describe('Blueprint preview images', function () {
 
       await waitFor(() => fs.existsSync(path.join(cacheDir, blueprintId, 'og.png')));
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal({ ...restoredData, rocketInterior: null });
+      expect(renderedMdbs[0]).to.deep.equal({
+        ...restoredData,
+        rocketInterior: null,
+        rocketInteriorOrigin: null,
+      });
     });
 
     it('the preview endpoint renders the current version data, not the stale blueprint cache', async function () {
@@ -853,7 +862,11 @@ describe('Blueprint preview images', function () {
       );
       expect(response.status).to.equal(200);
       expect(renderCount).to.equal(1);
-      expect(renderedMdbs[0]).to.deep.equal({ ...versionData, rocketInterior: null });
+      expect(renderedMdbs[0]).to.deep.equal({
+        ...versionData,
+        rocketInterior: null,
+        rocketInteriorOrigin: null,
+      });
     });
   });
 

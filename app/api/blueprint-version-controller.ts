@@ -93,6 +93,7 @@ export class BlueprintVersionController {
         modded: source.modded ?? null,
         mods: source.mods ?? [],
         rocketInterior: source.rocketInterior ?? null,
+        rocketInteriorOrigin: source.rocketInteriorOrigin ?? null,
         // Re-derived rather than copied: the fork's content is the source's
         // content, so deriving is equivalent — except for sources that predate
         // the field, where copying would leave the fork never-derived too.
@@ -121,6 +122,7 @@ export class BlueprintVersionController {
       PreviewImageService.instance.prerender(forked.id, now, async () => ({
         ...forkedVersion.data,
         rocketInterior: forked.rocketInterior ?? null,
+        rocketInteriorOrigin: forked.rocketInteriorOrigin ?? null,
       }));
 
       // The fork is a brand-new (draft) blueprint — lifecycle log starts here
@@ -347,6 +349,7 @@ export class BlueprintVersionController {
       PreviewImageService.instance.prerender(blueprint.id, blueprint.modifiedAt, async () => ({
         ...version.data,
         rocketInterior: blueprint.rocketInterior ?? null,
+        rocketInteriorOrigin: blueprint.rocketInteriorOrigin ?? null,
       }));
 
       const response: CreateBlueprintVersionResponse = { version: toVersionDto(version) };

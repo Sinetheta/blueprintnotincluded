@@ -13,8 +13,8 @@
 //   parent -> worker: { type: 'render', requestId, mdb, size, blueprintId, itemCount,
 //                       distinctPrefabs }
 //   `mdb` is the blueprint's stored data plus `rocketInterior` (the habitat
-//   module to draw the rocket-interior facade for, or null) — see
-//   PreviewController.loadRenderData.
+//   module to draw the rocket-interior facade for, or null) and
+//   `rocketInteriorOrigin` — see PreviewController.loadRenderData.
 //   worker -> parent: { type: 'ready' }
 //                     { type: 'rendered', requestId, raw: Buffer, width, height, timings }
 //                     { type: 'error', requestId, message }
@@ -54,6 +54,7 @@ import {
   terrainIconUrl,
   RocketInteriorPlacement,
   isRocketInteriorModule,
+  isRocketInteriorCell,
   placeRocketInterior,
   buildRocketInteriorScenery,
   expandBoundsForRocketInterior,
@@ -540,9 +541,16 @@ async function renderMaster(
 
   // The facade is framed with the blueprint: a rocket blueprint's items sit
   // inside the hull, and the whole hull has to be in the picture.
-  const rocketInterior = (mdb as { rocketInterior?: unknown }).rocketInterior;
+  const { rocketInterior, rocketInteriorOrigin } = mdb as {
+    rocketInterior?: unknown;
+    rocketInteriorOrigin?: unknown;
+  };
   const placement = isRocketInteriorModule(rocketInterior)
-    ? placeRocketInterior(rocketInterior, blueprint)
+    ? placeRocketInterior(
+        rocketInterior,
+        blueprint,
+        isRocketInteriorCell(rocketInteriorOrigin) ? rocketInteriorOrigin : null
+      )
     : null;
 
   const rasterizeStart = Date.now();

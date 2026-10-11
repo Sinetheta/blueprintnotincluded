@@ -167,20 +167,23 @@ describe('Blueprint metadata API', function () {
       const upload = await TestSetup.request()
         .post('/api/uploadblueprint')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ ...BASE_BODY, rocketInterior: 'small' });
+        .send({ ...BASE_BODY, rocketInterior: 'small', rocketInteriorOrigin: { x: 4, y: 3 } });
       expect(upload.status).to.equal(200);
       const id = upload.body.id;
 
       const saved = await BlueprintModel.model.findById(id);
       expect(saved!.rocketInterior).to.equal('small');
+      expect(saved!.rocketInteriorOrigin).to.deep.include({ x: 4, y: 3 });
 
       const open = await TestSetup.request().get(`/api/getblueprint/${id}`);
       expect(open.status).to.equal(200);
       expect(open.body.rocketInterior).to.equal('small');
+      expect(open.body.rocketInteriorOrigin).to.deep.equal({ x: 4, y: 3 });
 
       const details = await TestSetup.request().get(`/api/blueprints/${id}`);
       expect(details.status).to.equal(200);
       expect(details.body.rocketInterior).to.equal('small');
+      expect(details.body.rocketInteriorOrigin).to.deep.equal({ x: 4, y: 3 });
 
       const list = await TestSetup.request()
         .get('/api/getblueprints')
@@ -190,6 +193,7 @@ describe('Blueprint metadata API', function () {
       // The preview renderer is fed the choice alongside the blueprint data.
       const renderData = (await PreviewController.loadRenderData(id)) as any;
       expect(renderData.rocketInterior).to.equal('small');
+      expect(renderData.rocketInteriorOrigin).to.deep.equal({ x: 4, y: 3 });
       expect(renderData.buildings).to.deep.equal([]);
 
       // Re-saving without it clears it: the choice is part of the metadata
@@ -199,7 +203,28 @@ describe('Blueprint metadata API', function () {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ ...BASE_BODY, overwrite: true });
       expect(cleared.status).to.equal(200);
-      expect((await BlueprintModel.model.findById(id))!.rocketInterior).to.equal(null);
+      const clearedDoc = (await BlueprintModel.model.findById(id))!;
+      expect(clearedDoc.rocketInterior).to.equal(null);
+      expect(clearedDoc.rocketInteriorOrigin).to.equal(null);
+    });
+
+    it('drops an origin sent without a module and rejects a malformed one', async function () {
+      const noModule = await TestSetup.request()
+        .post('/api/uploadblueprint')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ ...BASE_BODY, rocketInteriorOrigin: { x: 1, y: 2 } });
+      expect(noModule.status).to.equal(200);
+      expect(
+        (await BlueprintModel.model.findById(noModule.body.id))!.rocketInteriorOrigin
+      ).to.equal(null);
+
+      for (const bad of [{ x: 1.5, y: 2 }, { x: '1', y: 2 }, { x: 1 }, 'here']) {
+        const response = await TestSetup.request()
+          .post('/api/uploadblueprint')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({ ...BASE_BODY, rocketInterior: 'small', rocketInteriorOrigin: bad });
+        expect(response.status, JSON.stringify(bad)).to.equal(400);
+      }
     });
 
     it('rejects an unknown rocket interior with 400', async function () {

@@ -2,6 +2,7 @@ import {
   Blueprint,
   BlueprintItem,
   CameraService,
+  RocketInteriorCell,
   RocketInteriorModule,
   RocketInteriorPlacement,
   buildRocketInteriorScenery,
@@ -92,19 +93,23 @@ export class DrawRocketInterior {
   }
 
   // Draws the facade for `module` behind `blueprint`, or clears it for null.
-  // Returns the placement in use, for callers that frame around the hull.
+  // `storedOrigin` is the record's rocketInteriorOrigin (see
+  // BlueprintService.setRocketInterior): without it a station-less blueprint
+  // would be re-centred as it grows. Returns the placement in use, for
+  // callers that frame around the hull.
   draw(
     module: RocketInteriorModule | null | undefined,
     blueprint: Blueprint | null | undefined,
     camera: CameraService,
     viewport: Viewport,
+    storedOrigin: RocketInteriorCell | null | undefined = null,
   ): RocketInteriorPlacement | null {
     if (module == null || blueprint == null) {
       if (this.active) this.clear();
       return null;
     }
 
-    const placement = placeRocketInterior(module, blueprint);
+    const placement = placeRocketInterior(module, blueprint, storedOrigin);
     const key = rocketInteriorPlacementKey(placement);
     if (key !== this.placementKey) {
       this.rebuildHull(placement);

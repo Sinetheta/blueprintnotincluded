@@ -19,7 +19,9 @@ import {
   RESEARCH_TIERS,
   ROCKET_INTERIOR_MODULES,
   RocketInteriorModule,
+  RocketInteriorCell,
   isRocketInteriorModule,
+  isRocketInteriorCell,
   RAW_SOURCE_FORMATS,
   RawSourceFormat,
   validateBlueprintName,
@@ -245,11 +247,31 @@ export class BlueprintController {
         return;
       }
 
+      // Where the hull sits, as the editor resolved it when the module was
+      // chosen. Only meaningful with a module; a pair of integer cells.
+      const rawOrigin = req.body.rocketInteriorOrigin ?? null;
+      if (rawOrigin != null && !isRocketInteriorCell(rawOrigin)) {
+        res
+          .status(400)
+          .json(apiError(400, 'Invalid rocketInteriorOrigin: must be { x: integer, y: integer }'));
+        return;
+      }
+      const rocketInteriorOrigin: RocketInteriorCell | null =
+        rocketInterior != null && rawOrigin != null ? { x: rawOrigin.x, y: rawOrigin.y } : null;
+
       // publish: true = publish as part of this save; absent = keep current
       // state (new blueprints start as drafts via the schema default)
       const publish = req.body.publish != null ? Boolean(req.body.publish) : null;
 
-      const metadata = { category, subcategory, description, researchTier, modded, rocketInterior };
+      const metadata = {
+        category,
+        subcategory,
+        description,
+        researchTier,
+        modded,
+        rocketInterior,
+        rocketInteriorOrigin,
+      };
 
       // Verbatim BlueprintsV2 source for byte-exact re-download (§8). The
       // client only sends it when the saved data still equals the imported
@@ -600,6 +622,7 @@ export class BlueprintController {
         mods: blueprint.mods ?? [],
         rooms: blueprint.rooms ?? null,
         rocketInterior: blueprint.rocketInterior ?? null,
+        rocketInteriorOrigin: blueprint.rocketInteriorOrigin ?? null,
         isPublished: blueprint.isPublished !== false,
         hasRawSource: blueprint.rawSource != null,
         rawSourceFormat: blueprint.rawSourceFormat ?? null,
@@ -1251,6 +1274,7 @@ export class BlueprintController {
       mods: blueprint.mods ?? [],
       rooms: blueprint.rooms ?? null,
       rocketInterior: blueprint.rocketInterior ?? null,
+      rocketInteriorOrigin: blueprint.rocketInteriorOrigin ?? null,
       isPublished: blueprint.isPublished !== false,
       nbForks: blueprint.forkCount ?? 0,
       nbViews: blueprint.viewCount ?? 0,
@@ -1579,6 +1603,7 @@ export class BlueprintController {
         mods: blueprint.mods ?? [],
         rooms: blueprint.rooms ?? null,
         rocketInterior: blueprint.rocketInterior ?? null,
+        rocketInteriorOrigin: blueprint.rocketInteriorOrigin ?? null,
         isPublished: blueprint.isPublished !== false,
         nbForks: blueprint.forkCount ?? 0,
         nbViews: blueprint.viewCount ?? 0,
@@ -1717,6 +1742,7 @@ export class BlueprintController {
       researchTier: string | null;
       modded: boolean | null;
       rocketInterior: RocketInteriorModule | null;
+      rocketInteriorOrigin: RocketInteriorCell | null;
     },
     publish?: boolean | null,
     forkSource?: { source: Blueprint; versionId: mongoose.Types.ObjectId } | null,
@@ -1783,6 +1809,7 @@ export class BlueprintController {
       blueprint.researchTier = metadata.researchTier;
       blueprint.modded = metadata.modded;
       blueprint.rocketInterior = metadata.rocketInterior;
+      blueprint.rocketInteriorOrigin = metadata.rocketInteriorOrigin;
       // A blueprint using known-mod buildings is modded regardless of what the
       // client derived (protects against stale clients shipping the old heuristic).
       if (blueprint.mods.length > 0) blueprint.modded = true;
@@ -1881,6 +1908,7 @@ export class BlueprintController {
     PreviewImageService.instance.prerender(newBlueprint.id, newBlueprint.modifiedAt, async () => ({
       ...data,
       rocketInterior: newBlueprint.rocketInterior ?? null,
+      rocketInteriorOrigin: newBlueprint.rocketInteriorOrigin ?? null,
     }));
 
     try {
