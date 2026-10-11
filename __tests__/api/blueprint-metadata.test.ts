@@ -8,6 +8,7 @@ process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
+import { PreviewController } from '../../app/api/preview-controller';
 import { computeHotScore } from '../../lib/index';
 
 const TINY_PNG =
@@ -94,7 +95,12 @@ describe('Blueprint metadata API', function () {
       const foodUpload = await TestSetup.request()
         .post('/api/uploadblueprint')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ ...BASE_BODY, name: 'Food Category Blueprint', category: 'food', subcategory: 'farm' });
+        .send({
+          ...BASE_BODY,
+          name: 'Food Category Blueprint',
+          category: 'food',
+          subcategory: 'farm',
+        });
 
       expect(foodUpload.status).to.equal(200);
       const foodSaved = await BlueprintModel.model.findById(foodUpload.body.id);
@@ -104,7 +110,12 @@ describe('Blueprint metadata API', function () {
       const roomsUpload = await TestSetup.request()
         .post('/api/uploadblueprint')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ ...BASE_BODY, name: 'Rooms Category Blueprint', category: 'rooms', subcategory: 'barracks' });
+        .send({
+          ...BASE_BODY,
+          name: 'Rooms Category Blueprint',
+          category: 'rooms',
+          subcategory: 'barracks',
+        });
 
       expect(roomsUpload.status).to.equal(200);
       const roomsSaved = await BlueprintModel.model.findById(roomsUpload.body.id);
@@ -147,6 +158,55 @@ describe('Blueprint metadata API', function () {
         .post('/api/uploadblueprint')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ ...BASE_BODY, researchTier: 'superAdvanced' });
+
+      expect(response.status).to.equal(400);
+      expect(response.body.errors).to.be.an('array');
+    });
+
+    it('persists the rocket interior choice and serves it on every read', async function () {
+      const upload = await TestSetup.request()
+        .post('/api/uploadblueprint')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ ...BASE_BODY, rocketInterior: 'small' });
+      expect(upload.status).to.equal(200);
+      const id = upload.body.id;
+
+      const saved = await BlueprintModel.model.findById(id);
+      expect(saved!.rocketInterior).to.equal('small');
+
+      const open = await TestSetup.request().get(`/api/getblueprint/${id}`);
+      expect(open.status).to.equal(200);
+      expect(open.body.rocketInterior).to.equal('small');
+
+      const details = await TestSetup.request().get(`/api/blueprints/${id}`);
+      expect(details.status).to.equal(200);
+      expect(details.body.rocketInterior).to.equal('small');
+
+      const list = await TestSetup.request()
+        .get('/api/getblueprints')
+        .query({ olderthan: Date.now() });
+      expect(list.body.blueprints.find((bp: any) => bp.id === id).rocketInterior).to.equal('small');
+
+      // The preview renderer is fed the choice alongside the blueprint data.
+      const renderData = (await PreviewController.loadRenderData(id)) as any;
+      expect(renderData.rocketInterior).to.equal('small');
+      expect(renderData.buildings).to.deep.equal([]);
+
+      // Re-saving without it clears it: the choice is part of the metadata
+      // the client sends whole, like category.
+      const cleared = await TestSetup.request()
+        .post('/api/uploadblueprint')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ ...BASE_BODY, overwrite: true });
+      expect(cleared.status).to.equal(200);
+      expect((await BlueprintModel.model.findById(id))!.rocketInterior).to.equal(null);
+    });
+
+    it('rejects an unknown rocket interior with 400', async function () {
+      const response = await TestSetup.request()
+        .post('/api/uploadblueprint')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ ...BASE_BODY, rocketInterior: 'large' });
 
       expect(response.status).to.equal(400);
       expect(response.body.errors).to.be.an('array');
@@ -429,7 +489,10 @@ describe('Blueprint metadata API', function () {
         .set('Authorization', `Bearer ${otherToken}`)
         .send({ blueprintId: id, rating: 5 });
 
-      const after = (await BlueprintModel.model.findById(id).select('hotScore ratingCount ratingAverage downloadCount createdAt').lean())!;
+      const after = (await BlueprintModel.model
+        .findById(id)
+        .select('hotScore ratingCount ratingAverage downloadCount createdAt')
+        .lean())!;
       const expected = computeHotScore({
         ratingCount: after.ratingCount ?? 0,
         ratingAverage: after.ratingAverage ?? 0,

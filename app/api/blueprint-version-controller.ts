@@ -92,6 +92,7 @@ export class BlueprintVersionController {
         researchTier: source.researchTier ?? null,
         modded: source.modded ?? null,
         mods: source.mods ?? [],
+        rocketInterior: source.rocketInterior ?? null,
         // Re-derived rather than copied: the fork's content is the source's
         // content, so deriving is equivalent — except for sources that predate
         // the field, where copying would leave the fork never-derived too.
@@ -117,7 +118,10 @@ export class BlueprintVersionController {
       await BlueprintModel.model.updateOne({ _id: source._id }, { $inc: { forkCount: 1 } });
 
       // Render-on-write: warm the fork's preview cache (Phase 2).
-      PreviewImageService.instance.prerender(forked.id, now, async () => forkedVersion.data);
+      PreviewImageService.instance.prerender(forked.id, now, async () => ({
+        ...forkedVersion.data,
+        rocketInterior: forked.rocketInterior ?? null,
+      }));
 
       // The fork is a brand-new (draft) blueprint — lifecycle log starts here
       BlueprintEventService.log({ blueprintId: forked.id, actorId: user._id, type: 'created' });
@@ -182,7 +186,9 @@ export class BlueprintVersionController {
 
       const { name } = (req.body ?? {}) as CreateBlueprintVersionRequest;
       if (name != null && (typeof name !== 'string' || name.length > NAME_MAX_LENGTH)) {
-        res.status(400).json(apiError(400, `Version name must be ${NAME_MAX_LENGTH} characters or fewer`));
+        res
+          .status(400)
+          .json(apiError(400, `Version name must be ${NAME_MAX_LENGTH} characters or fewer`));
         return;
       }
 
@@ -226,7 +232,10 @@ export class BlueprintVersionController {
       const user = req.user as UserJwt;
       const blueprintId = String(req.params.id);
       const versionId = String(req.params.versionId);
-      if (!mongoose.Types.ObjectId.isValid(blueprintId) || !mongoose.Types.ObjectId.isValid(versionId)) {
+      if (
+        !mongoose.Types.ObjectId.isValid(blueprintId) ||
+        !mongoose.Types.ObjectId.isValid(versionId)
+      ) {
         res.status(400).json(apiError(400, 'Invalid blueprint or version id'));
         return;
       }
@@ -251,7 +260,10 @@ export class BlueprintVersionController {
         return;
       }
 
-      const liveCount = await BlueprintVersionModel.model.countDocuments({ blueprintId, deletedAt: null });
+      const liveCount = await BlueprintVersionModel.model.countDocuments({
+        blueprintId,
+        deletedAt: null,
+      });
       if (liveCount <= 1) {
         res.status(400).json(apiError(400, 'Cannot delete the only remaining version'));
         return;
@@ -289,7 +301,10 @@ export class BlueprintVersionController {
       const user = req.user as UserJwt;
       const blueprintId = String(req.params.id);
       const versionId = String(req.params.versionId);
-      if (!mongoose.Types.ObjectId.isValid(blueprintId) || !mongoose.Types.ObjectId.isValid(versionId)) {
+      if (
+        !mongoose.Types.ObjectId.isValid(blueprintId) ||
+        !mongoose.Types.ObjectId.isValid(versionId)
+      ) {
         res.status(400).json(apiError(400, 'Invalid blueprint or version id'));
         return;
       }
@@ -329,7 +344,10 @@ export class BlueprintVersionController {
       await blueprint.save();
 
       // Render-on-write: warm the preview cache with the restored data (Phase 2).
-      PreviewImageService.instance.prerender(blueprint.id, blueprint.modifiedAt, async () => version.data);
+      PreviewImageService.instance.prerender(blueprint.id, blueprint.modifiedAt, async () => ({
+        ...version.data,
+        rocketInterior: blueprint.rocketInterior ?? null,
+      }));
 
       const response: CreateBlueprintVersionResponse = { version: toVersionDto(version) };
       res.json(response);
