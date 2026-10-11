@@ -357,6 +357,46 @@ no "this is a stack" marker — the Blueprints mod recomputes stacking from the 
 - **Fixture caveat** — `rocket-modules-stack-synthetic.blueprint` is built from the export's
   real `attachPoints`, not captured from a game.
 
+### Rocket interiors (the habitat facade)
+
+A rocket blueprint is built *inside* a habitat module, and the Blueprints mod ignores the
+module entirely: the file holds the player's buildings, the `RocketControlStation` (captured
+even though nobody placed it) and dig commands for the non-solid cells of the selection. None
+of the walls, windows, ports or the door is in it. `rocket-interior.ts` draws them back as
+scenery under the blueprint, with the game's landed backdrop, so a visitor sees a rocket.
+
+- **Source of truth** — the game's own interior templates for `HabitatModuleSmall` (8×8 nose
+  cone) and `HabitatModuleMedium` (12×11), Klei `TemplateContainer` YAML carried over by hand
+  into `assets/manual/rocket-interior/` (not an export; it changes only when Klei redraws the
+  interiors). `scripts/gen-rocket-interior-layouts.js` tables them as glyph grids in
+  `rocket-interior-layouts.ts` — one two-character glyph per cell, readable in a diff — and
+  asserts every solid cell carries a building. The door (`ClustercraftInteriorDoor`) is an
+  entity with no `OniItem`; it is drawn from its PNG.
+- **Alignment** — on the control station, which is fixed in both templates and always
+  present: template origin = station cell − `stationOrigin` (`(0,-2)` small, `(0,-3)`
+  medium). Mod offsets and site cells are the same y-up space, so nothing is transformed. A
+  blueprint with no station or more than one (cheats, hand edits) falls back to centring the
+  hull on the blueprint's bounding box (`anchor: 'bounds'`).
+- **Scenery, not content** — `buildRocketInteriorScenery` makes a throwaway `Blueprint` of
+  real `BlueprintItem`s so the hull renders through the ordinary `drawPixi` pipeline (joined
+  wall tiles, the real port art, overlay/display treatment), through a private camera into a
+  container sorted under every building. Nothing is added to the blueprint: no cost, no
+  export, and the blueprint's own building on a hull cell simply draws over the hull's
+  (which also covers the altered-hull case with no detection).
+- **Stored choice** — `Blueprint.rocketInterior` on the website record (`'small' |
+  'medium' | null`), author-picked in the save dialog or the editor's Rocket interior menu
+  and sent with the other metadata; `null`/absent = none. Chosen over the file's `metadata`
+  block because it is presentation, not blueprint content, and because a later auto-detector
+  is a server-side derivation like `rooms` — it should fill null/absent and leave a stored
+  module alone. The preview worker receives it beside the data (`PreviewRenderData`).
+- **The look lives in one place** — `lib/src/drawing/rocket-backdrop.ts`: star layers
+  (scale, parallax, alpha), moon (size in cells, crest above the floor, horizontal offset),
+  vignette (radii and centre per module; the fade curve is baked into `vignette.png` by
+  `scripts/gen-rocket-vignette.js`) and the door rectangle. `rocketBackdropGeometry` turns
+  those into screen rects; the three renderers (editor overlay, client thumbnail/export,
+  preview worker) only place sprites. Landed, by day, only — the in-flight and night sets
+  were deliberately left out.
+
 ### Dig commands and userdesc on export
 
 Two things a generated export used to lose. An unedited import was never affected — its raw
