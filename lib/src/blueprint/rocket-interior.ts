@@ -197,6 +197,11 @@ export interface RocketInteriorPlacement {
   // The world cell the template's (0, 0) lands on.
   origin: RocketInteriorCell;
   anchor: RocketInteriorAnchor;
+  // Hull pieces the blueprint itself says are gone, as world cells: the mod
+  // writes a dig command for every non-solid cell of the selection, so a dig
+  // on a wall or window cell means the player had blown it out when the
+  // capture was taken. Sorted, deduplicated.
+  removed: RocketInteriorCell[];
 }
 
 // The subset of BlueprintItem the alignment reads, so plain records can be
@@ -255,10 +260,17 @@ export function placeRocketInterior(
   storedOrigin?: RocketInteriorCell | null
 ): RocketInteriorPlacement {
   const layout = rocketInteriorLayout(module);
+  const place = (origin: RocketInteriorCell, anchor: RocketInteriorAnchor) => ({
+    module,
+    layout,
+    origin,
+    anchor,
+    removed: dugHullCells(layout, origin, blueprint.digCommands),
+  });
+
   const fromStation = rocketInteriorOriginFromStation(layout, blueprint.blueprintItems);
-  if (fromStation != null) return { module, layout, origin: fromStation, anchor: 'station' };
-  if (storedOrigin != null)
-    return { module, layout, origin: { x: storedOrigin.x, y: storedOrigin.y }, anchor: 'stored' };
+  if (fromStation != null) return place(fromStation, 'station');
+  if (storedOrigin != null) return place({ x: storedOrigin.x, y: storedOrigin.y }, 'stored');
 
   // getBoundingBox is a sentinel pair on an empty blueprint; the template then
   // sits on the origin, which is where a new blueprint starts anyway.
@@ -272,23 +284,47 @@ export function placeRocketInterior(
           const [min, max] = blueprint.getBoundingBox();
           return rocketInteriorOriginCentred(layout, min, max);
         })();
-  return { module, layout, origin, anchor: 'bounds' };
+  return place(origin, 'bounds');
+}
+
+// The hull cells a blueprint's dig commands land on. Dig commands only cover
+// the player's selection rectangle, so a wall outside it is simply unknown
+// and stays; one inside it that was dug is a hole the player made.
+function dugHullCells(
+  layout: RocketInteriorLayout,
+  origin: RocketInteriorCell,
+  digCommands: { x: number; y: number }[] | null | undefined
+): RocketInteriorCell[] {
+  if (digCommands == null || digCommands.length === 0) return [];
+  const dug = new Set(digCommands.map(dig => `${dig.x},${dig.y}`));
+  const removed: RocketInteriorCell[] = [];
+  for (const piece of layout.pieces) {
+    const x = piece.x + origin.x;
+    const y = piece.y + origin.y;
+    if (dug.has(`${x},${y}`)) removed.push({ x, y });
+  }
+  return removed.sort((a, b) => a.x - b.x || a.y - b.y);
 }
 
 // Two placements draw the same scenery exactly when this key matches; lets a
 // per-frame renderer keep its sprites while nothing moved.
 export function rocketInteriorPlacementKey(placement: RocketInteriorPlacement): string {
-  return `${placement.module}:${placement.origin.x},${placement.origin.y}`;
+  const removed = placement.removed.map(cell => `${cell.x},${cell.y}`).join(';');
+  return `${placement.module}:${placement.origin.x},${placement.origin.y}:${removed}`;
 }
 
+// The hull's pieces as world cells, less the ones the blueprint dug out.
 export function rocketInteriorWorldPieces(
   placement: RocketInteriorPlacement
 ): RocketInteriorPiece[] {
-  return placement.layout.pieces.map(piece => ({
-    id: piece.id,
-    x: piece.x + placement.origin.x,
-    y: piece.y + placement.origin.y,
-  }));
+  const removed = new Set(placement.removed.map(cell => `${cell.x},${cell.y}`));
+  const pieces: RocketInteriorPiece[] = [];
+  for (const piece of placement.layout.pieces) {
+    const x = piece.x + placement.origin.x;
+    const y = piece.y + placement.origin.y;
+    if (!removed.has(`${x},${y}`)) pieces.push({ id: piece.id, x, y });
+  }
+  return pieces;
 }
 
 export function rocketInteriorWorldDoor(placement: RocketInteriorPlacement): RocketInteriorCell {

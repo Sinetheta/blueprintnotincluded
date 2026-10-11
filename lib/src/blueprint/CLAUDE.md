@@ -382,6 +382,13 @@ scenery under the blueprint, with the game's landed backdrop, so a visitor sees 
   placed, which is exactly the hopping hull the first QA pass found. A single station still
   wins over a stored origin; the origin a station gave is stored too, so the hull stays put
   if the station is later removed. A future nudge UI edits this field.
+- **Blown-out walls** — the capture already says which hull pieces were gone: the mod writes a
+  dig command for every non-solid cell of the selection, so a dig on a wall or window cell is a
+  hole the player made (cheats, or escaping the hull). `placeRocketInterior` lists those as
+  `removed` and the scenery leaves them out, with the neighbouring tiles un-joining. Dig
+  commands only cover the selection rectangle, so a wall outside it is unknown and stays. A
+  blueprint built from scratch on the site has no dig commands; a manual "Edit hull" toggle
+  (removed template cells stored beside the origin) is the follow-up for that case.
 - **Window art** — the rocket window's own sprite is a small pane that joins only to other
   rocket windows, so a lone window between walls read as an undersized square. Hull pieces
   draw as `ROCKET_INTERIOR_ART` says (windows as the plain `GlassTile`); the layout and the
