@@ -41,8 +41,13 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      # The read-only window is the whole cost of a collection, so do not
-      # open one for nothing.
+      # The read-only window is the whole cost of a collection, so the
+      # scheduled run does not open one for nothing. Deploys and retags are
+      # the only things that write to the registry, and each leaves exactly
+      # an untagged manifest behind, so "no untagged manifests" is "nothing
+      # to collect". The one leftover the count cannot see is a layer
+      # orphaned by deleting a manifest by hand in the control panel, so a
+      # run started by hand always collects.
       - name: Count untagged manifests
         id: count
         env:
@@ -53,15 +58,19 @@ jobs:
           untagged=$(jq '[(. // [])[] | select((.tags // []) | length == 0)] | length' <<< "$manifests")
           bytes=$(jq '[(. // [])[] | select((.tags // []) | length == 0) | .compressed_size_bytes // 0] | add // 0' <<< "$manifests")
           echo "$untagged untagged manifest(s), $((bytes / 1024 / 1024)) MiB compressed"
-          echo "untagged=$untagged" >> "$GITHUB_OUTPUT"
-          if [ "$untagged" = "0" ]; then
-            echo "Nothing to collect." >> "$GITHUB_STEP_SUMMARY"
-          else
+          if [ "$untagged" != "0" ]; then
+            echo "collect=true" >> "$GITHUB_OUTPUT"
             echo "Collecting $untagged untagged manifest(s), $((bytes / 1024 / 1024)) MiB compressed." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "collect=true" >> "$GITHUB_OUTPUT"
+            echo "No untagged manifests; collecting unreferenced layers anyway because this run was started by hand." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "collect=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to collect." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Start garbage collection
-        if: steps.count.outputs.untagged != '0'
+        if: steps.count.outputs.collect == 'true'
         run: |
           set -euo pipefail
           # The API answers 404 when nothing is running, which doctl reports
