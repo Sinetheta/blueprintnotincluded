@@ -1,0 +1,48 @@
+<div class="box-card ui-widget dig-card">
+  <div class="box-card-title" i18n>Dig</div>
+  <p class="hint" i18n>
+    Marks cells for the Blueprints mod to dig out when the blueprint is pasted
+    in the game.
+  </p>
+
+  <div class="mode-row">
+    <button
+      type="button"
+      class="mode-button"
+      [class.selected]="!tool.erase"
+      (click)="tool.erase = false"
+      i18n
+    >
+      Dig
+    </button>
+    <button
+      type="button"
+      class="mode-button"
+      [class.selected]="tool.erase"
+      (click)="tool.erase = true"
+      i18n
+    >
+      Erase
+    </button>
+  </div>
+
+  <p class="count" i18n>
+    {digCount, plural, =1 {1 cell} other {{{ digCount }} cells}} marked for
+    digging
+  </p>
+
+  <label class="visibility-row">
+    <input
+      type="checkbox"
+      [checked]="tool.showDigCommands"
+      (change)="tool.showDigCommands = !tool.showDigCommands"
+    />
+    <span i18n>Show dig cells</span>
+  </label>
+
+  <p class="hint" i18n>
+    Click or drag on the blueprint to mark cells. A cell under a planning note
+    is already dug in the game, so it cannot take a dig of its own (the cursor
+    turns red). Right-click to return to Select.
+  </p>
+</div>

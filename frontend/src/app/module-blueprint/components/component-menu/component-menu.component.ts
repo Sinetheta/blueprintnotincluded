@@ -200,6 +200,13 @@ export class ComponentMenuComponent
           this.clickTool(ToolType.build);
         },
       },
+      {
+        label: $localize`Dig`,
+        id: ToolType[ToolType.dig],
+        command: (_event: any) => {
+          this.clickTool(ToolType.dig);
+        },
+      },
     ];
 
     this.languagesMenuItems = [];

@@ -10,6 +10,7 @@ export enum ToolType {
   planning,
   notes,
   terrain,
+  dig,
 }
 
 export interface ITool {

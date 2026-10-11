@@ -37,6 +37,7 @@ import { DrawMiniUi } from "../../drawing/draw-mini-ui";
 import { DrawRoomOverlay } from "../../drawing/draw-room-overlay";
 import { DrawNotesOverlay } from "../../drawing/draw-notes-overlay";
 import { DrawPlanningOverlay } from "../../drawing/draw-planning-overlay";
+import { DrawDigOverlay } from "../../drawing/draw-dig-overlay";
 import { DrawTerrainOverlay } from "../../drawing/draw-terrain-overlay";
 import { DrawRocketInterior } from "../../drawing/draw-rocket-interior";
 import { drawAreaOfEffects } from "../../drawing/draw-area-of-effect";
@@ -89,6 +90,7 @@ const TOOL_ACTIONS: ShortcutActionId[] = [
   ShortcutAction.toolBuild,
   ShortcutAction.toolPlanning,
   ShortcutAction.toolScissors,
+  ShortcutAction.toolDig,
   ShortcutAction.buildRotate,
   ShortcutAction.editDelete,
   ShortcutAction.interfaceCancel,
@@ -127,6 +129,10 @@ export class ComponentCanvasComponent
   drawRoomOverlay!: DrawRoomOverlay;
   drawNotesOverlay!: DrawNotesOverlay;
   drawPlanningOverlay!: DrawPlanningOverlay;
+  // Dig cells sit under the buildings, except while the Dig tool is active,
+  // when the same cells draw over them (see drawAll).
+  drawDigOverlay!: DrawDigOverlay;
+  drawDigOverlayOnTop!: DrawDigOverlay;
   drawTerrainOverlay!: DrawTerrainOverlay;
   drawRocketInterior!: DrawRocketInterior;
 
@@ -170,6 +176,13 @@ export class ComponentCanvasComponent
       this.drawPixi.InitAnimation();
       this.cameraService.container = this.drawPixi.blueprintContainer;
       this.drawRoomOverlay = new DrawRoomOverlay(this.drawPixi);
+      // Before the other stage overlays, so planning shapes, terrain and
+      // notes still draw over it.
+      this.drawDigOverlayOnTop = new DrawDigOverlay(
+        this.drawPixi,
+        this.drawPixi.pixiApp.stage,
+        1,
+      );
       this.drawNotesOverlay = new DrawNotesOverlay(this.drawPixi);
       this.drawPlanningOverlay = new DrawPlanningOverlay(this.drawPixi);
       this.drawTerrainOverlay = new DrawTerrainOverlay(this.drawPixi);
@@ -180,6 +193,12 @@ export class ComponentCanvasComponent
         this.drawPixi.blueprintContainer,
         this.drawPixi.pixiApp.stage,
         true,
+      );
+      // Over the hull, under the buildings: after the hull, so the order is
+      // right even before the container's first zIndex sort.
+      this.drawDigOverlay = new DrawDigOverlay(
+        this.drawPixi,
+        this.drawPixi.blueprintContainer,
       );
 
       if (this.forceSize) {
@@ -412,7 +431,8 @@ export class ComponentCanvasComponent
 
     if (
       this.blueprint.blueprintItems.length > 0 ||
-      this.blueprint.planningToolShapes.length > 0
+      this.blueprint.planningToolShapes.length > 0 ||
+      this.blueprint.digCommands.length > 0
     ) {
       const boundingBox = this.blueprint.getBoundingBox();
       const topLeft = boundingBox[0];
@@ -1086,6 +1106,12 @@ export class ComponentCanvasComponent
       rocketOrigin,
     );
 
+    // Dig cells, between the hull and the buildings by zIndex.
+    new DrawDigOverlay(this.drawPixi, exportCamera.container).draw(
+      clone.digCommands,
+      exportCamera,
+    );
+
     clone.blueprintItems.map((item) => {
       item.updateTileables(clone);
       item.drawPixi(exportCamera, this.drawPixi);
@@ -1203,6 +1229,11 @@ export class ComponentCanvasComponent
       this.drawPixi,
       exportCamera.container,
     );
+    // Between the hull and the buildings by zIndex, like the thumbnail.
+    const digOverlay = new DrawDigOverlay(
+      this.drawPixi,
+      exportCamera.container,
+    );
 
     exportOptions.selectedOverlays.map((overlay) => {
       exportCamera.overlay = overlay;
@@ -1215,6 +1246,7 @@ export class ComponentCanvasComponent
         { width: sizeInPixels.x, height: sizeInPixels.y },
         rocketOrigin,
       );
+      digOverlay.draw(clone.digCommands, exportCamera);
 
       clone.blueprintItems.map((item) => {
         item.updateTileables(clone);
@@ -1379,6 +1411,25 @@ export class ComponentCanvasComponent
       }
 
       this.toolService.draw(this.drawPixi, this.cameraService);
+
+      // Dig cells. At rest they sit under the buildings: a capture carries a
+      // dig on every empty cell of its selection, and over the buildings
+      // that would hatch the whole picture. While the Dig tool is active
+      // they draw on top instead, so a dig painted under a building can
+      // still be seen and erased. The visibility toggle is view-only and
+      // live-editor-only, like the terrain and note toggles below.
+      const digTool = this.toolService.digTool;
+      const digs = this.blueprint.digCommands;
+      if (!this.forceSize && !digTool.showDigCommands) {
+        this.drawDigOverlay.clear();
+        this.drawDigOverlayOnTop.clear();
+      } else if (!this.forceSize && digTool.visible) {
+        this.drawDigOverlay.clear();
+        this.drawDigOverlayOnTop.draw(digs, this.cameraService);
+      } else {
+        this.drawDigOverlayOnTop.clear();
+        this.drawDigOverlay.draw(digs, this.cameraService);
+      }
 
       // Planning Tool cells are blueprint content, so include them in the
       // editor, thumbnails, and exported images.

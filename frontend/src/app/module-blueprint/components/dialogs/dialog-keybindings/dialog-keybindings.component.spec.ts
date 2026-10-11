@@ -89,15 +89,15 @@ describe("DialogKeybindingsComponent", () => {
       expect(component.isCapturing(ShortcutAction.cameraHome)).toBe(true);
       expect(setEnabled).toHaveBeenCalledWith(false);
 
-      component.onKeyDown(capture("KeyG"));
+      component.onKeyDown(capture("KeyJ"));
       expect(setEnabled).toHaveBeenLastCalledWith(true);
     });
 
     it("binds the captured key to the action", () => {
       component.startCapture(ShortcutAction.cameraHome);
-      component.onKeyDown(capture("KeyG"));
+      component.onKeyDown(capture("KeyJ"));
 
-      expect(keybindingService.resolve(makeChord("KeyG"))).toBe(
+      expect(keybindingService.resolve(makeChord("KeyJ"))).toBe(
         ShortcutAction.cameraHome,
       );
       expect(component.isCapturing(ShortcutAction.cameraHome)).toBe(false);
@@ -105,11 +105,11 @@ describe("DialogKeybindingsComponent", () => {
 
     it("captures modifiers along with the key", () => {
       component.startCapture(ShortcutAction.cameraHome);
-      component.onKeyDown(capture("KeyG", { ctrlKey: true, shiftKey: true }));
+      component.onKeyDown(capture("KeyJ", { ctrlKey: true, shiftKey: true }));
 
       expect(
         keybindingService.resolve(
-          makeChord("KeyG", { ctrl: true, shift: true }),
+          makeChord("KeyJ", { ctrl: true, shift: true }),
         ),
       ).toBe(ShortcutAction.cameraHome);
     });
@@ -131,8 +131,8 @@ describe("DialogKeybindingsComponent", () => {
     });
 
     it("ignores key presses when no capture is in progress", () => {
-      component.onKeyDown(capture("KeyG"));
-      expect(keybindingService.resolve(makeChord("KeyG"))).toBeNull();
+      component.onKeyDown(capture("KeyJ"));
+      expect(keybindingService.resolve(makeChord("KeyJ"))).toBeNull();
     });
 
     // A shadowed binding the user can't see is worse than a moved one.
@@ -182,7 +182,7 @@ describe("DialogKeybindingsComponent", () => {
         makeChord("KeyI"),
       ]);
       keybindingService.setChords(ShortcutAction.cameraHome, [
-        makeChord("KeyG"),
+        makeChord("KeyJ"),
       ]);
       expect(component.anyCustomized).toBe(true);
 

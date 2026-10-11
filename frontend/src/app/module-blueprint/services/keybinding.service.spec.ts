@@ -63,9 +63,9 @@ describe("KeybindingService", () => {
 
   describe("customizing", () => {
     it("adds a chord and persists only the override", () => {
-      service.addChord(ShortcutAction.cameraHome, makeChord("KeyG"));
+      service.addChord(ShortcutAction.cameraHome, makeChord("KeyJ"));
 
-      expect(service.resolve(makeChord("KeyG"))).toBe(
+      expect(service.resolve(makeChord("KeyJ"))).toBe(
         ShortcutAction.cameraHome,
       );
       expect(service.isCustomized(ShortcutAction.cameraHome)).toBe(true);
@@ -95,8 +95,8 @@ describe("KeybindingService", () => {
     // Otherwise a user who happens to reproduce the defaults would be frozen
     // on them and stop picking up future default changes.
     it("drops the override when the chords match the defaults again", () => {
-      service.addChord(ShortcutAction.cameraHome, makeChord("KeyG"));
-      service.removeChord(ShortcutAction.cameraHome, makeChord("KeyG"));
+      service.addChord(ShortcutAction.cameraHome, makeChord("KeyJ"));
+      service.removeChord(ShortcutAction.cameraHome, makeChord("KeyJ"));
 
       expect(service.isCustomized(ShortcutAction.cameraHome)).toBe(false);
       expect(stored()).toBeNull();
@@ -126,7 +126,7 @@ describe("KeybindingService", () => {
     it("emits a change notification", () => {
       const onChange = vi.fn();
       service.changed.subscribe(onChange);
-      service.addChord(ShortcutAction.cameraHome, makeChord("KeyG"));
+      service.addChord(ShortcutAction.cameraHome, makeChord("KeyJ"));
       expect(onChange).toHaveBeenCalledTimes(1);
     });
   });
@@ -151,10 +151,10 @@ describe("KeybindingService", () => {
 
   describe("persistence", () => {
     it("reloads overrides from storage", () => {
-      service.setChords(ShortcutAction.cameraHome, [makeChord("KeyG")]);
+      service.setChords(ShortcutAction.cameraHome, [makeChord("KeyJ")]);
 
       const reloaded = new KeybindingService();
-      expect(reloaded.resolve(makeChord("KeyG"))).toBe(
+      expect(reloaded.resolve(makeChord("KeyJ"))).toBe(
         ShortcutAction.cameraHome,
       );
       expect(reloaded.resolve(makeChord("KeyH"))).toBeNull();
@@ -172,20 +172,20 @@ describe("KeybindingService", () => {
     it("drops entries for actions that no longer exist", () => {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ "camera.warpToMars": ["KeyG"] }),
+        JSON.stringify({ "camera.warpToMars": ["KeyJ"] }),
       );
       const reloaded = new KeybindingService();
-      expect(reloaded.resolve(makeChord("KeyG"))).toBeNull();
+      expect(reloaded.resolve(makeChord("KeyJ"))).toBeNull();
     });
 
     it("drops chord strings it cannot parse", () => {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ "camera.home": ["Hyper+KeyG", "KeyG"] }),
+        JSON.stringify({ "camera.home": ["Hyper+KeyJ", "KeyJ"] }),
       );
       const reloaded = new KeybindingService();
       expect(reloaded.getSerializedChords(ShortcutAction.cameraHome)).toEqual([
-        "KeyG",
+        "KeyJ",
       ]);
     });
 
@@ -197,10 +197,10 @@ describe("KeybindingService", () => {
         });
 
       expect(() =>
-        service.addChord(ShortcutAction.cameraHome, makeChord("KeyG")),
+        service.addChord(ShortcutAction.cameraHome, makeChord("KeyJ")),
       ).not.toThrow();
       // The session still gets the new binding, it just isn't saved.
-      expect(service.resolve(makeChord("KeyG"))).toBe(
+      expect(service.resolve(makeChord("KeyJ"))).toBe(
         ShortcutAction.cameraHome,
       );
 

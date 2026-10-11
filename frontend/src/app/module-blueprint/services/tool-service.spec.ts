@@ -10,6 +10,7 @@ import {
 import { PlanningTool } from "../common/tools/planning-tool";
 import { NotesTool } from "../common/tools/notes-tool";
 import { TerrainTool } from "../common/tools/terrain-tool";
+import { DigTool } from "../common/tools/dig-tool";
 import { ShortcutAction } from "../keybindings/shortcut-actions";
 import { BlueprintService } from "./blueprint-service";
 import { WorldNoteService } from "./world-note.service";
@@ -50,6 +51,7 @@ describe("ToolService", () => {
     mode: "text" | "element";
   };
   let mockTerrain: ReturnType<typeof makeTool>;
+  let mockDig: ReturnType<typeof makeTool>;
   let blueprintItemsAt: any[];
   let worldNotes: BniWorldNote[];
   let mockBlueprintService: { blueprint: any };
@@ -67,6 +69,7 @@ describe("ToolService", () => {
       mode: "text",
     };
     mockTerrain = makeTool(ToolType.terrain);
+    mockDig = makeTool(ToolType.dig);
 
     blueprintItemsAt = [];
     worldNotes = [];
@@ -86,6 +89,7 @@ describe("ToolService", () => {
       mockPlanning as unknown as PlanningTool,
       mockNotes as unknown as NotesTool,
       mockTerrain as unknown as TerrainTool,
+      mockDig as unknown as DigTool,
       mockBlueprintService as unknown as BlueprintService,
       mockWorldNoteService as unknown as WorldNoteService,
     );
@@ -114,6 +118,10 @@ describe("ToolService", () => {
 
     it("returns notesTool for ToolType.notes", () => {
       expect(service.getTool(ToolType.notes)).toBe(mockNotes);
+    });
+
+    it("returns digTool for ToolType.dig", () => {
+      expect(service.getTool(ToolType.dig)).toBe(mockDig);
     });
   });
 
@@ -247,6 +255,12 @@ describe("ToolService", () => {
     it("switches to the notes tool", () => {
       expect(service.handleShortcut(ShortcutAction.toolNotes)).toBe(true);
       expect(mockNotes.visible).toBe(true);
+    });
+
+    it("switches to the dig tool", () => {
+      expect(service.handleShortcut(ShortcutAction.toolDig)).toBe(true);
+      expect(mockDig.visible).toBe(true);
+      expect(mockDig.parent).toBe(service);
     });
 
     it("declines the scissors shortcut while it is unavailable", () => {

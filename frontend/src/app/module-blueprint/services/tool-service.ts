@@ -20,6 +20,7 @@ import { ScissorsTool } from "../common/tools/scissors-tool";
 import { PlanningTool } from "../common/tools/planning-tool";
 import { NotesTool } from "../common/tools/notes-tool";
 import { TerrainTool } from "../common/tools/terrain-tool";
+import { DigTool } from "../common/tools/dig-tool";
 import { BlueprintService } from "./blueprint-service";
 import { WorldNoteService, findNoteAt } from "./world-note.service";
 
@@ -52,6 +53,7 @@ export class ToolService implements ITool, IChangeTool {
     public planningTool: PlanningTool,
     public notesTool: NotesTool,
     public terrainTool: TerrainTool,
+    public digTool: DigTool,
     private blueprintService: BlueprintService,
     private worldNoteService: WorldNoteService,
   ) {
@@ -66,6 +68,7 @@ export class ToolService implements ITool, IChangeTool {
     this.allTools.push(this.planningTool);
     this.allTools.push(this.notesTool);
     this.allTools.push(this.terrainTool);
+    this.allTools.push(this.digTool);
 
     this.buildTool.parent = this;
     this.selectTool.parent = this;
@@ -73,6 +76,7 @@ export class ToolService implements ITool, IChangeTool {
     this.planningTool.parent = this;
     this.notesTool.parent = this;
     this.terrainTool.parent = this;
+    this.digTool.parent = this;
   }
 
   subscribeToolChanged(observer: IObsToolChanged) {
@@ -239,6 +243,9 @@ export class ToolService implements ITool, IChangeTool {
         return true;
       case ShortcutAction.toolNotes:
         this.changeTool(ToolType.notes);
+        return true;
+      case ShortcutAction.toolDig:
+        this.changeTool(ToolType.dig);
         return true;
       default:
         return this.currentTool.handleShortcut(action);
