@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 process.env.NODE_ENV = 'test';
 
 import { TestSetup, TestDbHelper } from '../setup/testSetup';
+import { TestDataFactory } from '../factories/testData';
 import { BlueprintModel } from '../../app/api/models/blueprint';
 import { PreviewImageModel } from '../../app/api/models/preview-image';
 import { PREVIEW_RENDER_VERSION } from '../../app/api/services/preview-image-service';
@@ -158,6 +159,10 @@ describe('Social share cards', function () {
         ]);
       }
     });
+
+    it('composes the logo card once and shares it', async function () {
+      expect(await composeCollage([])).to.equal(await composeCollage([]));
+    });
   });
 
   describe('pickCollageTiles', function () {
@@ -173,6 +178,18 @@ describe('Social share cards', function () {
       const tiles = await pickCollageTiles({ ...emptyFilter, category: 'power' });
       const reds = await Promise.all(tiles.map(async t => (await sharp(t).raw().toBuffer())[0]));
       expect(reds).to.deep.equal([9, 3]);
+    });
+
+    it('reads past a top of the listing with no usable previews', async function () {
+      this.timeout(10000);
+      // 45 top-rated blueprints with no stored preview: more than one batch
+      await BlueprintModel.model.insertMany(
+        Array.from({ length: 45 }, () =>
+          TestDataFactory.createBlueprint(owner._id as Types.ObjectId, { ratingCount: 100 } as any)
+        )
+      );
+      for (let i = 1; i <= 3; i++) await seed({ ratingCount: i });
+      expect(await pickCollageTiles(emptyFilter)).to.have.length(3);
     });
 
     it('caps at five tiles', async function () {
@@ -219,11 +236,12 @@ describe('Social share cards', function () {
       expect(res.text).to.contain('/images/site-preview-large-wide.png');
 
       const all = await TestSetup.request()
-        .get('/discover?category=oxygenGen')
+        .get('/discover?category=oxygenGen&sort=popular&utm_source=slack')
         .set('User-Agent', SLACKBOT);
       expect(all.text).to.contain('content="Oxygen blueprints"');
       expect(all.text).to.contain('Browse 2 oxygen blueprints');
       expect(all.text).to.contain('/api/social/collage.jpg?category=oxygenGen&amp;v=');
+      // Canonical og:url: sort and tracking params dropped
       expect(all.text).to.contain(`content="${process.env.HOST}/discover?category=oxygenGen"`);
     });
 

@@ -35,9 +35,11 @@ const PAD = 24;
 const GAP = 12;
 const RADIUS = 12;
 const MAX_TILES = 5;
-// Candidates fetched per card: enough to survive duplicate copies (47% of the
-// corpus is byte-identical to another blueprint) and missing previews.
-const CANDIDATES = 40;
+// Candidates read per batch, and in all: enough to survive duplicate copies
+// (47% of the corpus is byte-identical to another blueprint) and missing or
+// stale previews, without scanning a whole category for one card.
+const CANDIDATE_BATCH = 40;
+const MAX_CANDIDATES = 200;
 const MAX_ROOMS = 3;
 
 const CACHE_TTL_MS = 6 * 60 * 60_000;
@@ -123,50 +125,57 @@ export function collageMatch(filter: CollageFilter): Record<string, unknown> {
  * per duplicate cluster, skipping any without a fresh stored preview.
  */
 export async function pickCollageTiles(filter: CollageFilter): Promise<Buffer[]> {
-  const candidates = await BlueprintModel.model
-    .find(collageMatch(filter))
-    .sort({ ratingCount: -1, viewCount: -1, createdAt: -1 })
-    .limit(CANDIDATES)
-    .select('_id modifiedAt')
-    .lean();
-  if (candidates.length === 0) return [];
-  const ids = candidates.map(c => c._id);
-
-  const [searchRows, previewRows] = await Promise.all([
-    BlueprintSearchModel.model
-      .find({ blueprintId: { $in: ids }, lang: 'en' })
-      .select('blueprintId clusterKey')
-      .lean(),
-    // Metadata only: bytes are fetched for the chosen few below.
-    PreviewImageModel.model
-      .find({ blueprintId: { $in: ids }, variant: 'hero.webp' })
-      .select('blueprintId sourceModifiedAt renderVersion')
-      .lean(),
-  ]);
-  const clusterOf = new Map(searchRows.map(row => [String(row.blueprintId), row.clusterKey]));
-  const previewOf = new Map(previewRows.map(row => [String(row.blueprintId), row]));
-
   const chosen: mongoose.Types.ObjectId[] = [];
   const seenClusters = new Set<string>();
-  for (const candidate of candidates) {
-    const id = String(candidate._id);
-    const preview = previewOf.get(id);
-    if (
-      !preview ||
-      !PreviewImageService.isRowFresh(
-        preview.sourceModifiedAt,
-        candidate.modifiedAt ?? null,
-        preview.renderVersion
+  // Paged, because the top of a listing can all be ineligible at once (a
+  // PREVIEW_RENDER_VERSION bump stales every stored preview until it is next
+  // viewed). Capped, because a card is not worth scanning a whole category.
+  for (let skip = 0; skip < MAX_CANDIDATES && chosen.length < MAX_TILES; skip += CANDIDATE_BATCH) {
+    const candidates = await BlueprintModel.model
+      .find(collageMatch(filter))
+      .sort({ ratingCount: -1, viewCount: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(CANDIDATE_BATCH)
+      .select('_id modifiedAt')
+      .lean();
+    if (candidates.length === 0) break;
+    const ids = candidates.map(c => c._id);
+
+    const [searchRows, previewRows] = await Promise.all([
+      BlueprintSearchModel.model
+        .find({ blueprintId: { $in: ids }, lang: 'en' })
+        .select('blueprintId clusterKey')
+        .lean(),
+      // Metadata only: bytes are fetched for the chosen few below.
+      PreviewImageModel.model
+        .find({ blueprintId: { $in: ids }, variant: 'hero.webp' })
+        .select('blueprintId sourceModifiedAt renderVersion')
+        .lean(),
+    ]);
+    const clusterOf = new Map(searchRows.map(row => [String(row.blueprintId), row.clusterKey]));
+    const previewOf = new Map(previewRows.map(row => [String(row.blueprintId), row]));
+
+    for (const candidate of candidates) {
+      const id = String(candidate._id);
+      const preview = previewOf.get(id);
+      if (
+        !preview ||
+        !PreviewImageService.isRowFresh(
+          preview.sourceModifiedAt,
+          candidate.modifiedAt ?? null,
+          preview.renderVersion
+        )
       )
-    )
-      continue;
-    const cluster = clusterOf.get(id);
-    if (cluster) {
-      if (seenClusters.has(cluster)) continue;
-      seenClusters.add(cluster);
+        continue;
+      const cluster = clusterOf.get(id);
+      if (cluster) {
+        if (seenClusters.has(cluster)) continue;
+        seenClusters.add(cluster);
+      }
+      chosen.push(candidate._id as mongoose.Types.ObjectId);
+      if (chosen.length === MAX_TILES) break;
     }
-    chosen.push(candidate._id as mongoose.Types.ObjectId);
-    if (chosen.length === MAX_TILES) break;
+    if (candidates.length < CANDIDATE_BATCH) break;
   }
   if (chosen.length === 0) return [];
 
@@ -235,9 +244,24 @@ async function roundedTile(source: Buffer, size: number): Promise<Buffer> {
     .toBuffer();
 }
 
+// The logo card is the same bytes for every filter that falls back to it —
+// including any made-up owner id — so it is composed once per process.
+let logoCard: Promise<Buffer> | null = null;
+
 /** Composes the card. Below three tiles it is the logo alone, centred. */
 export async function composeCollage(tiles: Buffer[]): Promise<Buffer> {
   const layout = collageLayout(tiles.length);
+  if (layout.length === 0) {
+    logoCard ??= composeCard(layout, tiles).catch(err => {
+      logoCard = null;
+      throw err;
+    });
+    return logoCard;
+  }
+  return composeCard(layout, tiles);
+}
+
+async function composeCard(layout: Placement[], tiles: Buffer[]): Promise<Buffer> {
   const overlays: OverlayOptions[] = [];
   if (layout.length === 0) {
     const size = 320;

@@ -10,6 +10,7 @@ import {
   CARD_WIDTH,
   CollageFilter,
   collageMatch,
+  collageQuery,
   collageUrl,
   getCollage,
   parseCollageFilter,
@@ -139,7 +140,7 @@ export class StaticController {
       const meta: Partial<OpenGraphMeta> = {
         'og:title': title,
         'og:description': description,
-        'og:url': `${process.env.HOST}${req.originalUrl}`,
+        'og:url': this.discoverUrl(filter, rawName),
       };
       if (images) meta.images = images;
       return this.serveHtml(req, res, { metaTags: new WebsiteMeta(meta).getHtmlTags() });
@@ -191,6 +192,15 @@ export class StaticController {
       console.log('Collage error', err);
       return res.status(500).send();
     }
+  }
+
+  // Canonical: only the params the title and card describe, so a link carrying
+  // sort, utm_* or junk groups with the plain filter link in unfurlers.
+  private discoverUrl(filter: CollageFilter, name: string) {
+    const params = new URLSearchParams(collageQuery({ ...filter, owner: null }));
+    if (name) params.set('name', name);
+    const query = params.toString();
+    return `${process.env.HOST}/discover${query ? `?${query}` : ''}`;
   }
 
   private collageImage(filter: CollageFilter, title: string) {
