@@ -94,6 +94,8 @@ export class Routes {
     app.route('/api/blueprints/:id').get(this.uploadBlueprintController.getBlueprintDetails);
     app.route('/api/blueprints/:id/related').get(this.uploadBlueprintController.getRelatedBlueprints);
     app.route('/api/blueprints/:id/preview/:variant').get(this.previewController.getPreview);
+    // Open Graph card for Discover/profile shares: a collage of stored previews
+    app.route('/api/social/collage.jpg').get(this.staticController.getCollage);
     // Fallback image for cards when the preview render errors — the stored
     // save-time thumbnail decoded from its data URI
     app.route('/api/blueprints/:id/thumbnail').get(this.uploadBlueprintController.getBlueprintThumbnail);
@@ -173,6 +175,8 @@ export class Routes {
     app.get('/b/:blueprintId', this.staticController.getBlueprint);
     app.get('/b/:blueprintId/thumbnail', this.staticController.getBlueprintThumbnail);
     app.get('/blueprint/:blueprintId', this.staticController.getBlueprint);
+    app.get('/discover', this.staticController.getDiscover);
+    app.get('/profile/:username', this.staticController.getProfile);
     app.use(express.static(path.join(__dirname, 'public')));
     app.get('/*path', this.staticController.serveHtml);
   }
