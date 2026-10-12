@@ -32,15 +32,6 @@ export interface OpenGraphImage {
 
 type OpenGraphTags = keyof Omit<OpenGraphMeta, 'images'> | keyof OpenGraphImage;
 
-export const defaultImageSquare: OpenGraphImage = {
-  'og:image': '/images/site-preview-large-square.png',
-  'og:image:url': '/images/site-preview-large-square.png',
-  'og:image:type': 'image/png',
-  'og:image:height': '1200',
-  'og:image:width': '1200',
-  'og:image:alt': 'An example blueprint, shown against the website editor.',
-};
-
 export const defaultImageWide: OpenGraphImage = {
   'og:image': '/images/site-preview-large-wide.png',
   'og:image:url': '/images/site-preview-large-wide.png',
@@ -51,14 +42,25 @@ export const defaultImageWide: OpenGraphImage = {
     'An example blueprint, shown against the website editor, next to the blueprint not included logo.',
 };
 
+export const SITE_NAME = 'Blueprint Not Included';
+
+// Only the wide image: unfurlers (Slack among them) show the *first* og:image,
+// and the square one was a lone example blueprint with no logo or name —
+// shared next to a category title, it read as a random thumbnail.
 export const defaultWebsiteMeta: OpenGraphMeta = {
   'og:type': 'website',
   'og:url': process.env.HOST || 'https://example.com',
-  'og:title': 'Blueprint Not Included',
+  'og:site_name': SITE_NAME,
+  'og:title': SITE_NAME,
   'og:description':
     'A place to upload, build, and share your favourite blueprint designs for Oxygen Not Included.',
-  images: [defaultImageSquare, defaultImageWide],
+  images: [defaultImageWide],
 };
+
+// og:image must be absolute (ogp.me); a root-relative path is left to each
+// unfurler to guess at, and some drop the image instead.
+const absoluteUrl = (url: string) =>
+  url.startsWith('/') ? `${process.env.HOST ?? ''}${url}` : url;
 
 // `og:title` carries a user-supplied blueprint name, and these tags are
 // rendered raw (`<%- metaTags %>` in index-robots.ejs), so the content has to
@@ -85,6 +87,17 @@ export class WebsiteMeta {
   }
 
   public getHtmlTags() {
-    return deepMap(this.meta, htmlMetaTag).join('');
+    const images = (this.meta.images ?? []).map(image => ({
+      ...image,
+      'og:image': absoluteUrl(image['og:image']),
+      'og:image:url': absoluteUrl(image['og:image:url']),
+    }));
+    const tags = deepMap({ ...this.meta, images }, htmlMetaTag);
+    tags.push('<meta name="twitter:card" content="summary_large_image" />');
+    if (images.length > 0)
+      tags.push(
+        `<meta name="twitter:image" content="${escapeHtmlAttribute(images[0]['og:image'])}" />`
+      );
+    return tags.join('');
   }
 }
