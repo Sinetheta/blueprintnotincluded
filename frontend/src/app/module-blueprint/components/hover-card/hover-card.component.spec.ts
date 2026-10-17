@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { CommonModule } from "@angular/common";
 import { HoverCardComponent } from "./hover-card.component";
@@ -82,6 +82,18 @@ describe("HoverCardComponent", () => {
     expect(host().querySelector(".hover-card-more")!.textContent).toContain(
       "+3 more",
     );
+  });
+
+  it("re-places a shown card when the window resizes", () => {
+    listener(view());
+    const render = vi.spyOn(fixture.componentInstance, "render");
+    window.dispatchEvent(new Event("resize"));
+    expect(render).toHaveBeenCalledTimes(1);
+
+    listener(null);
+    render.mockClear();
+    window.dispatchEvent(new Event("resize"));
+    expect(render).not.toHaveBeenCalled();
   });
 
   it("places itself beside the cell and clears on hide", () => {

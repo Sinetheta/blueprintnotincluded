@@ -40,6 +40,14 @@ export class HoverCardService {
     this.toolService.selectTool.subscribeSelectionChanged({
       selectionChanged: () => this.refresh(),
     });
+    // An edit made without a click or a key on the canvas — Enter in the
+    // note panel while the pointer rests on the canvas, say — changes what
+    // the shown cell holds; the next pointer move in that cell is a no-op.
+    this.blueprintService.blueprint.subscribeBlueprintChanged({
+      itemAdded: () => {},
+      itemDestroyed: () => {},
+      blueprintChanged: () => this.refresh(),
+    });
   }
 
   // The card registers here; returns the unregister.
