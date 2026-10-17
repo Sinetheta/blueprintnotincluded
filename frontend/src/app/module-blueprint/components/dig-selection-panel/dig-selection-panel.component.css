@@ -1,0 +1,89 @@
+/* Pinned bottom-right with the note and terrain panels, and built like the
+   terrain panel; the title bar is the darker amber of the dig hatching. */
+.dig-panel {
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  font-family: var(--p-font-family, Arial, sans-serif);
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.dig-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #8f6410;
+  color: #fff;
+  font-weight: bold;
+}
+
+.dig-panel-close {
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.dig-panel-close:hover {
+  color: #ffe7b8;
+}
+
+.dig-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+}
+
+.dig-panel-count {
+  font-weight: 600;
+}
+
+.dig-panel-hint {
+  margin: 6px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--p-content-border-color);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--p-text-muted-color);
+}
+
+.dig-panel-erase {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #8a2b2b;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dig-panel-erase:hover {
+  background: #a83535;
+}
+
+.dig-panel-link {
+  margin-top: 2px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--p-primary-color);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.dig-panel-link:hover {
+  text-decoration: underline;
+}

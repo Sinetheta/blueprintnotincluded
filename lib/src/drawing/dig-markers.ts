@@ -173,3 +173,40 @@ export function digCommandsKey(digs: readonly BniDigCommand[] | null | undefined
   for (const dig of digs) key += dig.x + ',' + dig.y + ';';
   return key;
 }
+
+// The dug region containing `cell`: every dig reachable from it through
+// shared sides — exactly the area digOverlayGeometry outlines as one shape.
+// Empty when `cell` is not dug. A repeated cell is returned once, in the
+// order the flood fill reaches it.
+export function digRegionAt(
+  digs: readonly BniDigCommand[] | null | undefined,
+  cell: { x: number; y: number }
+): BniDigCommand[] {
+  if (digs == null) return [];
+  const dug = new Set<string>();
+  for (const dig of digs) dug.add(cellKey(dig.x, dig.y));
+  if (!dug.has(cellKey(cell.x, cell.y))) return [];
+
+  const region: BniDigCommand[] = [];
+  const seen = new Set<string>([cellKey(cell.x, cell.y)]);
+  const queue: BniDigCommand[] = [{ x: cell.x, y: cell.y }];
+  while (queue.length > 0) {
+    const next = queue.shift()!;
+    region.push(next);
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const x = next.x + dx;
+      const y = next.y + dy;
+      const key = cellKey(x, y);
+      if (dug.has(key) && !seen.has(key)) {
+        seen.add(key);
+        queue.push({ x, y });
+      }
+    }
+  }
+  return region;
+}

@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { DIG_COLOR, digCommandsKey, digOverlayGeometry, drawDigCells } from '../../lib';
+import {
+  DIG_COLOR,
+  digCommandsKey,
+  digOverlayGeometry,
+  digRegionAt,
+  drawDigCells,
+} from '../../lib';
 
 // lib/src/drawing/dig-markers.ts — the dig overlay's geometry, shared by the
 // editor, the client-side exports and the server preview worker.
@@ -135,5 +141,42 @@ describe('dig markers', function () {
       ])
     );
     expect(digCommandsKey(null)).to.equal('');
+  });
+
+  describe('digRegionAt', () => {
+    const sorted = (cells: { x: number; y: number }[]) =>
+      cells.map(c => `${c.x},${c.y}`).sort();
+
+    it('is empty off a dig', () => {
+      expect(digRegionAt([{ x: 0, y: 0 }], { x: 1, y: 0 })).to.deep.equal([]);
+      expect(digRegionAt(null, { x: 0, y: 0 })).to.deep.equal([]);
+    });
+
+    it('takes every dig joined through shared sides, from any of its cells', () => {
+      // An L of four cells, a diagonal neighbour, and a separate cell.
+      const digs = [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 2, y: 0 },
+        { x: 2, y: 1 },
+        { x: 3, y: 2 },
+        { x: 7, y: 7 },
+      ];
+      const l = ['0,0', '1,0', '2,0', '2,1'];
+      expect(sorted(digRegionAt(digs, { x: 0, y: 0 }))).to.deep.equal(l);
+      expect(sorted(digRegionAt(digs, { x: 2, y: 1 }))).to.deep.equal(l);
+      // Corners do not join regions, as the overlay outlines them apart.
+      expect(sorted(digRegionAt(digs, { x: 3, y: 2 }))).to.deep.equal(['3,2']);
+      expect(sorted(digRegionAt(digs, { x: 7, y: 7 }))).to.deep.equal(['7,7']);
+    });
+
+    it('lists a repeated cell once', () => {
+      const digs = [
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+      ];
+      expect(sorted(digRegionAt(digs, { x: 0, y: 1 }))).to.deep.equal(['0,0', '0,1']);
+    });
   });
 });

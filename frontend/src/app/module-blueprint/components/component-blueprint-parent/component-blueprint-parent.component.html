@@ -122,11 +122,12 @@
     </div>
     <app-dialog-about #aboutDialog></app-dialog-about>
   </div>
-  <!-- Selection panels for the two annotation layers, stacked in one corner.
-       Note and terrain selection are mutually exclusive, but the note panel
+  <!-- Selection panels for the annotation layers and dig areas, stacked in one
+       corner. Note, terrain and dig selection are mutually exclusive, but the note panel
        also shows the pending note while the Notes tool is active, and a
        terrain feature can be selected from that tool too. -->
   <div class="corner-panels">
+    <app-dig-selection-panel></app-dig-selection-panel>
     <app-terrain-edit-panel></app-terrain-edit-panel>
     <app-note-edit-panel></app-note-edit-panel>
   </div>

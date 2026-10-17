@@ -5,6 +5,7 @@ import { GameStringService } from "./game-string-service";
 import { TerrainAnnotationService } from "./terrain-annotation.service";
 import { ToolService } from "./tool-service";
 import { WorldNoteService } from "./world-note.service";
+import { DigSelectionService } from "./dig-selection.service";
 import {
   HoverCardContent,
   hoverCardContent,
@@ -32,6 +33,7 @@ export class HoverCardService {
     private worldNoteService: WorldNoteService,
     private terrainService: TerrainAnnotationService,
     private gameStringService: GameStringService,
+    private digSelection: DigSelectionService,
   ) {
     // A click that changes the selection moves the orange border, so the
     // card re-renders on the click itself, not on the next tile change.
@@ -96,8 +98,8 @@ export class HoverCardService {
   }
 
   // Whether `entry` is what the canvas's selection highlight belongs to: a
-  // building (or element cell) in the selected group of the Select tool, or
-  // the selected note or terrain feature. A dig is never selectable.
+  // building (or element cell) in the selected group of the Select tool, the
+  // selected note or terrain feature, or a cell of the selected dig area.
   private isSelected(entry: CellStackEntry): boolean {
     switch (entry.kind) {
       case "building":
@@ -113,7 +115,7 @@ export class HoverCardService {
       case "terrain":
         return this.terrainService.selected === entry.ref;
       case "dig":
-        return false;
+        return this.digSelection.isSelected(entry.ref);
     }
   }
 }

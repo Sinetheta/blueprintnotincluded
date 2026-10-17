@@ -22,4 +22,8 @@ export declare function digEdgeThickness(zoom: number): number;
 export declare function drawDigCells(graphics: any, digs: readonly BniDigCommand[] | null | undefined, zoom: number, originX?: number, originY?: number, alpha?: number, color?: number): void;
 export declare function drawCrossedDigCell(graphics: any, cell: BniDigCommand, zoom: number, originX?: number, originY?: number, color?: number): void;
 export declare function digCommandsKey(digs: readonly BniDigCommand[] | null | undefined): string;
+export declare function digRegionAt(digs: readonly BniDigCommand[] | null | undefined, cell: {
+    x: number;
+    y: number;
+}): BniDigCommand[];
 //# sourceMappingURL=dig-markers.d.ts.map

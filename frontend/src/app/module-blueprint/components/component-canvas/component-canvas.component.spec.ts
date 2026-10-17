@@ -12,7 +12,9 @@ import { AuthenticationService } from "src/app/module-blueprint/services/authent
 import { SelectTool } from "src/app/module-blueprint/common/tools/select-tool";
 import { ScissorsTool } from "src/app/module-blueprint/common/tools/scissors-tool";
 import { DrawPixi } from "src/app/module-blueprint/drawing/draw-pixi";
-import { CameraService, Overlay } from "../../../../../../lib/index";
+import { CameraService, Overlay, Vector2 } from "../../../../../../lib/index";
+import { DigSelectionService } from "src/app/module-blueprint/services/dig-selection.service";
+import { KeyboardShortcutService } from "src/app/module-blueprint/services/keyboard-shortcut.service";
 import { HoverCardService } from "src/app/module-blueprint/services/hover-card.service";
 import { ToolService } from "src/app/module-blueprint/services/tool-service";
 import { ToolType } from "src/app/module-blueprint/common/tools/tool";
@@ -157,6 +159,107 @@ describe("ComponentCanvasComponent", () => {
         { left: 40, top: 0, width: 40, height: 40 },
         true,
       );
+    });
+  });
+
+  describe("dig selection with the Select tool", () => {
+    const WIRED = { x: 3, y: 3 };
+    const EMPTY = { x: 4, y: 3 };
+    let digSelection: DigSelectionService;
+    let wire: any;
+
+    // Each click a second apart: two quick clicks on one building are the
+    // Select tool's double-click, which selects every building like it.
+    let now = Date.parse("2026-10-17T12:00:00Z");
+    const click = (tile: { x: number; y: number }) => {
+      now += 1000;
+      vi.setSystemTime(now);
+      vi.spyOn(component, "getCurrentTile").mockReturnValue(
+        new Vector2(tile.x, tile.y),
+      );
+      component.mouseClick({ button: 0 });
+    };
+    const selectTool = () => TestBed.inject(ToolService).selectTool;
+    const key = (name: string) =>
+      TestBed.inject(KeyboardShortcutService).handleKeyEvent(
+        new KeyboardEvent("keydown", { code: name }),
+      );
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      digSelection = TestBed.inject(DigSelectionService);
+      wire = {
+        oniItem: {
+          id: "Wire",
+          isElement: false,
+          buildableElementsArray: [],
+          overlay: Overlay.Base,
+        },
+        buildableElements: [],
+        position: new Vector2(WIRED.x, WIRED.y),
+        depth: 10,
+        temperature: 293,
+      };
+      const blueprint = component.blueprint;
+      blueprint.digCommands = [
+        { x: WIRED.x, y: WIRED.y },
+        { x: EMPTY.x, y: EMPTY.y },
+      ];
+      vi.spyOn(blueprint, "getBlueprintItemsAt").mockImplementation(
+        (position: Vector2) =>
+          position.x === WIRED.x && position.y === WIRED.y ? [wire] : [],
+      );
+    });
+
+    it("selects the dug area on a click where nothing is built", () => {
+      click(EMPTY);
+      expect(digSelection.selected).toHaveLength(2);
+      expect(selectTool().hasSelection).toBe(false);
+    });
+
+    it("comes to the dig after the buildings on the cell, then back round", () => {
+      click(WIRED);
+      expect(selectTool().selectedItem).toBe(wire);
+      expect(digSelection.selected).toBe(null);
+
+      click(WIRED);
+      expect(selectTool().hasSelection).toBe(false);
+      expect(digSelection.selected).toHaveLength(2);
+
+      click(WIRED);
+      expect(selectTool().selectedItem).toBe(wire);
+      expect(digSelection.selected).toBe(null);
+    });
+
+    it("drops the dig selection on a click off it", () => {
+      click(EMPTY);
+      click({ x: 9, y: 9 });
+      expect(digSelection.selected).toBe(null);
+    });
+
+    it("leaves digs alone under any other tool", () => {
+      vi.spyOn(
+        TestBed.inject(ToolService),
+        "currentToolType",
+        "get",
+      ).mockReturnValue(ToolType.planning);
+      click(EMPTY);
+      expect(digSelection.selected).toBe(null);
+    });
+
+    it("erases the area on Delete and lets go on Escape", () => {
+      click(EMPTY);
+      key("Escape");
+      expect(digSelection.selected).toBe(null);
+      expect(component.blueprint.digCommands).toHaveLength(2);
+
+      click(EMPTY);
+      key("Delete");
+      expect(component.blueprint.digCommands).toEqual([]);
     });
   });
 

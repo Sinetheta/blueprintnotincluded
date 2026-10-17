@@ -1,0 +1,33 @@
+<div class="dig-panel" *ngIf="cellCount as count">
+  <div class="dig-panel-header">
+    <span class="dig-panel-title">{{ title }}</span>
+    <button
+      type="button"
+      class="dig-panel-close"
+      (click)="close()"
+      aria-label="Close"
+      i18n-aria-label
+    >
+      ×
+    </button>
+  </div>
+
+  <div class="dig-panel-body">
+    <div class="dig-panel-count" i18n>
+      {count, plural, =1 {1 cell} other {{{ count }} cells}}
+    </div>
+
+    <p class="dig-panel-hint" i18n>
+      Dug out when the blueprint is placed in game, so whatever is there now
+      makes way for the build. Press Delete, or use the button below, to erase
+      this area.
+    </p>
+
+    <button type="button" class="dig-panel-erase" (click)="erase()" i18n>
+      Erase dig area
+    </button>
+    <button type="button" class="dig-panel-link" (click)="openDigTool()" i18n>
+      Paint or erase single cells with the Dig tool…
+    </button>
+  </div>
+</div>

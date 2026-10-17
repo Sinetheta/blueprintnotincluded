@@ -14,6 +14,8 @@ import { TerrainAnnotationService } from "./terrain-annotation.service";
 import { BlueprintService } from "./blueprint-service";
 import { ToolService } from "./tool-service";
 import { GameStringService } from "./game-string-service";
+import { DigSelectionService } from "./dig-selection.service";
+import { DigTool } from "../common/tools/dig-tool";
 
 const CELL = { x: 2, y: 3 };
 const RECT = { left: 100, top: 100, width: 32, height: 32 };
@@ -41,6 +43,7 @@ describe("HoverCardService", () => {
   let selectTool: SelectTool;
   let worldNoteService: WorldNoteService;
   let terrainService: TerrainAnnotationService;
+  let digSelection: DigSelectionService;
   let toolService: { selectTool: SelectTool; digTool: any };
   let views: (HoverCardView | null)[];
   let blueprint: {
@@ -75,6 +78,10 @@ describe("HoverCardService", () => {
     worldNoteService = new WorldNoteService(blueprintService);
     terrainService = new TerrainAnnotationService(blueprintService);
     toolService = { selectTool, digTool: { showDigCommands: true } };
+    digSelection = new DigSelectionService(
+      blueprintService,
+      toolService.digTool as DigTool,
+    );
 
     service = new HoverCardService(
       blueprintService,
@@ -82,6 +89,7 @@ describe("HoverCardService", () => {
       worldNoteService,
       terrainService,
       { dict: {} } as unknown as GameStringService,
+      digSelection,
     );
     views = [];
     service.connect((view) => views.push(view));
@@ -126,12 +134,14 @@ describe("HoverCardService", () => {
     expect(borders()).toEqual([true, false, false]);
   });
 
-  it("never borders a dig", () => {
-    blueprint.items = [];
+  it("borders a dig once its area is selected", () => {
     blueprint.digCommands = [{ x: CELL.x, y: CELL.y }];
     service.show(CELL, RECT);
-    expect(lastView()!.cards).toHaveLength(1);
-    expect(borders()).toEqual([false]);
+    expect(borders()).toEqual([false, false, false]);
+
+    digSelection.select(CELL);
+    service.refresh();
+    expect(borders()).toEqual([false, false, true]);
   });
 
   it("skips a re-render for the same cell, unless forced", () => {
