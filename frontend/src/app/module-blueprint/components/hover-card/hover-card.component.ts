@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostListener,
   OnDestroy,
   OnInit,
 } from "@angular/core";
@@ -45,6 +46,12 @@ export class HoverCardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.disconnect?.();
+  }
+
+  // The edge flip depends on the viewport, so a resize re-places the card.
+  @HostListener("window:resize")
+  onWindowResize() {
+    if (this.view != null) this.render(this.view);
   }
 
   render(view: HoverCardView | null) {

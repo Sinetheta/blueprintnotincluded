@@ -52,7 +52,9 @@ describe("HoverCardService", () => {
     digCommands: BniDigCommand[];
     items: any[];
     getBlueprintItemsAt: (position: Vector2) => any[];
+    subscribeBlueprintChanged: (observer: { blueprintChanged(): void }) => void;
   };
+  let blueprintObserver: { blueprintChanged(): void };
 
   const lastView = () => views[views.length - 1];
   const borders = () => lastView()!.cards.map((card) => card.selected);
@@ -72,6 +74,9 @@ describe("HoverCardService", () => {
       items: [item("Wire", 120), item("Tile", 30)],
       getBlueprintItemsAt: (position) =>
         position.x === CELL.x && position.y === CELL.y ? blueprint.items : [],
+      subscribeBlueprintChanged: (observer) => {
+        blueprintObserver = observer;
+      },
     };
     const blueprintService = { blueprint } as unknown as BlueprintService;
     selectTool = new SelectTool(blueprintService);
@@ -142,6 +147,17 @@ describe("HoverCardService", () => {
     digSelection.select(CELL);
     service.refresh();
     expect(borders()).toEqual([false, false, true]);
+  });
+
+  it("re-renders the shown cell when the blueprint changes", () => {
+    service.show(CELL, RECT);
+    blueprint.worldNotes = [{ x: CELL.x, y: CELL.y, type: 0, title: "New" }];
+    blueprintObserver.blueprintChanged();
+    expect(lastView()!.cards.map((card) => card.header)).toEqual([
+      "New",
+      "Wire",
+      "Tile",
+    ]);
   });
 
   it("skips a re-render for the same cell, unless forced", () => {
