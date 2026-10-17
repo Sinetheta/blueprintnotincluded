@@ -9,6 +9,7 @@ import {
 import {
   HoverCardContext,
   MAX_HOVER_CARDS,
+  breathability,
   formatCelsius,
   hoverCardContent,
 } from "./hover-card-content";
@@ -62,6 +63,18 @@ describe("hoverCardContent", () => {
         state: ElementState.Gas,
       } as unknown as BuildableElement,
       {
+        id: "ContaminatedOxygen",
+        name: "Polluted Oxygen",
+        tag: 3,
+        state: ElementState.Gas,
+      } as unknown as BuildableElement,
+      {
+        id: "Hydrogen",
+        name: "Hydrogen",
+        tag: 4,
+        state: ElementState.Gas,
+      } as unknown as BuildableElement,
+      {
         id: "Vacuum",
         name: "Vacuum",
         tag: 2,
@@ -88,6 +101,22 @@ describe("hoverCardContent", () => {
         ref: building({ tempDisabled: true }),
       });
       expect(card.bullets).toEqual([{ text: "Disabled" }]);
+    });
+
+    it("lists the materials after the first on one line", () => {
+      const card = cardFor({
+        kind: "building",
+        ref: building({
+          oniItem: { name: "Mechanized Airlock", isElement: false },
+          buildableElements: [{ name: "Copper" }, { name: "Plastic" }],
+          tempDisabled: true,
+        }),
+      });
+      expect(card.material).toBe("Copper");
+      expect(card.bullets).toEqual([
+        { text: "Also: ", accent: "Plastic" },
+        { text: "Disabled" },
+      ]);
     });
 
     it("leads with the canonical setting, element resolved, priority skipped", () => {
@@ -148,6 +177,36 @@ describe("hoverCardContent", () => {
       "1500 Grams",
       "20 °C",
     ]);
+  });
+
+  it("rates oxygen and polluted oxygen for breathing after the mass", () => {
+    const massBullet = (id: string, mass: number) =>
+      cardFor({
+        kind: "element",
+        ref: {
+          buildableElements: [BuildableElement.getElementById(id)],
+          mass,
+          temperature: 293.15,
+        } as any,
+      }).bullets[1];
+
+    expect(massBullet("Oxygen", 1.6395)).toEqual({
+      text: "1640 Grams",
+      accent: " (Very Breathable)",
+    });
+    expect(massBullet("ContaminatedOxygen", 0.6).accent).toBe(" (Breathable)");
+    expect(massBullet("Hydrogen", 10)).toEqual({ text: "10 Kg" });
+  });
+
+  it("bands breathability at the game's cutoffs", () => {
+    const at = (kg: number) => breathability(kg, CONTEXT);
+    expect(at(1)).toBe("Very Breathable");
+    expect(at(0.999)).toBe("Breathable");
+    expect(at(0.525)).toBe("Breathable");
+    expect(at(0.5249)).toBe("Barely Breathable");
+    expect(at(0.05)).toBe("Barely Breathable");
+    expect(at(0.0499)).toBe("Unbreathable");
+    expect(at(0)).toBe("Unbreathable");
   });
 
   it("resolves an element note by its tag", () => {
