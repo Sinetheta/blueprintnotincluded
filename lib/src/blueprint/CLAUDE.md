@@ -498,6 +498,17 @@ right-click or Escape returns to Select.
   worker composites them in a pass of their own after the hull and before the first building
   batch. `PREVIEW_RENDER_VERSION` went to 3 for this, since every stored capture preview lacks
   them.
+- **Selectable from Select.** A click on a dug cell selects its whole region — `digRegionAt`, the
+  4-connected area the overlay outlines as one shape — highlighted at full strength over the
+  buildings with a green outline (`DrawDigSelection`), and opens `dig-selection-panel` in the
+  corner stack: what a dig is, **Erase dig area**, and a link to the Dig tool. Delete erases it
+  (one undo step), Escape lets go. Digs sit at the end of Select's click cycle: on a cell with
+  buildings the click after the last one selects the dig, and the next goes back to the top; on
+  a cell with none, the first click does. `DigSelectionService` keys the selection by the
+  clicked cell and re-resolves the region per read, like the note and terrain selections, and
+  is null while dig cells are hidden. Mutually exclusive with the building, note and terrain
+  selections; only the Select tool selects or keeps one. Before this, a click on the hatching
+  did nothing, and a visitor read the areas as inactive.
 - **"Show dig cells"** in the panel is view-only, live-editor-only, like the terrain and note
   toggles; switching to the tool or painting turns it back on.
 - **Framing**: `getBoundingBox` includes dig cells (and `isBlueprintEmpty` counts them), so a
@@ -525,8 +536,9 @@ what a building hides (a dig, a gas cell, a wire under a tile) is still readable
   the cursor, flipping left/above at the viewport edge. On for Select only (the Element Report
   is a view, not a tool); off in embeds, on `pointer: coarse`, and while dragging or panning.
 - **Orange border = selected**: the entry the canvas's green highlight belongs to — a building or
-  element cell in the Select tool's selected group, or the selected note or terrain feature.
-  Element cells and element notes are selectable today, so they can carry it; a dig never does.
+  element cell in the Select tool's selected group, the selected note or terrain feature, or a
+  cell of the selected dig area. Element cells and element notes are selectable, so they carry it
+  too.
   The canvas re-renders on every pointer-up and key, so the border moves on the click that
   cycles the selection (`itemGroupeNext` announces nothing).
 

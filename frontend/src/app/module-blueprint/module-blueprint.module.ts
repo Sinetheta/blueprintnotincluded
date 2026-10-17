@@ -51,6 +51,7 @@ import { ToolService } from "./services/tool-service";
 import { NoteEditPanelComponent } from "./components/note-edit-panel/note-edit-panel.component";
 import { TerrainEditPanelComponent } from "./components/terrain-edit-panel/terrain-edit-panel.component";
 import { HoverCardComponent } from "./components/hover-card/hover-card.component";
+import { DigSelectionPanelComponent } from "./components/dig-selection-panel/dig-selection-panel.component";
 import { ElementNoteEditorComponent } from "./components/note-edit-panel/element-note-editor/element-note-editor.component";
 import { SelectTool } from "./common/tools/select-tool";
 import { BuildTool } from "./common/tools/build-tool";
@@ -182,6 +183,7 @@ import { DigToolComponent } from "./components/side-bar/dig-tool/dig-tool.compon
     NoteEditPanelComponent,
     TerrainEditPanelComponent,
     HoverCardComponent,
+    DigSelectionPanelComponent,
     ElementNoteEditorComponent,
     SupportedModsPageComponent,
     PlanningToolComponent,

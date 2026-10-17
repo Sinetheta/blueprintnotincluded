@@ -12,6 +12,7 @@ import {
 // Engine imports
 import {
   Blueprint,
+  BlueprintItem,
   CameraService,
   IObsCameraChanged,
   SpriteInfo,
@@ -38,6 +39,7 @@ import { DrawRoomOverlay } from "../../drawing/draw-room-overlay";
 import { DrawNotesOverlay } from "../../drawing/draw-notes-overlay";
 import { DrawPlanningOverlay } from "../../drawing/draw-planning-overlay";
 import { DrawDigOverlay } from "../../drawing/draw-dig-overlay";
+import { DrawDigSelection } from "../../drawing/draw-dig-selection";
 import { DrawTerrainOverlay } from "../../drawing/draw-terrain-overlay";
 import { DrawRocketInterior } from "../../drawing/draw-rocket-interior";
 import { drawAreaOfEffects } from "../../drawing/draw-area-of-effect";
@@ -58,6 +60,7 @@ import {
 } from "../../services/blueprint-service";
 import { ToolService, IObsToolChanged } from "../../services/tool-service";
 import { HoverCardService } from "../../services/hover-card.service";
+import { DigSelectionService } from "../../services/dig-selection.service";
 import { cellScreenRect } from "../hover-card/hover-card-placement";
 import { ToolType } from "../../common/tools/tool";
 import { KeyboardShortcutService } from "../../services/keyboard-shortcut.service";
@@ -135,6 +138,8 @@ export class ComponentCanvasComponent
   // when the same cells draw over them (see drawAll).
   drawDigOverlay!: DrawDigOverlay;
   drawDigOverlayOnTop!: DrawDigOverlay;
+  // A dig area selected from the Select tool, highlighted over the buildings.
+  drawDigSelection!: DrawDigSelection;
   drawTerrainOverlay!: DrawTerrainOverlay;
   drawRocketInterior!: DrawRocketInterior;
 
@@ -153,6 +158,7 @@ export class ComponentCanvasComponent
     private terrainService: TerrainAnnotationService,
     private shortcutService: KeyboardShortcutService,
     private hoverCardService: HoverCardService,
+    private digSelection: DigSelectionService,
     drawPixi: DrawPixi,
   ) {
     this.drawPixi = drawPixi;
@@ -166,6 +172,10 @@ export class ComponentCanvasComponent
     if (!this.forceSize)
       this.canvasRef.nativeElement.style.cursor =
         toolType == ToolType.scissors ? SCISSORS_CURSOR : "";
+    // Only Select selects digs; another tool must not leave one selected and
+    // erasable by the Delete key.
+    if (this.toolService.currentToolType != ToolType.select)
+      this.digSelection.clear();
     this.updateHoverCard(true);
   }
 
@@ -187,6 +197,7 @@ export class ComponentCanvasComponent
         this.drawPixi.pixiApp.stage,
         1,
       );
+      this.drawDigSelection = new DrawDigSelection(this.drawPixi);
       this.drawNotesOverlay = new DrawNotesOverlay(this.drawPixi);
       this.drawPlanningOverlay = new DrawPlanningOverlay(this.drawPixi);
       this.drawTerrainOverlay = new DrawTerrainOverlay(this.drawPixi);
@@ -218,8 +229,10 @@ export class ComponentCanvasComponent
     // whichever way round the user selected things.
     this.toolService.selectTool.subscribeSelectionChanged({
       selectionChanged: () => {
-        if (this.toolService.selectTool.hasSelection)
+        if (this.toolService.selectTool.hasSelection) {
           this.terrainService.clear();
+          this.digSelection.clear();
+        }
       },
     });
 
@@ -324,6 +337,19 @@ export class ComponentCanvasComponent
       this.terrainService.delete(selected);
       return true;
     });
+
+    // A selected dig area is the third such selection, with the same Escape
+    // and Delete, declining when there is none.
+    register(ShortcutAction.interfaceCancel, () => {
+      if (this.digSelection.selected == null) return false;
+      this.digSelection.clear();
+      return true;
+    });
+    register(ShortcutAction.editDelete, () => {
+      if (this.digSelection.selected == null) return false;
+      this.digSelection.erase();
+      return true;
+    });
   }
 
   // Render-time telemetry: how long it takes from "a blueprint is handed to the
@@ -422,6 +448,7 @@ export class ComponentCanvasComponent
     this.startRenderMetric(source);
     this.worldNoteService.clear();
     this.terrainService.clear();
+    this.digSelection.clear();
     this.blueprint.destroyAndCopyItems(source);
 
     this.cameraService.overlay = Overlay.Base;
@@ -534,6 +561,7 @@ export class ComponentCanvasComponent
           if (note != null) {
             this.worldNoteService.select(note);
             this.terrainService.clear();
+            this.digSelection.clear();
             return;
           }
           this.worldNoteService.clear();
@@ -550,17 +578,66 @@ export class ComponentCanvasComponent
           // Building and annotation selection are mutually exclusive, so that
           // "Delete" is never ambiguous about which one it means.
           this.toolService.selectTool.deselectAll();
+          this.digSelection.clear();
           this.terrainService.select(feature);
           return;
         }
         this.terrainService.clear();
+        if (this.selectDigOnClick(tile)) return;
         this.toolService.leftClick(tile);
       } else if (event.button == 2) {
         this.worldNoteService.clear();
         this.terrainService.clear();
+        this.digSelection.clear();
         this.toolService.rightClick(this.getCurrentTile(event));
       }
     }
+  }
+
+  // Dig cells are the layer under the buildings, so with Select they join the
+  // end of its click cycle: a click on a dug cell selects the frontmost
+  // building as before, and the click after the last building on that cell
+  // selects the dig area (straight away when nothing is built there). The
+  // next click goes back round to the top. Returns true when the click was
+  // spent on the dig; false hands it to the tool as before.
+  private selectDigOnClick(tile: Vector2): boolean {
+    if (
+      this.toolService.currentToolType != ToolType.select ||
+      !this.toolService.digTool.showDigCommands ||
+      !this.blueprint.digCommands.some(
+        (dig) => dig.x === tile.x && dig.y === tile.y,
+      )
+    ) {
+      this.digSelection.clear();
+      return false;
+    }
+
+    const itemsHere = this.blueprint.getBlueprintItemsAt(tile);
+    if (this.digSelection.isSelected(tile)) {
+      if (itemsHere.length === 0) return true;
+      this.digSelection.clear();
+      return false;
+    }
+    if (itemsHere.length > 0 && !this.selectCycleEndsAt(itemsHere))
+      return false;
+
+    this.toolService.selectTool.deselectAll();
+    this.digSelection.select(tile);
+    return true;
+  }
+
+  // Whether the Select tool's current group is on this cell and its next
+  // click would wrap back to the first group, or leave the cell.
+  private selectCycleEndsAt(itemsHere: BlueprintItem[]): boolean {
+    const selectTool = this.toolService.selectTool;
+    const groups = selectTool.sameItemCollections;
+    const index = selectTool.currentMultipleSelectionIndex;
+    if (index == -1) return false;
+    const onCell = (group: { items: BlueprintItem[] }) =>
+      group.items.some((item) => itemsHere.includes(item));
+    if (!onCell(groups[index])) return false;
+    const next = (index + 1) % groups.length;
+    return next == 0 || !onCell(groups[next]);
   }
 
   private findNoteAt(tile: Vector2): BniWorldNote | null {
@@ -1503,6 +1580,11 @@ export class ComponentCanvasComponent
         this.drawDigOverlayOnTop.clear();
         this.drawDigOverlay.draw(digs, this.cameraService);
       }
+      if (!this.forceSize)
+        this.drawDigSelection.draw(
+          this.digSelection.selected,
+          this.cameraService,
+        );
 
       // Planning Tool cells are blueprint content, so include them in the
       // editor, thumbnails, and exported images.
