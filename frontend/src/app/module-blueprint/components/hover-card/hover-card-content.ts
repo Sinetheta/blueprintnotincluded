@@ -73,6 +73,41 @@ const STATE_FALLBACKS: Record<ElementState, string> = {
 
 const massPipe = new AddMassUnitPipe();
 
+// The two elements the game rates for breathing, and its cutoffs in kg
+// (checked from the top, first match wins), with the oxygen overlay's legend
+// strings for the labels.
+const BREATHABLE_ELEMENTS = ["Oxygen", "ContaminatedOxygen"];
+const BREATHABILITY: { minKg: number; key: string; fallback: string }[] = [
+  {
+    minKg: 1,
+    key: "STRINGS.UI.OVERLAYS.OXYGEN.LEGEND1",
+    fallback: "Very Breathable",
+  },
+  {
+    minKg: 0.525,
+    key: "STRINGS.UI.OVERLAYS.OXYGEN.LEGEND2",
+    fallback: "Breathable",
+  },
+  {
+    minKg: 0.05,
+    key: "STRINGS.UI.OVERLAYS.OXYGEN.LEGEND3",
+    fallback: "Barely Breathable",
+  },
+  {
+    minKg: -Infinity,
+    key: "STRINGS.UI.OVERLAYS.OXYGEN.LEGEND4",
+    fallback: "Unbreathable",
+  },
+];
+
+export function breathability(
+  massKg: number,
+  context: Pick<HoverCardContext, "gameString">,
+): string {
+  const band = BREATHABILITY.find((b) => massKg >= b.minKg)!;
+  return context.gameString(band.key) ?? band.fallback;
+}
+
 export function hoverCardContent(
   entries: CellStackEntry[],
   cell: { x: number; y: number },
@@ -151,8 +186,20 @@ function describeTerrain(
   };
 }
 
+// The header carries the first construction material, as the game's
+// BUILDING_HOVER_NAME_FMT does; a building with more material slots lists the
+// rest on one line, since the game's card never shows them at all.
 function describeBuilding(item: BlueprintItem): Omit<HoverCard, "selected"> {
   const bullets: HoverCardBullet[] = [];
+  const otherMaterials = item.buildableElements
+    .slice(1)
+    .filter((element) => element != null)
+    .map((element) => element.name);
+  if (otherMaterials.length > 0)
+    bullets.push({
+      text: $localize`Also: `,
+      accent: otherMaterials.join(", "),
+    });
   if (item.tempDisabled) bullets.push({ text: $localize`Disabled` });
   const setting = headlineSetting(item);
   if (setting != null) bullets.push(setting);
@@ -232,7 +279,16 @@ function describeElement(
   ];
   // A vacuum has neither.
   if (element.state != ElementState.Vacuum) {
-    if (mass != null) bullets.push({ text: massPipe.transform(mass) });
+    // Oxygen and polluted oxygen get the game's breathability after the mass.
+    if (mass != null)
+      bullets.push(
+        BREATHABLE_ELEMENTS.includes(element.id)
+          ? {
+              text: massPipe.transform(mass),
+              accent: ` (${breathability(mass, context)})`,
+            }
+          : { text: massPipe.transform(mass) },
+      );
     if (temperatureKelvin != null)
       bullets.push({ text: formatCelsius(temperatureKelvin) });
   }
