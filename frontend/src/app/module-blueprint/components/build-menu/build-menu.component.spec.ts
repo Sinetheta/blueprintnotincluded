@@ -9,6 +9,7 @@ import {
   OniItem,
 } from "../../../../../../lib/index";
 import { ToolType } from "../../common/tools/tool";
+import { CanvasRightClick } from "../../services/tool-service";
 import { BuildMenuService } from "../../services/build-menu.service";
 import { KeybindingService } from "../../services/keybinding.service";
 import { KeyboardShortcutService } from "../../services/keyboard-shortcut.service";
@@ -70,7 +71,7 @@ describe("BuildMenuComponent", () => {
         changeItem: vi.fn(),
         templateItemToBuild: { oniItem: { id: "Tile" } },
       },
-      rightClicked: new Subject<ToolType>(),
+      rightClicked: new Subject<CanvasRightClick>(),
     };
     shortcuts = new KeyboardShortcutService(new KeybindingService());
     service = new BuildMenuService(toolService, { dict: {} } as any, shortcuts);
@@ -212,6 +213,19 @@ describe("BuildMenuComponent", () => {
       fixture.detectChanges();
       expect(el().querySelector(".build-dlc-badge")).not.toBeNull();
     });
+
+    it("drops a building's tooltip when the menu closes under it", () => {
+      const entry = service.categories[0].groups[0].entries[0];
+      component.showEntryTip(entry, el().querySelector(".build-menu-entry"));
+      fixture.detectChanges();
+      expect(el().querySelector(".build-menu-tip")).not.toBeNull();
+      // Escape with focus on the canvas: the service closes the menu and the
+      // hovered button leaves the DOM, so no mouseleave ever fires.
+      press("Escape");
+      fixture.detectChanges();
+      expect(el().querySelector(".build-menu-panel")).toBeNull();
+      expect(el().querySelector(".build-menu-tip")).toBeNull();
+    });
   });
 
   describe("search", () => {
@@ -244,6 +258,28 @@ describe("BuildMenuComponent", () => {
       expect(el().querySelector(".build-menu-empty")?.textContent).toBe(
         "NO RESULTS FOUND",
       );
+    });
+
+    it("ignores the row that scrolls under a resting pointer", async () => {
+      const rows = el().querySelectorAll<HTMLElement>(
+        ".build-menu-results li button",
+      );
+      const enter = (index: number, clientX: number, clientY: number) =>
+        rows[index].dispatchEvent(
+          new MouseEvent("mouseenter", { clientX, clientY }),
+        );
+      component.trackPointer(
+        new MouseEvent("mousemove", { clientX: 40, clientY: 80 }),
+      );
+      keydownInSearch("ArrowDown");
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(component.highlight).toBe(1);
+      // The list scrolled and the browser re-entered row 0 from the same spot.
+      enter(0, 40, 80);
+      expect(component.highlight).toBe(1);
+      // The pointer actually moved: the mouse is in charge again.
+      enter(0, 41, 80);
+      expect(component.highlight).toBe(0);
     });
 
     it("moves through the results with the arrow keys, and Enter picks", () => {
@@ -326,6 +362,12 @@ describe("BuildMenuComponent", () => {
     it("shows one launcher instead of the column", () => {
       expect(el().querySelector(".build-menu-column")).toBeNull();
       expect(el().querySelector(".build-menu-launcher")).not.toBeNull();
+    });
+
+    it("has no launcher until the database has loaded", () => {
+      service.categories = [];
+      fixture.detectChanges();
+      expect(el().querySelector(".build-menu-launcher")).toBeNull();
     });
 
     it("opens a sheet with the categories as a row", () => {

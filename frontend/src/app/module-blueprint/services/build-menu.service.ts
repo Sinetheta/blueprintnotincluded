@@ -29,12 +29,20 @@ import {
   buildMenuLayout,
 } from "../components/build-menu/build-menu-layout";
 import { AddMassUnitPipe } from "../pipes/add-mass-unit.pipe";
+import {
+  buildingDlcLabels,
+  buildingTooltip,
+} from "../components/build-menu/building-labels";
 import { GameStringService } from "./game-string-service";
 import { KeyboardShortcutService } from "./keyboard-shortcut.service";
 import { ToolService } from "./tool-service";
 
 export interface BuildMenuItemEntry extends BuildMenuEntry {
   item: OniItem;
+  // Fixed per building, so computed once here rather than per render: the
+  // template reads these on every tile on every change-detection pass.
+  tooltip: string;
+  dlcLabels: string[];
 }
 
 export interface BuildMenuCategoryView {
@@ -85,6 +93,14 @@ export class BuildMenuService {
   // The menu component focuses its search box when this fires.
   get focusSearchRequests(): Observable<void> {
     return this.focusSearchSubject.asObservable();
+  }
+
+  private dismissedSubject = new Subject<void>();
+  // The menu closed, or its search was cleared, from outside the component
+  // (Escape, a right-click, the Build Tool card): whatever the component was
+  // showing about the old contents — a tooltip, a highlighted row — is stale.
+  get dismissed(): Observable<void> {
+    return this.dismissedSubject.asObservable();
   }
 
   constructor(
@@ -181,6 +197,8 @@ export class BuildMenuService {
         subcategoryTitle: this.subcategoryTitle(menuItem.subcategory),
         order: all.length,
         item,
+        tooltip: buildingTooltip(item),
+        dlcLabels: buildingDlcLabels(item),
       };
       all.push(entry);
       if (!entriesByCategory.has(entry.categoryId))
@@ -241,6 +259,7 @@ export class BuildMenuService {
     this.unregisterCancel = null;
     this.rightClicks?.unsubscribe();
     this.rightClicks = null;
+    this.dismissedSubject.next();
   }
 
   // Ctrl+F: the search, opening the first category if nothing is open.
@@ -255,21 +274,24 @@ export class BuildMenuService {
   //    the box empty, or focus elsewhere, Escape closes the menu. Registered
   //    last, it shadows the editor-wide Escape (leave the build tool,
   //    deselect) until the menu closes.
-  //  - The game's right-click: the first drops the building in hand (the
-  //    build tool already does that, by going back to Select), the next one,
-  //    with nothing in hand, closes the menu. Other tools keep theirs.
+  //  - The game's right-click: one that drops something — the building in
+  //    hand (the build tool does that itself, by going back to Select) or a
+  //    selection under Select — only drops it; the next one, with nothing in
+  //    hand, closes the menu. Other tools keep theirs.
   private listenWhileOpen() {
     if (this.unregisterCancel == null)
       this.unregisterCancel = this.shortcutService.register(
         ShortcutAction.interfaceCancel,
         () => {
-          if (this.queryText != "") this.queryText = "";
-          else this.close();
+          if (this.queryText != "") {
+            this.queryText = "";
+            this.dismissedSubject.next();
+          } else this.close();
         },
       );
     if (this.rightClicks == null)
-      this.rightClicks = this.toolService.rightClicked.subscribe((toolType) => {
-        if (toolType == ToolType.select) this.close();
+      this.rightClicks = this.toolService.rightClicked.subscribe((click) => {
+        if (click.toolType == ToolType.select && !click.dropped) this.close();
       });
   }
 
@@ -284,20 +306,23 @@ export class BuildMenuService {
 
   // ─── Picking ───────────────────────────────────────────────────────────
 
-  // The same path the Build Tool card's picker took: the build tool, then a
-  // fresh instance of the building as its brush. The menu stays open.
+  // The same path the Build Tool card's picker took: a fresh instance of the
+  // building as the build tool's brush, then the build tool. The menu stays
+  // open. Brush first: entering the tool makes the card's ensureBuildItem
+  // check the brush against its item, and handing it the new one up front
+  // means it has nothing to rebuild.
   choose(entry: BuildMenuItemEntry) {
     const instance = BlueprintHelpers.createInstance(entry.prefabId);
     if (instance == null) return;
-    if (!this.buildToolActive) this.toolService.changeTool(ToolType.build);
     this.toolService.buildTool.changeItem(instance);
+    if (!this.buildToolActive) this.toolService.changeTool(ToolType.build);
   }
 
   paintElement() {
     const element = new BlueprintItemElement(OniItem.elementId);
     element.setElement("Water", 0);
-    if (!this.buildToolActive) this.toolService.changeTool(ToolType.build);
     this.toolService.buildTool.changeItem(element);
+    if (!this.buildToolActive) this.toolService.changeTool(ToolType.build);
   }
 
   // ─── Text ──────────────────────────────────────────────────────────────

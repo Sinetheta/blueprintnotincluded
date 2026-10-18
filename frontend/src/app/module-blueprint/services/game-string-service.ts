@@ -8,26 +8,55 @@ import { Injectable } from "@angular/core";
 // English-only; the legacy per-locale .po files have been retired.
 const STRINGS_FILE = "assets/strings/strings.json";
 
-// Klei rich-text tags to strip for display. Each removes every wrapper of its kind and
-// keeps the inner text. Applied once per value at load time. Global, so only ever used
-// with String.replace, which ignores and resets lastIndex.
-const MARKUP_PATTERNS: RegExp[] = [
-  /<color=#.+?>(.*?)<\/color>/gi,
-  /<size=.+?>(.*?)<\/size>/gi,
-  /<style=.+?>(.*?)<\/style>/gi,
-  /<smallcaps>(.*?)<\/smallcaps>/gi,
-  /<link=".+?">(.*?)<\/link>/gi,
-  /<alpha=#.+?>((.|\n)*?)<\/color>/gi,
-  /<indent=#.+?>((.|\n)*?)<\/indent>/gi,
-  /<b>(.*?)<\/b>/gi,
-  /<i>(.*?)<\/i>/gi,
+// Klei's strings are TextMeshPro rich text. Display keeps the words and drops
+// the tags: every opening or closing tag below, with or without a `=value`,
+// wherever it sits — so a wrapper that spans lines, nests, or closes with a
+// different tag (`<alpha=#AA>…</color>` is common) needs no case of its own.
+// An allowlist of the tag names, not "anything in angle brackets": the codex
+// strings carry `<name@gravitas.nova>` addresses and the odd `<DESC>`
+// placeholder, which are text. Applied once per value at load time. Global, so
+// only ever used with String.replace, which ignores and resets lastIndex.
+const TMP_TAGS = [
+  "b",
+  "i",
+  "u",
+  "s",
+  "sub",
+  "sup",
+  "mark",
+  "smallcaps",
+  "lowercase",
+  "uppercase",
+  "allcaps",
+  "color",
+  "alpha",
+  "size",
+  "font",
+  "style",
+  "sprite",
+  "link",
+  "indent",
+  "line-indent",
+  "line-height",
+  "margin",
+  "pos",
+  "voffset",
+  "width",
+  "align",
+  "cspace",
+  "mspace",
+  "nobr",
+  "noparse",
+  "page",
 ];
+const MARKUP_PATTERN = new RegExp(
+  `</?(?:${TMP_TAGS.join("|")})(?:=[^>]*)?>`,
+  "gi",
+);
 
 function stripMarkup(value: string): string {
   if (!value) return value;
-  let result = value;
-  for (const pattern of MARKUP_PATTERNS) result = result.replace(pattern, "$1");
-  return result;
+  return value.replace(MARKUP_PATTERN, "");
 }
 
 @Injectable({ providedIn: "root" })

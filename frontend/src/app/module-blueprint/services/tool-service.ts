@@ -28,6 +28,12 @@ import { WorldNoteService, findNoteAt } from "./world-note.service";
 // The mod's `BlueprintNoteData.NoteType.Element`.
 const ELEMENT_NOTE = 1;
 
+// A canvas right-click as the tools saw it. `dropped`: it had something in
+// hand to let go of — a selection under Select, the brush under Build.
+export interface CanvasRightClick {
+  toolType: ToolType;
+  dropped: boolean;
+}
 @Injectable({ providedIn: "root" })
 export class ToolService implements ITool, IChangeTool {
   private allTools: ITool[];
@@ -46,10 +52,11 @@ export class ToolService implements ITool, IChangeTool {
 
   private observers: IObsToolChanged[];
 
-  // Every canvas right-click, with the tool that took it. The build menu
-  // closes on one that had no building to drop, as the game's does.
-  private rightClickedSubject = new Subject<ToolType>();
-  get rightClicked(): Observable<ToolType> {
+  // Every canvas right-click, with the tool that took it and whether it had
+  // anything to drop. The build menu closes on one that dropped nothing, as
+  // the game's does.
+  private rightClickedSubject = new Subject<CanvasRightClick>();
+  get rightClicked(): Observable<CanvasRightClick> {
     return this.rightClickedSubject.asObservable();
   }
 
@@ -144,8 +151,14 @@ export class ToolService implements ITool, IChangeTool {
   }
   rightClick(tile: Vector2) {
     const toolType = this.currentTool.toolType;
+    // Read before the tool acts: Select's right-click is what clears the
+    // selection, and Build's drops the brush by leaving for Select.
+    const dropped =
+      toolType == ToolType.select
+        ? this.selectTool.selectedItems.length > 0
+        : toolType == ToolType.build;
     this.currentTool.rightClick(tile);
-    this.rightClickedSubject.next(toolType);
+    this.rightClickedSubject.next({ toolType, dropped });
   }
   hover(tile: Vector2) {
     this.lastHoverTile = tile;

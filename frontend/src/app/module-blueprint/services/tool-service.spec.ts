@@ -1,4 +1,4 @@
-import { ToolService } from "./tool-service";
+import { ToolService, CanvasRightClick } from "./tool-service";
 import { ToolType } from "../common/tools/tool";
 import {
   BlueprintHelpers,
@@ -36,6 +36,7 @@ const makeTool = (toolType: ToolType, toolGroup = 1) => ({
   // SelectTool/BuildTool members ToolService reaches for when wiring the
   // game's "copy building" shortcut.
   selectedItem: null as any,
+  selectedItems: [] as any[],
   changeItem: vi.fn(),
 });
 
@@ -184,13 +185,29 @@ describe("ToolService", () => {
     });
 
     it("reports a right-click with the tool that took it", () => {
-      const seen: ToolType[] = [];
-      const subscription = service.rightClicked.subscribe((toolType) =>
-        seen.push(toolType),
+      const seen: CanvasRightClick[] = [];
+      const subscription = service.rightClicked.subscribe((click) =>
+        seen.push(click),
       );
       service.rightClick(new Vector2(1, 2));
       subscription.unsubscribe();
-      expect(seen).toEqual([ToolType.select]);
+      expect(seen).toEqual([{ toolType: ToolType.select, dropped: false }]);
+    });
+
+    it("reports a right-click under Select as dropping the selection it had", () => {
+      // Judged before the tool acts: Select's own right-click is what clears it.
+      mockSelect.selectedItems = [{} as any];
+      mockSelect.rightClick.mockImplementation(() => {
+        mockSelect.selectedItems = [];
+      });
+      const seen: CanvasRightClick[] = [];
+      const subscription = service.rightClicked.subscribe((click) =>
+        seen.push(click),
+      );
+      service.rightClick(new Vector2(1, 2));
+      subscription.unsubscribe();
+      mockSelect.rightClick.mockReset();
+      expect(seen).toEqual([{ toolType: ToolType.select, dropped: true }]);
     });
 
     it("delegates unclaimed shortcuts to the active tool", () => {
