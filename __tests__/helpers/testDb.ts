@@ -1,17 +1,9 @@
+import mongoose, { Types } from 'mongoose';
 import { UserModel } from '../../app/api/models/user';
 import { BlueprintModel } from '../../app/api/models/blueprint';
-import { BlueprintVersionModel } from '../../app/api/models/blueprint-version';
-import { FeedbackModel } from '../../app/api/models/feedback';
-import { FollowModel } from '../../app/api/models/follow';
-import { CommentModel } from '../../app/api/models/comment';
-import { NotificationModel } from '../../app/api/models/notification';
-import { PreviewImageModel } from '../../app/api/models/preview-image';
-import { BlueprintEventModel } from '../../app/api/models/blueprint-event';
 import { BlueprintRatingModel } from '../../app/api/models/blueprint-rating';
-import { BlueprintSearchModel } from '../../app/api/models/blueprint-search';
 import { upsertSearchRow } from '../../app/api/services/search-index-service';
 import { TestDataFactory, TestUser, TestBlueprint } from '../factories/testData';
-import { Types } from 'mongoose';
 
 export class TestDbHelper {
   static async createTestUser(userData?: Partial<TestUser>) {
@@ -49,102 +41,109 @@ export class TestDbHelper {
     );
   }
 
+  // Writes run in parallel; every create* call builds its document from the
+  // factory synchronously before its first await, so counters and _ids are
+  // still assigned in source order.
   static async seedDatabase() {
     // Create test users with unique identifiers
     const timestamp = Date.now();
-    const user1 = await this.createTestUser({
-      username: `blueprintmaster_${timestamp}`,
-      email: `master_${timestamp}@blueprints.com`,
-    });
+    const [user1, user2, user3] = await Promise.all([
+      this.createTestUser({
+        username: `blueprintmaster_${timestamp}`,
+        email: `master_${timestamp}@blueprints.com`,
+      }),
+      this.createTestUser({
+        username: `poweruser_${timestamp}`,
+        email: `power_${timestamp}@blueprints.com`,
+      }),
+      this.createTestUser({
+        username: `newbie_${timestamp}`,
+        email: `newbie_${timestamp}@blueprints.com`,
+      }),
+    ]);
 
-    const user2 = await this.createTestUser({
-      username: `poweruser_${timestamp}`,
-      email: `power_${timestamp}@blueprints.com`,
-    });
-
-    const user3 = await this.createTestUser({
-      username: `newbie_${timestamp}`,
-      email: `newbie_${timestamp}@blueprints.com`,
-    });
-
-    // Create various blueprints for testing
+    // Create various blueprints for testing. The copy points at the popular
+    // blueprint, so that id is minted up front.
     const now = Date.now();
-    const popularBlueprint = await this.createTestBlueprint(user1._id as Types.ObjectId, {
-      name: 'Super Coal Generator Setup',
-      createdAt: new Date(now - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      data: {
-        version: '1.0',
-        blueprintItems: [
-          { id: 'Generator', x: 0, y: 0, element: 'Coal' },
-          { id: 'Battery', x: 1, y: 0 },
-          { id: 'Wire', x: 2, y: 0 },
-        ],
-        info: {
-          name: 'Super Coal Generator Setup',
-          description: 'Efficient coal power generation with automation',
+    const popularId = new Types.ObjectId();
+    const [popularBlueprint, recentBlueprint, oldBlueprint, copiedBlueprint] = await Promise.all([
+      this.createTestBlueprint(user1._id as Types.ObjectId, {
+        _id: popularId,
+        name: 'Super Coal Generator Setup',
+        createdAt: new Date(now - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        data: {
+          version: '1.0',
+          blueprintItems: [
+            { id: 'Generator', x: 0, y: 0, element: 'Coal' },
+            { id: 'Battery', x: 1, y: 0 },
+            { id: 'Wire', x: 2, y: 0 },
+          ],
+          info: {
+            name: 'Super Coal Generator Setup',
+            description: 'Efficient coal power generation with automation',
+          },
         },
-      },
-    });
-
-    const recentBlueprint = await this.createTestBlueprint(user2._id as Types.ObjectId, {
-      name: 'Oxygen Production Line',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      data: {
-        version: '1.0',
-        blueprintItems: [
-          { id: 'Electrolyzer', x: 0, y: 0 },
-          { id: 'Pump', x: 1, y: 0 },
-        ],
-        info: {
-          name: 'Oxygen Production Line',
-          description: 'Basic oxygen production setup',
+      }),
+      this.createTestBlueprint(user2._id as Types.ObjectId, {
+        name: 'Oxygen Production Line',
+        createdAt: new Date(now - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        data: {
+          version: '1.0',
+          blueprintItems: [
+            { id: 'Electrolyzer', x: 0, y: 0 },
+            { id: 'Pump', x: 1, y: 0 },
+          ],
+          info: {
+            name: 'Oxygen Production Line',
+            description: 'Basic oxygen production setup',
+          },
         },
-      },
-    });
-
-    const oldBlueprint = await this.createTestBlueprint(user3._id as Types.ObjectId, {
-      name: 'Legacy Food System',
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-      data: {
-        version: '0.9',
-        blueprintItems: [
-          { id: 'FarmTile', x: 0, y: 0 },
-          { id: 'MealLice', x: 0, y: 1 },
-        ],
-        info: {
-          name: 'Legacy Food System',
-          description: 'Old-style farming setup',
+      }),
+      this.createTestBlueprint(user3._id as Types.ObjectId, {
+        name: 'Legacy Food System',
+        createdAt: new Date(now - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+        data: {
+          version: '0.9',
+          blueprintItems: [
+            { id: 'FarmTile', x: 0, y: 0 },
+            { id: 'MealLice', x: 0, y: 1 },
+          ],
+          info: {
+            name: 'Legacy Food System',
+            description: 'Old-style farming setup',
+          },
         },
-      },
-    });
-
-    const copiedBlueprint = await this.createTestBlueprint(user3._id as Types.ObjectId, {
-      name: 'Modified Coal Generator',
-      isCopy: true,
-      copyOf: popularBlueprint._id as Types.ObjectId,
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      data: {
-        version: '1.0',
-        blueprintItems: [
-          { id: 'Generator', x: 0, y: 0, element: 'Coal' },
-          { id: 'Battery', x: 1, y: 0 },
-          { id: 'Wire', x: 2, y: 0 },
-          { id: 'Transformer', x: 3, y: 0 }, // Added modification
-        ],
-        info: {
-          name: 'Modified Coal Generator',
-          description: 'Coal generator with power transformation',
+      }),
+      this.createTestBlueprint(user3._id as Types.ObjectId, {
+        name: 'Modified Coal Generator',
+        isCopy: true,
+        copyOf: popularId,
+        createdAt: new Date(now - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        data: {
+          version: '1.0',
+          blueprintItems: [
+            { id: 'Generator', x: 0, y: 0, element: 'Coal' },
+            { id: 'Battery', x: 1, y: 0 },
+            { id: 'Wire', x: 2, y: 0 },
+            { id: 'Transformer', x: 3, y: 0 }, // Added modification
+          ],
+          info: {
+            name: 'Modified Coal Generator',
+            description: 'Coal generator with power transformation',
+          },
         },
-      },
-    });
+      }),
+    ]);
 
     // popular: two ratings (avg 4.5); recent: one rating (avg 4); old/copied: unrated
-    await this.seedRatings(popularBlueprint._id as Types.ObjectId, [
-      { userId: (user2._id as Types.ObjectId).toString(), value: 5 },
-      { userId: (user3._id as Types.ObjectId).toString(), value: 4 },
-    ]);
-    await this.seedRatings(recentBlueprint._id as Types.ObjectId, [
-      { userId: (user1._id as Types.ObjectId).toString(), value: 4 },
+    await Promise.all([
+      this.seedRatings(popularBlueprint._id as Types.ObjectId, [
+        { userId: (user2._id as Types.ObjectId).toString(), value: 5 },
+        { userId: (user3._id as Types.ObjectId).toString(), value: 4 },
+      ]),
+      this.seedRatings(recentBlueprint._id as Types.ObjectId, [
+        { userId: (user1._id as Types.ObjectId).toString(), value: 4 },
+      ]),
     ]);
 
     return {
@@ -153,23 +152,12 @@ export class TestDbHelper {
     };
   }
 
+  // Every registered model's collection, not a hand-kept list: a collection
+  // missing from the list leaks its rows into later specs' counts.
   static async cleanDatabase() {
-    try {
-      await BlueprintModel.model.deleteMany({});
-      await BlueprintVersionModel.model.deleteMany({});
-      await UserModel.model.deleteMany({});
-      await FeedbackModel.model.deleteMany({});
-      await FollowModel.model.deleteMany({});
-      await CommentModel.model.deleteMany({});
-      await NotificationModel.model.deleteMany({});
-      await PreviewImageModel.model.deleteMany({});
-      await BlueprintEventModel.model.deleteMany({});
-      await BlueprintRatingModel.model.deleteMany({});
-      if (BlueprintSearchModel.model != null) await BlueprintSearchModel.model.deleteMany({});
-      TestDataFactory.reset();
-    } catch (error) {
-      console.error('Error cleaning database:', error);
-      throw error;
-    }
+    await Promise.all(
+      Object.values(mongoose.connection.collections).map(collection => collection.deleteMany({}))
+    );
+    TestDataFactory.reset();
   }
 }

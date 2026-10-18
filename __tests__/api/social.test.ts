@@ -1,11 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -59,6 +53,48 @@ describe('Profile, Follow, Feed API', function () {
         `/api/users/${testData.users.user1.username}/profile`
       );
       expect(response.body.blueprintCount).to.equal(0);
+    });
+
+    // Theme, content locale and DLC exclusions are private account state. The
+    // profile is an explicit whitelist, so pin its exact keys: any newly
+    // exposed field — not just one of today's preferences — fails here.
+    it('exposes only public fields — never the private preferences — to other viewers', async function () {
+      const token = testData.users.user1.generateJwt();
+      const patches = [
+        { path: 'theme-preference', body: { theme: 'custom', customColors: { board: '#101f2e' } } },
+        { path: 'locale-preference', body: { locale: 'ru' } },
+        { path: 'dlc-preferences', body: { excludedDlcs: ['DLC3_ID'] } },
+      ];
+      for (const { path, body } of patches) {
+        const response = await TestSetup.request()
+          .patch(`/api/users/me/${path}`)
+          .set('Authorization', `Bearer ${token}`)
+          .send(body);
+        expect(response.status, path).to.equal(200);
+      }
+
+      const PUBLIC_KEYS = [
+        'id',
+        'username',
+        'bio',
+        'memberSince',
+        'blueprintCount',
+        'followerCount',
+        'followingCount',
+        'followedByMe',
+        'avatarId',
+      ];
+      const anonymous = await TestSetup.request().get(
+        `/api/users/${testData.users.user1.username}/profile`
+      );
+      expect(anonymous.status).to.equal(200);
+      expect(Object.keys(anonymous.body)).to.have.members(PUBLIC_KEYS);
+
+      const otherUser = await TestSetup.request()
+        .get(`/api/users/${testData.users.user1.username}/profileSecure`)
+        .set('Authorization', `Bearer ${testData.users.user2.generateJwt()}`);
+      expect(otherUser.status).to.equal(200);
+      expect(Object.keys(otherUser.body)).to.have.members(PUBLIC_KEYS);
     });
   });
 
@@ -341,7 +377,7 @@ describe('Profile, Follow, Feed API', function () {
       expect(response.body.remaining).to.equal(0);
     });
 
-    it('returns only followees blueprints, newest first', async function () {
+    it('returns only followees blueprints', async function () {
       // user2 follows user1 (owner of popularBlueprint) but not user3 (owner of oldBlueprint/copiedBlueprint)
       await FollowModel.model.create({
         followerId: testData.users.user2._id,

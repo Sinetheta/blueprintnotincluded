@@ -110,51 +110,27 @@ describe('CameraService.setOverlayForItem', function () {
     expect(camera.overlay).to.equal(Overlay.Gas);
   });
 
-  it('switches out of Base for an item that declares an overlay', function () {
-    // The case PR #232 proposed suppressing, on the theory that a Building-layer
-    // device is already opaque in Base so the switch buys nothing. The game
-    // switches anyway, so we do too.
-    const camera = makeCamera();
-    camera.overlay = Overlay.Base;
-    camera.setOverlayForItem(automationItem);
-    expect(camera.overlay).to.equal(Overlay.Automation);
-  });
-
-  it('switches out of the Room overlay for an item that declares one', function () {
-    const camera = makeCamera();
-    camera.overlay = Overlay.Room;
-    camera.setOverlayForItem(automationItem);
-    expect(camera.overlay).to.equal(Overlay.Automation);
-  });
-
-  it('stays put when re-picking an item whose overlay is already current', function () {
-    const camera = makeCamera();
-    camera.overlay = Overlay.Automation;
-    camera.setOverlayForItem(automationItem);
-    expect(camera.overlay).to.equal(Overlay.Automation);
+  it('switches out of Base and Room for an item that declares an overlay', function () {
+    // Base is the case PR #232 proposed suppressing, on the theory that a
+    // Building-layer device is already opaque in Base so the switch buys
+    // nothing. The game switches anyway, so we do too.
+    for (const from of [Overlay.Base, Overlay.Room]) {
+      const camera = makeCamera();
+      camera.overlay = from;
+      camera.setOverlayForItem(automationItem);
+      expect(camera.overlay, Overlay[from]).to.equal(Overlay.Automation);
+    }
   });
 
   // The behaviour this change adds. A building with no viewMode used to drag the
   // view to Base from wherever you were -- the original report's complaint.
-  it('stays in Automation when picking a building that declares no overlay', function () {
-    const camera = makeCamera();
-    camera.overlay = Overlay.Automation;
-    camera.setOverlayForItem(plainBuilding);
-    expect(camera.overlay).to.equal(Overlay.Automation);
-  });
-
-  it('stays in Power when picking a building that declares no overlay', function () {
-    const camera = makeCamera();
-    camera.overlay = Overlay.Power;
-    camera.setOverlayForItem(plainBuilding);
-    expect(camera.overlay).to.equal(Overlay.Power);
-  });
-
-  it('stays in the Room overlay when picking a building that declares no overlay', function () {
-    const camera = makeCamera();
-    camera.overlay = Overlay.Room;
-    camera.setOverlayForItem(plainBuilding);
-    expect(camera.overlay).to.equal(Overlay.Room);
+  it('stays in the current overlay when picking a building that declares no overlay', function () {
+    for (const current of [Overlay.Automation, Overlay.Power, Overlay.Room]) {
+      const camera = makeCamera();
+      camera.overlay = current;
+      camera.setOverlayForItem(plainBuilding);
+      expect(camera.overlay, Overlay[current]).to.equal(current);
+    }
   });
 
   // The element brush routes through BuildTool.changeItem like any building, and
@@ -162,9 +138,10 @@ describe('CameraService.setOverlayForItem', function () {
   // wherever you were -- where elements render at 0.3 alpha. Pinned so the
   // consequence is visible rather than discovered.
   it('leaves the element brush in the current overlay, where elements are greyed', function () {
+    loadGameDatabase();
     const camera = makeCamera();
     camera.overlay = Overlay.Automation;
-    camera.setOverlayForItem(plainBuilding); // the Element OniItem's overlay
+    camera.setOverlayForItem(OniItem.getOniItem(OniItem.elementId));
     expect(camera.overlay).to.equal(Overlay.Automation);
   });
 

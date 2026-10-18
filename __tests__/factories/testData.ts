@@ -88,45 +88,6 @@ export class TestDataFactory {
     return blueprint;
   }
 
-  static createPopularBlueprint(owner: Types.ObjectId): TestBlueprint {
-    return this.createBlueprint(owner, {
-      name: `Popular Blueprint ${this.blueprintCounter}`,
-      ratingCount: 3,
-      ratingAverage: 4.5,
-      data: {
-        version: '1.0',
-        blueprintItems: [
-          { id: 'Generator', x: 0, y: 0 },
-          { id: 'Battery', x: 1, y: 0 },
-          { id: 'Wire', x: 2, y: 0 },
-        ],
-        info: {
-          name: `Popular Blueprint ${this.blueprintCounter}`,
-          description: 'A popular power generation setup',
-        },
-      },
-    });
-  }
-
-  static createOldBlueprint(owner: Types.ObjectId, daysAgo: number = 7): TestBlueprint {
-    const oldDate = new Date();
-    oldDate.setDate(oldDate.getDate() - daysAgo);
-
-    return this.createBlueprint(owner, {
-      name: `Old Blueprint ${this.blueprintCounter}`,
-      createdAt: oldDate,
-      modifiedAt: oldDate,
-    });
-  }
-
-  static createCopiedBlueprint(owner: Types.ObjectId, originalId: Types.ObjectId): TestBlueprint {
-    return this.createBlueprint(owner, {
-      name: `Copy of Blueprint ${this.blueprintCounter}`,
-      isCopy: true,
-      copyOf: originalId,
-    });
-  }
-
   static reset(): void {
     this.userCounter = 0;
     this.blueprintCounter = 0;

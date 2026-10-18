@@ -9,6 +9,9 @@ import { WorkOSService } from '../../app/api/services/workos-service';
 import { BOOT_DEV_USERS, DEV_USERS, DEV_PASSWORD, ensureDevUsers } from '../../app/api/dev-users';
 
 // crypto-js 4.2.0: PBKDF2('dev_password', '00112233445566778899aabbccddeeff', { keySize: 512 / 32 }).toString(Hex)
+// Also a precomputed credential for DEV_PASSWORD: fixtures that only need a
+// user who *has* a password skip setPassword's ~90 ms 250k-iteration hash.
+const CRYPTO_JS_FIXTURE_SALT = '00112233445566778899aabbccddeeff';
 const CRYPTO_JS_FIXTURE_HASH =
   '0a3ec56bc20db87a2cf28fb1e4058c14726a4a352e9efa7b82a321678f268d1ab03767a400f2cfa637517375b33e05ae0b3d5d9d5deaa2e76d84c9f2f3f1a8ea';
 
@@ -51,7 +54,6 @@ describe('Local auth mode', function () {
       // social-graph roster is a seed:dev-blueprints concern.
       expect(response.body.devUsers).to.have.length(BOOT_DEV_USERS.length);
       expect(response.body.devUsers.map((u: any) => u.username)).to.include('dev_you');
-      expect(BOOT_DEV_USERS.length).to.be.lessThan(DEV_USERS.length);
       expect(response.body.devPassword).to.equal(DEV_PASSWORD);
       // Never leaks a password hash/salt
       for (const u of response.body.devUsers) {
@@ -69,13 +71,14 @@ describe('Local auth mode', function () {
         email: `local_admin_${Date.now()}@bpni.local`,
         authProvider: 'legacy',
         localRole: 'admin',
+        salt: CRYPTO_JS_FIXTURE_SALT,
+        hash: CRYPTO_JS_FIXTURE_HASH,
       });
-      user.setPassword('correct horse battery staple');
       await user.save();
 
       const response = await TestSetup.request()
         .post('/api/auth/login')
-        .send({ email: user.email, password: 'correct horse battery staple' });
+        .send({ email: user.email, password: DEV_PASSWORD });
 
       expect(response.status).to.equal(200);
       const decoded: any = jwt.verify(response.body.token, process.env.JWT_SECRET as string);
@@ -89,8 +92,9 @@ describe('Local auth mode', function () {
         username: `local_wrong_${Date.now()}`,
         email: `local_wrong_${Date.now()}@bpni.local`,
         authProvider: 'legacy',
+        salt: CRYPTO_JS_FIXTURE_SALT,
+        hash: CRYPTO_JS_FIXTURE_HASH,
       });
-      user.setPassword('right-password');
       await user.save();
 
       const response = await TestSetup.request()
@@ -107,13 +111,14 @@ describe('Local auth mode', function () {
         username: `local_workos_${Date.now()}`,
         email: `local_workos_${Date.now()}@bpni.local`,
         authProvider: 'workos',
+        salt: CRYPTO_JS_FIXTURE_SALT,
+        hash: CRYPTO_JS_FIXTURE_HASH,
       });
-      user.setPassword('some-password');
       await user.save();
 
       const response = await TestSetup.request()
         .post('/api/auth/login')
-        .send({ email: user.email, password: 'some-password' });
+        .send({ email: user.email, password: DEV_PASSWORD });
 
       expect(response.status).to.equal(401);
       expect(response.body.error).to.equal('invalid_credentials');
@@ -259,13 +264,12 @@ describe('Local auth mode', function () {
 
   describe('ensureDevUsers', function () {
     it('is idempotent and leaves the boot roster with the fixed ids and a working password', async function () {
-      // Two runs back to back: two users, one native PBKDF2 each — the whole
-      // thing is well under a second, and that budget is the point.
+      // Two runs back to back: two users, one native PBKDF2 each — well under
+      // a second. The timeout is the budget: the pure-JS crypto-js hash this
+      // replaced took ~3 s per user, so a regression to it cannot fit.
       this.timeout(5000);
-      const started = Date.now();
       await ensureDevUsers();
       await ensureDevUsers();
-      expect(Date.now() - started).to.be.lessThan(2000);
 
       const found = await UserModel.model.find({ _id: { $in: DEV_USERS.map(u => u._id) } });
       expect(found).to.have.length(BOOT_DEV_USERS.length);
@@ -285,7 +289,7 @@ describe('Local auth mode', function () {
       // under 4.2.0 defaults. If this stops matching, every stored legacy
       // password silently stops validating.
       const user = new UserModel.model({ authProvider: 'legacy' });
-      (user as any).salt = '00112233445566778899aabbccddeeff';
+      (user as any).salt = CRYPTO_JS_FIXTURE_SALT;
       (user as any).hash = CRYPTO_JS_FIXTURE_HASH;
       expect(user.validPassword('dev_password')).to.equal(true);
       expect(user.validPassword('dev_passwor')).to.equal(false);

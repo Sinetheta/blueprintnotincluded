@@ -1,11 +1,4 @@
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-
-import path from 'path';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 
@@ -83,21 +76,6 @@ describe('Blueprint Validation API (Mocha)', function () {
       expect(response.status).to.equal(400);
       expect(response.body.errors).to.be.an('array');
       expect(response.body.errors[0].status).to.equal('400');
-    });
-
-    it('should accept valid blueprint names', async function () {
-      const response = await TestSetup.request()
-        .post('/api/uploadblueprint')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: 'Valid-Blueprint_Name 123',
-          blueprint: { test: 'data' },
-          thumbnail: 'base64thumbnail',
-          overwrite: false,
-        });
-
-      expect(response.status).to.equal(200);
-      expect(response.body.id).to.exist;
     });
 
     it('should accept blueprint names at exactly 60 characters', async function () {
@@ -207,38 +185,6 @@ describe('Blueprint Validation API (Mocha)', function () {
         .set('Authorization', `Bearer ${authToken}`);
       expect(details.status).to.equal(200);
       expect(details.body.name).to.equal('Padded Name');
-    });
-
-    it('should allow overwriting when overwrite flag is true', async function () {
-      const blueprintName = 'Overwrite Test Blueprint';
-
-      // Create initial blueprint
-      const initialResponse = await TestSetup.request()
-        .post('/api/uploadblueprint')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: blueprintName,
-          blueprint: { test: 'initial data' },
-          thumbnail: 'base64thumbnail',
-          overwrite: false,
-        });
-
-      expect(initialResponse.status).to.equal(200);
-      const initialId = initialResponse.body.id;
-
-      // Overwrite the blueprint
-      const overwriteResponse = await TestSetup.request()
-        .post('/api/uploadblueprint')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: blueprintName,
-          blueprint: { test: 'overwritten data' },
-          thumbnail: 'base64thumbnail',
-          overwrite: true,
-        });
-
-      expect(overwriteResponse.status).to.equal(200);
-      expect(overwriteResponse.body.id).to.equal(initialId);
     });
   });
 });

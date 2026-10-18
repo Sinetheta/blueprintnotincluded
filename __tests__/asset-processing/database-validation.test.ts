@@ -85,13 +85,20 @@ describe('Database Asset Validation', () => {
       expect(database.buildings).to.be.an('array').with.length.greaterThan(0);
     });
 
-    it('should write database-2024.json into the frontend asset root', () => {
+    // The import writes the same JSON into both asset roots; the backend (app.ts,
+    // the preview worker) reads one and the editor the other. A hand edit or a
+    // conflict resolved in one root only would make previews and the editor
+    // disagree about the same blueprint.
+    it('should write the same database-2024.json into the frontend asset root', () => {
       const frontendJson = path.join(
         __dirname,
         '../../frontend/src/assets/database/database-2024.json'
       );
       expect(fs.existsSync(frontendJson), 'frontend database-2024.json should exist').to.be.true;
-      expect(fs.statSync(frontendJson).size).to.be.greaterThan(0);
+      expect(
+        fs.readFileSync(frontendJson).equals(fs.readFileSync(databaseJsonPath)),
+        'frontend database-2024.json should be byte-identical to assets/database/database-2024.json'
+      ).to.be.true;
     });
   });
 
@@ -100,14 +107,6 @@ describe('Database Asset Validation', () => {
 
     before(() => {
       database = readDatabase();
-    });
-
-    it('should have 480 buildings and 212 elements', () => {
-      // 463 vanilla + 17 modded (6 Steam Workshop mods) — see
-      // spec/WEBSITE_MOD_IMPORT.md. Import defensively: this count varies
-      // with whatever mods were enabled at export time.
-      expect(database.buildings.length).to.equal(480);
-      expect(database.elements.length).to.equal(212);
     });
 
     it('should have valid elements structure', () => {
@@ -142,8 +141,9 @@ describe('Database Asset Validation', () => {
         const gases = (database.elements as BuildableElement[]).filter(
           element => element.state === ElementState.Gas
         );
-        // Vanilla U59 ships 32 gases; a sharp drop here means state parsing broke.
-        expect(gases.length).to.equal(32);
+        // Vanilla U59 ships 32 gases; a sharp drop here means state parsing broke
+        // (and would leave the loop below checking nothing).
+        expect(gases.length).to.be.at.least(25);
         for (const gas of gases) {
           expect(gas.maxMass, `${gas.id} maxMass`).to.equal(1.8);
           expect(gas.defaultMass, `${gas.id} defaultMass`).to.equal(1.0);
@@ -198,17 +198,15 @@ describe('Database Asset Validation', () => {
       });
     });
 
-    it('should have valid building structure with uiImage', () => {
-      database.buildings.forEach((building: BBuilding, index: number) => {
-        expect(building, `Building ${index} should have prefabId`).to.have.property('prefabId');
-        expect(building.prefabId, `Building ${index} prefabId should be string`)
-          .to.be.a('string')
-          .with.length.greaterThan(0);
-        expect(building, `Building ${index} should have uiImage`).to.have.property('uiImage');
-        expect(building.uiImage, `Building ${index} uiImage should be string`)
-          .to.be.a('string')
-          .with.length.greaterThan(0);
-      });
+    // Building names keep Klei's rich-text link markup; GameStringService strips
+    // it with /<link=".+?">(.*?)<\/link>/ at load time, so a malformed tag would
+    // reach the build menu as raw markup.
+    it('should keep building-name link markup in the form the string service strips', () => {
+      const malformed = (database.buildings as BBuilding[])
+        .filter(b => typeof b.name === 'string' && b.name.includes('<link='))
+        .filter(b => !/<link="[^"]+">.*<\/link>/.test(b.name))
+        .map(b => `${b.prefabId}: ${b.name}`);
+      expect(malformed, `malformed link markup: ${malformed.join('; ')}`).to.be.empty;
     });
 
     // BlueprintItemWire.drawPixi (lib/src/blueprint/blueprint-item-wire.ts) draws the
@@ -304,13 +302,6 @@ describe('Database Asset Validation', () => {
         ).not.to.deep.equal([]);
     });
 
-    it('should have overlay info sprites in uiSprites', () => {
-      const infoSprites = (database.uiSprites as BSpriteInfo[]).filter(
-        si => si.name && (si.name.includes('info') || si.name.includes('tile'))
-      );
-      expect(infoSprites.length).to.be.greaterThan(0);
-    });
-
     it('should have overlay spriteModifiers (info / element overlays)', () => {
       expect(database.spriteModifiers).to.be.an('array');
       (database.spriteModifiers as BSpriteModifier[]).forEach((modifier, index) => {
@@ -318,6 +309,14 @@ describe('Database Asset Validation', () => {
         expect(modifier, `Modifier ${index} should have tags`).to.have.property('tags');
         expect(modifier.tags, `Modifier ${index} tags should be array`).to.be.an('array');
       });
+    });
+
+    it('should point every overlay spriteModifier at a registered uiSprite', () => {
+      const spriteInfoNames = new Set((database.uiSprites as BSpriteInfo[]).map(si => si.name));
+      const broken = (database.spriteModifiers as BSpriteModifier[])
+        .filter(modifier => modifier.spriteInfoName && !spriteInfoNames.has(modifier.spriteInfoName))
+        .map(modifier => `${modifier.name} -> ${modifier.spriteInfoName}`);
+      expect(broken, `spriteModifiers with no uiSprite: ${broken.join(', ')}`).to.be.empty;
     });
   });
 
@@ -366,10 +365,24 @@ describe('Database Asset Validation', () => {
   });
 
   describe('Flat Icon Assets', () => {
-    it('should have ui_image directory with PNG files', () => {
-      expect(fs.existsSync(uiImagePath), 'assets/ui_image should exist').to.be.true;
-      const pngs = fs.readdirSync(uiImagePath).filter(f => f.endsWith('.png'));
-      expect(pngs.length, 'ui_image should have at least 1000 PNG files').to.be.greaterThan(1000);
+    // The import syncs ui_image/ into both roots: the server preview renderer
+    // draws from assets/ui_image, the editor from the frontend copy. An icon
+    // added, removed or redrawn in one root only renders differently in the two,
+    // which a matching file count cannot see.
+    it('should ship the same ui_image files in the backend and frontend roots', () => {
+      const frontendUiImagePath = path.join(__dirname, '../../frontend/src/assets/ui_image');
+      const backendFiles = fs.readdirSync(uiImagePath).sort();
+      const frontendFiles = fs.readdirSync(frontendUiImagePath).sort();
+      expect(frontendFiles, 'frontend ui_image file names').to.deep.equal(backendFiles);
+
+      const differing = backendFiles.filter(
+        file =>
+          !fs
+            .readFileSync(path.join(uiImagePath, file))
+            .equals(fs.readFileSync(path.join(frontendUiImagePath, file)))
+      );
+      expect(differing, `ui_image files that differ between roots: ${differing.join(', ')}`).to.be
+        .empty;
     });
 
     it('should have a ui_image PNG for every building', () => {

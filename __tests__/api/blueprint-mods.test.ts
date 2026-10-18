@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -95,35 +90,11 @@ describe('Blueprint mod derivation', function () {
       expect(saved!.modded).to.be.true;
     });
 
-    it('derives mods: [] for a vanilla-only save', async function () {
-      const response = await upload({
-        name: 'Vanilla Save',
-        blueprint: blueprintData(['Wire']),
-      });
-
-      expect(response.status).to.equal(200);
-      const saved = await BlueprintModel.model.findById(response.body.id);
-      expect(saved!.mods).to.deep.equal([]);
-    });
-
-    it('ignores a client-supplied mods field', async function () {
+    it('derives mods: [] for a vanilla save, ignoring a client-supplied mods field', async function () {
+      // The modded latch only fires off the server-derived `mods`, never off
+      // client input, so the client's own modded: false survives.
       const response = await upload({
         name: 'Client Mods Ignored',
-        blueprint: blueprintData(['Wire']),
-        mods: [MOD_WORKSHOP_ID],
-      });
-
-      expect(response.status).to.equal(200);
-      const saved = await BlueprintModel.model.findById(response.body.id);
-      expect(saved!.mods).to.deep.equal([]);
-      expect(saved!.modded).to.not.be.true;
-    });
-
-    it('does not force modded: true from a client-supplied mods field alone', async function () {
-      // metadata.modded defaults to null when omitted; the latch only fires
-      // off the server-derived `mods`, never off client input.
-      const response = await upload({
-        name: 'Client Mods Ignored Modded Flag',
         blueprint: blueprintData(['Wire']),
         modded: false,
         mods: [MOD_WORKSHOP_ID],
@@ -131,6 +102,7 @@ describe('Blueprint mod derivation', function () {
 
       expect(response.status).to.equal(200);
       const saved = await BlueprintModel.model.findById(response.body.id);
+      expect(saved!.mods).to.deep.equal([]);
       expect(saved!.modded).to.equal(false);
     });
   });

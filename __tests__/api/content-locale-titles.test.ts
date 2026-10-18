@@ -1,11 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
 import { Types } from 'mongoose';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup, TestDbHelper } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -92,23 +87,11 @@ describe('Content locale — title resolution', function () {
       expect(item.nameTranslated).to.equal(true);
     });
 
-    // Rule 4, and the reason this could ship before any backfill.
-    it('leaves an untranslated blueprint alone', async function () {
-      const doc = await TestDbHelper.createTestBlueprint(
-        testData.users.user1._id as Types.ObjectId,
-        { name: 'Dien phan full', isPublished: true }
-      );
-
-      const response = await TestSetup.request().get('/api/getblueprints?lang=vi');
-      const item = findItem(response.body, (doc._id as Types.ObjectId).toString());
-      expect(item.name).to.equal('Dien phan full');
-      expect(item.displayName).to.equal(undefined);
-    });
-
-    // An 'authored' row is the pivot echoing Blueprint.name, not a
-    // translation — resolving against it would report English titles as
+    // Rule 4, and the reason this could ship before any backfill. An untranslated
+    // blueprint still has its 'authored' pivot row, which only echoes
+    // Blueprint.name — resolving against it would report English titles as
     // "translated from English".
-    it('never treats an authored pivot row as a translation', async function () {
+    it('leaves an untranslated blueprint alone, never treating its authored pivot row as a translation', async function () {
       const doc = await TestDbHelper.createTestBlueprint(
         testData.users.user1._id as Types.ObjectId,
         { name: 'SPOM v2', isPublished: true }
@@ -116,6 +99,7 @@ describe('Content locale — title resolution', function () {
 
       const response = await TestSetup.request().get('/api/getblueprints?lang=vi');
       const item = findItem(response.body, (doc._id as Types.ObjectId).toString());
+      expect(item.name).to.equal('SPOM v2');
       expect(item.displayName).to.equal(undefined);
       expect(item.nameTranslated).to.equal(undefined);
     });

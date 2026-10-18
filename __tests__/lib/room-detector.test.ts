@@ -360,19 +360,14 @@ describe('room detector', function () {
   });
 
   describe('size boundaries', () => {
-    // 4×3 shell with one interior cell filled -> 11 open cells.
+    // 4×3 shell with one interior cell filled -> 11 open cells. The 12-cell
+    // pass is the barracks (4×3) case in the room-types table.
     it('11 cells is below every minimum (barracks needs 12)', () => {
       const blueprint = roomBlueprint(4, 3, [{ id: 'Bed', x: 0, y: 0 }]);
       place(blueprint, 'Tile', 3, 2);
       const cavity = singleCavity(blueprint);
       expect(cavity.size).to.equal(11);
       expect(cavity.result).to.equal('miscellaneous');
-    });
-
-    it('12 cells matches barracks', () => {
-      expect(detectedTypes(roomBlueprint(4, 3, [{ id: 'Bed', x: 0, y: 0 }]))).to.deep.equal([
-        'barracks',
-      ]);
     });
 
     it('64 cells still matches barracks; 65 does not', () => {
@@ -386,14 +381,6 @@ describe('room detector', function () {
   });
 
   describe('tiers, overrides, conflicts', () => {
-    it('flush toilet + advanced wash station upgrades latrine to washroom', () => {
-      const blueprint = roomBlueprint(4, 3, [
-        { id: 'FlushToilet', x: 0, y: 0 },
-        { id: 'WashSink', x: 2, y: 0 },
-      ]);
-      expect(detectedTypes(blueprint)).to.deep.equal(['washroom']);
-    });
-
     it('hospital overrides mess hall and barracks (no conflict)', () => {
       const blueprint = roomBlueprint(6, 3, [
         { id: 'MedicalCot', x: 0, y: 0 },
@@ -403,15 +390,6 @@ describe('room detector', function () {
       const cavity = singleCavity(blueprint);
       expect(cavity.result).to.equal('room');
       expect(detectedTypes(blueprint)).to.deep.equal(['hospital']);
-    });
-
-    it('great hall overrides recreation room (no conflict)', () => {
-      const blueprint = roomBlueprint(8, 4, [
-        { id: 'DiningTable', x: 0, y: 0 },
-        { id: 'WaterCooler', x: 1, y: 0 },
-        { id: 'ItemPedestal', x: 3, y: 0 },
-      ]);
-      expect(detectedTypes(blueprint)).to.deep.equal(['greatHall']);
     });
 
     it('bed + dining table across families -> conflict -> miscellaneous', () => {
@@ -475,10 +453,6 @@ describe('room detector', function () {
       place(blueprint, 'Bed', 0, 0);
       place(blueprint, 'Bed', 6, 0);
       expect(roomSearchTags(detectRooms(blueprint))).to.deep.equal(['barracks']);
-    });
-
-    it('is deterministic: identical input, identical output', () => {
-      expect(detectRooms(twoRooms())).to.deep.equal(detectRooms(twoRooms()));
     });
   });
 

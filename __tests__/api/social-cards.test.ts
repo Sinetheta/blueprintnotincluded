@@ -1,12 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
 import sharp from 'sharp';
 import { Types } from 'mongoose';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup, TestDbHelper } from '../setup/testSetup';
 import { TestDataFactory } from '../factories/testData';
@@ -53,6 +48,7 @@ describe('Social share cards', function () {
 
   // Each blueprint gets distinct content (its own cluster) unless `x` repeats,
   // and a stored hero preview unless `preview: false`.
+  let nextGap = 2; // explicit `x` values stay below this, so never collide
   async function seed(
     opts: {
       category?: string;
@@ -63,7 +59,7 @@ describe('Social share cards', function () {
     } = {}
   ) {
     // Cluster keys are origin-relative, so distinct content needs a varying gap.
-    const x = opts.x ?? 2 + Math.floor(Math.random() * 1e6);
+    const x = opts.x ?? nextGap++;
     const doc = await TestDbHelper.createTestBlueprint(
       owner._id as Types.ObjectId,
       {

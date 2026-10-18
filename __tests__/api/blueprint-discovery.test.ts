@@ -1,11 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -184,11 +178,20 @@ describe('Discovery: related blueprints + trending sort', function () {
     it('ranks same-author blueprints above signal-free ones', async function () {
       const owner = testData.users.user1._id;
       const source = await makeBlueprint(owner, { name: 'Related Author Source' });
-      const sameAuthor = await makeBlueprint(owner, { name: 'Related Author Sibling' });
+      // Older than the stranger's, so createdAt ordering alone would put it last.
+      const sameAuthor = await makeBlueprint(owner, {
+        name: 'Related Author Sibling',
+        createdAt: daysAgo(2),
+      });
+      const stranger = await makeBlueprint(testData.users.user2._id, {
+        name: 'Related Author Stranger',
+      });
 
       const response = await TestSetup.request().get(`/api/blueprints/${source._id}/related`);
       const names: string[] = response.body.blueprints.map((b: any) => b.name);
       expect(names).to.include(sameAuthor.name);
+      expect(names).to.include(stranger.name);
+      expect(names.indexOf(sameAuthor.name)).to.be.lessThan(names.indexOf(stranger.name));
     });
 
     it('falls back to recent public blueprints when the source has no signals to match on', async function () {
@@ -202,31 +205,9 @@ describe('Discovery: related blueprints + trending sort', function () {
   });
 
   describe('GET /api/getblueprints?sort=trending', function () {
-    it('ranks recently engaged blueprints above older ones with the same raw engagement', async function () {
-      const hot = await makeBlueprint(testData.users.user1._id, {
-        name: 'Trending Hot Recent',
-        ratingCount: 10,
-        ratingAverage: 4,
-        forkCount: 2,
-        createdAt: new Date(),
-      });
-      const stale = await makeBlueprint(testData.users.user2._id, {
-        name: 'Trending Stale Old',
-        ratingCount: 10,
-        ratingAverage: 4,
-        forkCount: 2,
-        createdAt: daysAgo(60),
-      });
-
-      const response = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now(), sort: 'trending' });
-
-      expect(response.status).to.equal(200);
-      const names: string[] = response.body.blueprints.map((b: any) => b.name);
-      expect(names.indexOf(hot.name)).to.be.lessThan(names.indexOf(stale.name));
-    });
-
+    // The scoring properties themselves (recency, downloads) are unit-tested in
+    // __tests__/lib/blueprint-hotscore.test.ts; this proves the endpoint sorts
+    // by the stored score rather than by rating.
     it('reorders relative to the plain popular (top-rated) sort', async function () {
       const oldButLiked = await makeBlueprint(testData.users.user1._id, {
         name: 'Trending Old But Liked',
@@ -254,35 +235,6 @@ describe('Discovery: related blueprints + trending sort', function () {
       expect(trendingNames.indexOf(newSmall.name)).to.be.lessThan(trendingNames.indexOf(oldButLiked.name));
     });
 
-    it('ranks a more-downloaded blueprint above a same-age, same-rating one', async function () {
-      // One shared timestamp so the recency term is identical — isolates the
-      // download signal as the only differentiator.
-      const createdAt = new Date();
-      const popular = await makeBlueprint(testData.users.user1._id, {
-        name: 'Trending More Downloads',
-        ratingCount: 4,
-        ratingAverage: 4,
-        downloadCount: 500,
-        createdAt,
-      });
-      const obscure = await makeBlueprint(testData.users.user2._id, {
-        name: 'Trending Few Downloads',
-        ratingCount: 4,
-        ratingAverage: 4,
-        downloadCount: 2,
-        createdAt,
-      });
-
-      const response = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now(), sort: 'trending' });
-
-      const names: string[] = response.body.blueprints.map((b: any) => b.name);
-      expect(names).to.include(popular.name);
-      expect(names).to.include(obscure.name);
-      expect(names.indexOf(popular.name)).to.be.lessThan(names.indexOf(obscure.name));
-    });
-
     it('rejects an unknown sort value', async function () {
       const response = await TestSetup.request()
         .get('/api/getblueprints')
@@ -290,17 +242,20 @@ describe('Discovery: related blueprints + trending sort', function () {
       expect(response.status).to.equal(400);
     });
 
-    it('surfaces a newly created blueprint (no cache) with a materialized hotScore', async function () {
-      const late = await makeBlueprint(testData.users.user2._id, {
-        name: 'Trending Late Arrival',
-        ratingCount: 99,
-        ratingAverage: 5,
-      });
+    // The fixtures above write hotScore themselves; this is the real save path,
+    // which must materialize it so a new upload is trending-sortable at once.
+    it('materializes hotScore when a blueprint is uploaded', async function () {
+      const saved = await TestSetup.request()
+        .post('/api/uploadblueprint')
+        .set('Authorization', `Bearer ${testData.users.user1.generateJwt()}`)
+        .send({ name: 'Trending Fresh Upload', blueprint: { blueprintItems: [] }, thumbnail: TINY_PNG });
+      expect(saved.status).to.equal(200);
 
-      const fresh = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now(), sort: 'trending' });
-      expect(fresh.body.blueprints.map((b: any) => b.name)).to.include(late.name);
+      const doc = await BlueprintModel.model.findById(saved.body.id).select('hotScore createdAt').lean();
+      expect(doc!.hotScore).to.be.closeTo(
+        computeHotScore({ ratingCount: 0, ratingAverage: 0, downloadCount: 0, createdAt: doc!.createdAt }),
+        1e-9
+      );
     });
 
     it('excludes a soft-deleted blueprint from the trending feed', async function () {
