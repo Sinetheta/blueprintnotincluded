@@ -116,17 +116,22 @@ describe("AuthenticationService", () => {
     });
 
     it("decodes a base64url-encoded JWT payload", () => {
+      // "???~~~" encodes to base64 with both '/' and '+', which base64url
+      // writes as '_' and '-'
       const payload = {
         _id: "u3",
         email: "c@d.com",
-        username: "carol",
+        username: "???~~~",
         exp: FUTURE_EXP,
       };
-      service.saveToken(makeJwtUrl(payload));
+      const token = makeJwtUrl(payload);
+      expect(token.split(".")[1]).toMatch(/_/);
+      expect(token.split(".")[1]).toMatch(/-/);
+      service.saveToken(token);
       const details = service.getUserDetails();
       expect(details).not.toBeNull();
       expect(details!._id).toBe("u3");
-      expect(details!.username).toBe("carol");
+      expect(details!.username).toBe("???~~~");
     });
 
     it("returns null and clears localStorage when token is malformed", () => {
@@ -175,16 +180,11 @@ describe("AuthenticationService", () => {
   });
 
   describe("logout", () => {
-    it("clears in-memory token", () => {
+    // getToken falls back to localStorage, so this fails if either copy survives
+    it("clears the token from memory and storage", () => {
       service.saveToken("token123");
       service.logout();
       expect(service.getToken()).toBe("");
-    });
-
-    it("removes token from localStorage", () => {
-      service.saveToken("token123");
-      service.logout();
-      expect(localStorage.getItem("blueprintnotincluded-token")).toBeNull();
     });
   });
 

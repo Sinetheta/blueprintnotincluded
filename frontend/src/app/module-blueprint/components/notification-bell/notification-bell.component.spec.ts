@@ -54,16 +54,30 @@ describe("NotificationBellComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("creates", () => {
-    fixture.detectChanges();
-    expect(component).toBeTruthy();
-  });
-
   it("polls unread count on init when logged in", () => {
     notificationService.list.mockReturnValue(of(makeResponse([], 3)));
     fixture.detectChanges();
     expect(notificationService.list).toHaveBeenCalled();
     expect(component.unreadCount).toBe(3);
+  });
+
+  it("re-polls the unread count on an interval until destroyed", () => {
+    vi.useFakeTimers();
+    try {
+      fixture.detectChanges();
+      expect(notificationService.list).toHaveBeenCalledTimes(1);
+
+      notificationService.list.mockReturnValue(of(makeResponse([], 4)));
+      vi.advanceTimersByTime(45000);
+      expect(notificationService.list).toHaveBeenCalledTimes(2);
+      expect(component.unreadCount).toBe(4);
+
+      fixture.destroy();
+      vi.advanceTimersByTime(45000);
+      expect(notificationService.list).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not poll when logged out", () => {
@@ -146,6 +160,9 @@ describe("NotificationBellComponent", () => {
       );
       expect(component.message({ ...base, type: "like" } as any)).toContain(
         "liked your blueprint",
+      );
+      expect(component.message({ ...base, type: "rating" } as any)).toContain(
+        "rated your blueprint",
       );
       expect(component.message({ ...base, type: "fork" } as any)).toContain(
         "forked your blueprint",
@@ -245,6 +262,10 @@ describe("NotificationBellComponent", () => {
       ),
     );
     component.loadMore();
+    // The next page starts where the first one ended, not at "now"
+    expect(notificationService.list.mock.calls.at(-1)[0]).toEqual(
+      new Date("2026-01-01"),
+    );
     expect(component.notifications).toHaveLength(2);
     expect(component.remaining).toBe(0);
   });

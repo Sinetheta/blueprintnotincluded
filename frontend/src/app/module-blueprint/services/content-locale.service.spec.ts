@@ -27,6 +27,7 @@ describe("ContentLocaleService", () => {
   afterEach(() => {
     http.verify();
     localStorage.clear();
+    vi.restoreAllMocks();
   });
 
   function stubNavigatorLanguage(value: string | undefined) {
@@ -83,6 +84,15 @@ describe("ContentLocaleService", () => {
       expect(request.request.method).toBe("PATCH");
       expect(request.request.body).toEqual({ locale: "ko" });
       request.flush({ locale: "ko" });
+    });
+
+    // The picker waits on the returned write before it reloads the page;
+    // waiting must not send the PATCH a second time
+    it("returns the account write so a caller can wait on it, without sending it twice", () => {
+      let done = false;
+      service.select("ko", true)!.subscribe(() => (done = true));
+      http.expectOne("/api/users/me/locale-preference").flush({ locale: "ko" });
+      expect(done).toBe(true);
     });
 
     it("narrows a region tag before storing it", () => {

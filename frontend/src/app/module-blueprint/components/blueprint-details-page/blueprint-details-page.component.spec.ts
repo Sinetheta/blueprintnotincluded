@@ -118,10 +118,6 @@ describe("BlueprintDetailsPageComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("creates", () => {
-    expect(component).toBeTruthy();
-  });
-
   it("loads details for the routed blueprint id", () => {
     fixture.detectChanges();
 
@@ -240,6 +236,7 @@ describe("BlueprintDetailsPageComponent", () => {
     });
 
     it("does not blow up the page when the related fetch fails", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       blueprintService.getRelatedBlueprints.mockReturnValue(
         throwError(() => new Error("boom")),
       );
@@ -247,6 +244,8 @@ describe("BlueprintDetailsPageComponent", () => {
       expect(() => fixture.detectChanges()).not.toThrow();
       expect(component.relatedBlueprints).toEqual([]);
       expect(component.details?.name).toBe("Super Coal Generator Setup");
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
     });
   });
 
@@ -904,6 +903,8 @@ describe("BlueprintDetailsPageComponent", () => {
   });
 
   describe("delete", () => {
+    afterEach(() => vi.restoreAllMocks());
+
     it("hides Delete for a blueprint owned by someone else", () => {
       fixture.detectChanges();
       expect(fixture.debugElement.query(By.css(".details-delete"))).toBe(null);

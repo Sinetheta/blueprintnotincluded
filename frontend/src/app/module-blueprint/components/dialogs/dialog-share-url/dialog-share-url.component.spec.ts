@@ -33,10 +33,6 @@ describe("DialogShareUrlComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("url", () => {
     it("is empty when neither blueprintId input nor blueprintService.id is set", () => {
       expect(component.url).toBe("");

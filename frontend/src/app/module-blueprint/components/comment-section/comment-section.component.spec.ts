@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NO_ERRORS_SCHEMA } from "@angular/core";
-import { of, throwError } from "rxjs";
+import { of, Subject, throwError } from "rxjs";
 
 import { CommentSectionComponent } from "./comment-section.component";
 import { CommentService } from "../../services/comment.service";
 import { AuthenticationService } from "../../services/authentification-service";
 import { TranslationService } from "../../services/translation.service";
+import { MAX_TRANSLATE_BATCH } from "../../../../../../lib/index";
 
 function makeComment(overrides: any = {}) {
   return {
@@ -66,10 +67,6 @@ describe("CommentSectionComponent", () => {
 
     fixture = TestBed.createComponent(CommentSectionComponent);
     component = fixture.componentInstance;
-  });
-
-  it("creates", () => {
-    expect(component).toBeTruthy();
   });
 
   describe("blueprintId binding", () => {
@@ -372,6 +369,44 @@ describe("CommentSectionComponent", () => {
         "c1",
         "c2",
       ]);
+    });
+
+    it("translateAll splits more foreign comments than one request may carry", () => {
+      translationService.matchesViewerLang.mockReturnValue(false);
+      const threads = Array.from(
+        { length: MAX_TRANSLATE_BATCH + 1 },
+        (_, i) => ({
+          comment: makeComment({ id: `c${i}`, sourceLang: "fr" }),
+          replies: [],
+        }),
+      );
+      commentService.getComments.mockReturnValue(
+        of({ threads, total: threads.length }),
+      );
+      const secondBatch = new Subject<any>();
+      translationService.translateComments
+        .mockReturnValueOnce(of({ translations: [] }))
+        .mockReturnValueOnce(secondBatch);
+      const lastId = `c${MAX_TRANSLATE_BATCH}`;
+      bindBlueprint("bp1");
+
+      component.translateAll();
+
+      expect(
+        translationService.translateComments.mock.calls.map(
+          ([, ids]: [string, string[]]) => ids.length,
+        ),
+      ).toEqual([MAX_TRANSLATE_BATCH, 1]);
+      // Each batch settles on its own
+      expect(component.showingTranslationIds.has("c0")).toBe(true);
+      expect(component.translatingIds.has(lastId)).toBe(true);
+      expect(component.translateAllWorking).toBe(true);
+
+      secondBatch.error(new Error("400"));
+      expect(component.translatingIds.size).toBe(0);
+      expect(component.showingTranslationIds.has(lastId)).toBe(false);
+      expect(component.showingTranslationIds.has("c0")).toBe(true);
+      expect(component.translateAllWorking).toBe(false);
     });
 
     it("renders a degraded note instead of the attribution when a translation is degraded", () => {

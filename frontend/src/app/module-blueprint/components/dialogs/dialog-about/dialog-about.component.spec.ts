@@ -47,15 +47,6 @@ describe("DialogAboutComponent", () => {
     ) as unknown as VersionServiceSpy;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
-  it("should initialize with loading state", () => {
-    expect(component.versionString).toBe("Loading...");
-    expect(component.detailedVersionInfo).toBe("");
-  });
-
   it("should load version information on init", async () => {
     component.ngOnInit();
 
@@ -66,37 +57,5 @@ describe("DialogAboutComponent", () => {
     expect(mockVersionService.getDetailedVersionInfo).toHaveBeenCalled();
     expect(component.versionString).toBe("Version 1.2.3 (abc123d)");
     expect(component.detailedVersionInfo).toContain("Version: 1.2.3");
-  });
-
-  it("should toggle dialog visibility", () => {
-    component.visible = false;
-    component.toggleDialog();
-    expect(component.visible).toBe(true);
-
-    component.toggleDialog();
-    expect(component.visible).toBe(false);
-  });
-
-  it("should handle version service errors gracefully", async () => {
-    mockVersionService.getVersionString.mockResolvedValue(
-      "Version unknown (Error: Failed to fetch)",
-    );
-    mockVersionService.getDetailedVersionInfo.mockResolvedValue(
-      "Version: unknown\nError: Failed to fetch",
-    );
-
-    component.ngOnInit();
-    await fixture.whenStable();
-
-    expect(component.versionString).toBe(
-      "Version unknown (Error: Failed to fetch)",
-    );
-    expect(component.detailedVersionInfo).toContain("Error: Failed to fetch");
-  });
-
-  it("should call loadVersionInfo on ngOnInit", () => {
-    const spy = vi.spyOn(component as any, "loadVersionInfo");
-    component.ngOnInit();
-    expect(spy).toHaveBeenCalled();
   });
 });

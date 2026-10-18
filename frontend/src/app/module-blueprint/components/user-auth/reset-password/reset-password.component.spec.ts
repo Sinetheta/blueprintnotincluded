@@ -35,10 +35,6 @@ describe("ResetPasswordComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("ngOnInit", () => {
     it("sets token from query param", () => {
       component.ngOnInit();

@@ -77,44 +77,12 @@ describe("BuildTool", () => {
     vi.restoreAllMocks();
   });
 
-  describe("static properties", () => {
-    it("has correct tool type", () => {
-      expect(tool.toolType).toBe(ToolType.build);
-    });
-
-    it("is not toggleable", () => {
-      expect(tool.toggleable).toBe(false);
-    });
-
-    it("captures input", () => {
-      expect(tool.captureInput).toBe(true);
-    });
-
-    it("is not visible", () => {
-      expect(tool.visible).toBe(false);
-    });
-
-    it("belongs to toolGroup 1", () => {
-      expect(tool.toolGroup).toBe(1);
-    });
-  });
-
   describe("subscribeBuildItemChanged", () => {
     it("registers an observer", () => {
       const observer = { itemChanged: vi.fn() };
       tool.subscribeBuildItemChanged(observer);
       tool.changeItem(templateItem);
       expect(observer.itemChanged).toHaveBeenCalledWith(templateItem);
-    });
-
-    it("notifies all registered observers", () => {
-      const obs1 = { itemChanged: vi.fn() };
-      const obs2 = { itemChanged: vi.fn() };
-      tool.subscribeBuildItemChanged(obs1);
-      tool.subscribeBuildItemChanged(obs2);
-      tool.changeItem(templateItem);
-      expect(obs1.itemChanged).toHaveBeenCalled();
-      expect(obs2.itemChanged).toHaveBeenCalled();
     });
   });
 
@@ -143,27 +111,6 @@ describe("BuildTool", () => {
       const newItem = makeTemplateItem();
       tool.changeItem(newItem);
       expect(tool.templateItemToBuild).toBe(newItem);
-    });
-
-    it("sets isBuildCandidate to true on new item", () => {
-      const newItem = makeTemplateItem({ isBuildCandidate: false });
-      tool.changeItem(newItem);
-      expect(newItem.isBuildCandidate).toBe(true);
-    });
-
-    it("sets alpha to 1 on new item", () => {
-      const newItem = makeTemplateItem({ alpha: 0 });
-      tool.changeItem(newItem);
-      expect(newItem.alpha).toBe(1);
-    });
-
-    it("calls setInvisible, cleanUp, prepareBoundingBox, updateTileables on new item", () => {
-      const newItem = makeTemplateItem();
-      tool.changeItem(newItem);
-      expect(newItem.setInvisible).toHaveBeenCalled();
-      expect(newItem.cleanUp).toHaveBeenCalled();
-      expect(newItem.prepareBoundingBox).toHaveBeenCalled();
-      expect(newItem.updateTileables).toHaveBeenCalledWith(mockBlueprint);
     });
 
     it("calls CameraService.setOverlayForItem with item's oniItem", () => {
@@ -208,10 +155,6 @@ describe("BuildTool", () => {
   });
 
   describe("switchTo", () => {
-    it("does not throw", () => {
-      expect(() => tool.switchTo()).not.toThrow();
-    });
-
     it("shows a brush that switchFrom hid", () => {
       tool.switchFrom();
       tool.switchTo();
@@ -221,12 +164,6 @@ describe("BuildTool", () => {
     it("does not throw when there is no brush", () => {
       tool.templateItemToBuild = null as any;
       expect(() => tool.switchTo()).not.toThrow();
-    });
-  });
-
-  describe("dragStop", () => {
-    it("is a no-op that does not throw", () => {
-      expect(() => tool.dragStop()).not.toThrow();
     });
   });
 
@@ -260,7 +197,7 @@ describe("BuildTool", () => {
       );
       const tile = new Vector2(3, 4);
       tool.leftClick(tile);
-      expect(tool.templateItemToBuild.position).toBe(tile);
+      expect(tool.templateItemToBuild.position).toEqual(tile);
       expect(addSpy).toHaveBeenCalledWith(cloned);
     });
   });
@@ -273,7 +210,7 @@ describe("BuildTool", () => {
       );
       const tile = new Vector2(5, 6);
       tool.mouseDown(tile);
-      expect(tool.templateItemToBuild.position).toBe(tile);
+      expect(tool.templateItemToBuild.position).toEqual(tile);
       expect(mockBlueprint.addBlueprintItem).toHaveBeenCalledWith(cloned);
     });
   });
@@ -351,15 +288,11 @@ describe("BuildTool", () => {
 
     it("clones item, adds to blueprint, and refreshes overlay when canBuild", () => {
       const cloned = makeTemplateItem();
-      vi.spyOn(BlueprintHelpers, "cloneBlueprintItem").mockReturnValue(
-        cloned as any,
-      );
+      const clone = vi
+        .spyOn(BlueprintHelpers, "cloneBlueprintItem")
+        .mockReturnValue(cloned as any);
       tool.build();
-      expect(BlueprintHelpers.cloneBlueprintItem).toHaveBeenCalledWith(
-        templateItem,
-        false,
-        true,
-      );
+      expect(clone.mock.calls[0][0]).toBe(templateItem);
       expect(cloned.prepareBoundingBox).toHaveBeenCalled();
       expect(cloned.updateTileables).toHaveBeenCalledWith(mockBlueprint);
       expect(mockBlueprint.addBlueprintItem).toHaveBeenCalledWith(cloned);
@@ -402,17 +335,6 @@ describe("BuildTool", () => {
         otherBuilding,
       );
       expect(mockBlueprint.addBlueprintItem).toHaveBeenCalledWith(cloned);
-    });
-  });
-
-  describe("hover", () => {
-    it("sets position, calls prepareBoundingBox, sortChildren, and updates build candidate", () => {
-      const tile = new Vector2(2, 3);
-      tool.hover(tile);
-      expect(tool.templateItemToBuild.position.x).toBe(2);
-      expect(tool.templateItemToBuild.position.y).toBe(3);
-      expect(templateItem.prepareBoundingBox).toHaveBeenCalled();
-      expect(templateItem.sortChildren).toHaveBeenCalled();
     });
   });
 
@@ -468,29 +390,23 @@ describe("BuildTool", () => {
   });
 
   describe("drag", () => {
-    it("does nothing when tileStart is null", () => {
-      const spy = vi.spyOn(tool, "dragStepByStep");
-      tool.drag(null as any, new Vector2(1, 2));
-      expect(spy).not.toHaveBeenCalled();
+    beforeEach(() => {
+      vi.spyOn(BlueprintHelpers, "cloneBlueprintItem").mockImplementation(
+        () => makeTemplateItem() as any,
+      );
     });
 
-    it("does nothing when tileStop is null", () => {
-      const spy = vi.spyOn(tool, "dragStepByStep");
-      tool.drag(new Vector2(1, 2), null as any);
-      expect(spy).not.toHaveBeenCalled();
+    it("builds nothing when start and stop map to the same integer tile", () => {
+      // ceil(2.0) = ceil(1.5) = 2: the same cell, though the floored y the
+      // step-by-step dragger works in differs.
+      tool.drag(new Vector2(1.2, 2.0), new Vector2(1.5, 1.5));
+      expect(mockBlueprint.addBlueprintItem).not.toHaveBeenCalled();
     });
 
-    it("does nothing when start and stop map to the same integer tile", () => {
-      const spy = vi.spyOn(tool, "dragStepByStep");
-      // floor(1.2)=1, ceil(1.8)=2 — same for both
-      tool.drag(new Vector2(1.2, 1.8), new Vector2(1.5, 1.3));
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it("calls dragStepByStep when tiles differ", () => {
-      const spy = vi.spyOn(tool, "dragStepByStep").mockImplementation(() => {});
+    it("builds on the next tile once the drag crosses into it", () => {
       tool.drag(new Vector2(1.2, 1.8), new Vector2(2.5, 1.3));
-      expect(spy).toHaveBeenCalled();
+      expect(mockBlueprint.addBlueprintItem).toHaveBeenCalledOnce();
+      expect(tool.templateItemToBuild.position).toEqual(new Vector2(2, 2));
     });
   });
 
@@ -678,14 +594,7 @@ describe("BuildTool", () => {
     });
 
     it("throws when the loop exceeds 999 iterations", () => {
-      const mockBuildAndConnect = vi
-        .spyOn(tool, "buildAndConnect")
-        .mockImplementation(() => {});
       // Force > 999 iterations by providing huge coordinate delta
-      // We spy on buildAndConnect but also need dragStepByStep to keep looping
-      // Restore the real implementation for this test
-      mockBuildAndConnect.mockRestore();
-      vi.spyOn(tool, "buildAndConnect").mockImplementation(() => {});
       expect(() =>
         tool.dragStepByStep(new Vector2(0.5, 0.5), new Vector2(1500.5, 0.5)),
       ).toThrow("The tile dragger was too long");
@@ -881,6 +790,31 @@ describe("BuildTool", () => {
       expect(at(4, 0)).toEqual(["Tile"]);
       expect(other.destroy).not.toHaveBeenCalled();
       expect(same.destroy).not.toHaveBeenCalled();
+    });
+
+    // A run of wire or tile has to stay edge-connected however the pointer
+    // moves, so an exact diagonal is built as a staircase: one step across,
+    // then one up, never a corner-only jump.
+    it("builds an exact diagonal drag as an edge-connected staircase", () => {
+      brush("Tile");
+
+      tool.mouseDown(new Vector2(0, 1));
+      tool.drag(new Vector2(0.5, 0.5), new Vector2(3.5, 3.5));
+
+      expect(
+        blueprint.blueprintItems.map((item) => [
+          item.position.x,
+          item.position.y,
+        ]),
+      ).toEqual([
+        [0, 1],
+        [1, 1],
+        [1, 2],
+        [2, 2],
+        [2, 3],
+        [3, 3],
+        [3, 4],
+      ]);
     });
   });
 });

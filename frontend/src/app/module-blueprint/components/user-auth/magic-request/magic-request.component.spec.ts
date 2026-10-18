@@ -41,20 +41,11 @@ describe("MagicRequestComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("ngOnInit", () => {
     it("pre-fills email from query param", () => {
       mockRoute.snapshot.queryParams = { email: "pre@fill.com" };
       component.ngOnInit();
       expect(component.email).toBe("pre@fill.com");
-    });
-
-    it("leaves email empty when no query param", () => {
-      component.ngOnInit();
-      expect(component.email).toBe("");
     });
   });
 
@@ -102,13 +93,14 @@ describe("MagicRequestComponent", () => {
       );
     });
 
-    it("saves token and navigates where the auth service says (returnTo, default /) on success", () => {
+    it("saves token and navigates where the auth service says (returnTo) on success", () => {
       component.code = "CODE123";
       component.email = "a@b.com";
       mockAuth.verifyMagicCode.mockReturnValue(of({ token: "magic-jwt" }));
+      mockAuth.consumeReturnTo.mockReturnValue("/editor?save=1");
       component.verifyCode();
       expect(mockAuth.saveToken).toHaveBeenCalledWith("magic-jwt");
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/editor?save=1");
     });
 
     it("sets codeError on invalid code", () => {

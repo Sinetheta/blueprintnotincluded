@@ -44,10 +44,6 @@ describe("RegisterPageComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("submit", () => {
     it("does nothing when email is empty", () => {
       component.username = "alice";
@@ -119,9 +115,10 @@ describe("RegisterPageComponent", () => {
       mockAuth.registerWithPassword.mockReturnValue(
         of({ message: "Account created.", token: "jwt" }),
       );
+      mockAuth.consumeReturnTo.mockReturnValue("/editor?save=1");
       component.submit();
       expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/editor?save=1");
       expect(component.loading).toBe(false);
     });
   });
@@ -133,7 +130,10 @@ describe("RegisterPageComponent", () => {
       expect(component.authMode).toBe("local");
     });
 
-    it("stays in workos mode by default", () => {
+    it("stays in workos mode when the auth-mode request fails", () => {
+      mockAuth.getAuthMode.mockReturnValue(
+        throwError(() => new Error("network")),
+      );
       component.ngOnInit();
       expect(component.authMode).toBe("workos");
     });

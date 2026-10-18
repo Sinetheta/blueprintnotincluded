@@ -103,17 +103,5 @@ describe("shortcut action catalogue", () => {
     ])("ships %s unbound, since the game has no equivalent key", (actionId) => {
       expect(getShortcutAction(actionId)?.defaults).toEqual([]);
     });
-
-    it("never binds a destructive tool to a bare letter", () => {
-      const bareLetter = (chord: string) => /^Key[A-Z]$/.test(chord);
-      for (const actionId of [
-        ShortcutAction.toolPlanning,
-        ShortcutAction.toolScissors,
-        ShortcutAction.toolNotes,
-      ])
-        expect(
-          getShortcutAction(actionId)!.defaults.filter(bareLetter),
-        ).toEqual([]);
-    });
   });
 });

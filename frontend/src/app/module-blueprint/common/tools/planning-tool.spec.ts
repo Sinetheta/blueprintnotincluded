@@ -1,5 +1,4 @@
 import { PlanningTool } from "./planning-tool";
-import { ToolType } from "./tool";
 import { BniPlanShape, Vector2 } from "../../../../../../lib/index";
 import { BlueprintService } from "../../services/blueprint-service";
 
@@ -16,12 +15,6 @@ describe("PlanningTool", () => {
     blueprint = { planningToolShapes: [], emitBlueprintChanged: vi.fn() };
     const blueprintService = { blueprint } as unknown as BlueprintService;
     tool = new PlanningTool(blueprintService);
-  });
-
-  it("is an exclusive input tool", () => {
-    expect(tool.toolType).toBe(ToolType.planning);
-    expect(tool.toolGroup).toBe(1);
-    expect(tool.captureInput).toBe(true);
   });
 
   it("adds a shape using the selected shape and color", () => {
@@ -51,5 +44,21 @@ describe("PlanningTool", () => {
     tool.mouseDown(new Vector2(9, 9));
     expect(blueprint.planningToolShapes).to.deep.equal([]);
     expect(blueprint.emitBlueprintChanged).toHaveBeenCalledOnce();
+  });
+
+  // A drag reports every pointer move; only a cell that actually changes may
+  // announce a blueprint change, or a stroke would emit one per move.
+  it("paints the cells a drag crosses, announcing only real changes", () => {
+    tool.shape = 1;
+    tool.color = 3;
+    tool.mouseDown(new Vector2(4, 5));
+    tool.drag(new Vector2(4, 5), new Vector2(4.3, 4.2)); // still cell (4, 5)
+    tool.drag(new Vector2(4.3, 4.2), new Vector2(5.5, 4.5));
+
+    expect(blueprint.planningToolShapes).to.deep.equal([
+      { x: 4, y: 5, shape: 1, color: 3 },
+      { x: 5, y: 5, shape: 1, color: 3 },
+    ]);
+    expect(blueprint.emitBlueprintChanged).toHaveBeenCalledTimes(2);
   });
 });

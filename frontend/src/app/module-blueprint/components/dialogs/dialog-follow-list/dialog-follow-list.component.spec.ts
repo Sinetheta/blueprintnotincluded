@@ -43,10 +43,6 @@ describe("DialogFollowListComponent", () => {
     fixture.detectChanges();
   });
 
-  it("creates", () => {
-    expect(component).toBeTruthy();
-  });
-
   it("loads followers and shows the dialog", () => {
     userService.getFollowers.mockReturnValue(
       of(
@@ -95,7 +91,7 @@ describe("DialogFollowListComponent", () => {
     expect(rows[1].query(By.css(".follow-list-mutual"))).toBeNull();
   });
 
-  it("paginates on scroll and stops once remaining is 0", () => {
+  it("loads the next page from where the last one ended, and stops once remaining is 0", () => {
     userService.getFollowers
       .mockReturnValueOnce(
         of(
@@ -116,6 +112,10 @@ describe("DialogFollowListComponent", () => {
     expect(component.noMore).toBe(false);
 
     component.loadMore();
+    expect(userService.getFollowers).toHaveBeenLastCalledWith(
+      "carol",
+      new Date("2026-01-01"),
+    );
     expect(component.entries).toHaveLength(2);
     expect(component.noMore).toBe(true);
   });

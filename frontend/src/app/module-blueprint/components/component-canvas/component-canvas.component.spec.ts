@@ -73,10 +73,6 @@ describe("ComponentCanvasComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("hover card", () => {
     const pointer = (x: number, y: number, pointerType = "mouse") => ({
       clientX: x,

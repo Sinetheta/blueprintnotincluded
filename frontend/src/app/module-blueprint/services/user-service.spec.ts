@@ -1,5 +1,4 @@
 import { UserService } from "./user-service";
-import { HttpParams } from "@angular/common/http";
 import { of } from "rxjs";
 
 describe("UserService", () => {
@@ -112,13 +111,10 @@ describe("UserService", () => {
     it("requests the feed with an olderthan cursor", () => {
       const date = new Date("2024-01-01");
       service.getFeed(date).subscribe();
-      expect(mockHttp.get).toHaveBeenCalledWith(
-        "/api/feed",
-        expect.objectContaining({
-          params: new HttpParams().set("olderthan", date.getTime().toString()),
-          headers: { Authorization: "Bearer token123" },
-        }),
-      );
+      const [url, options] = mockHttp.get.mock.calls[0];
+      expect(url).toBe("/api/feed");
+      expect(options.params.get("olderthan")).toBe(date.getTime().toString());
+      expect(options.headers).toEqual({ Authorization: "Bearer token123" });
     });
   });
 });

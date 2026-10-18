@@ -36,10 +36,6 @@ describe("ForkButtonComponent", () => {
     component.blueprintId = "source-id";
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   it("calls the fork endpoint and navigates to the new blueprint on success", () => {
     component.fork();
 

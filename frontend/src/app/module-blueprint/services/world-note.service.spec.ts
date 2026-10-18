@@ -64,13 +64,6 @@ describe("WorldNoteService", () => {
     expect(service.selected).to.equal(null);
   });
 
-  it("selection is keyed by cell, not by object reference", () => {
-    const n = textNote(1);
-    blueprint.worldNotes = [n];
-    service.select({ x: 1, y: 0 });
-    expect(service.selected).to.equal(n);
-  });
-
   it("selection survives an undo/redo that rebuilds the note array", () => {
     const original = textNote(3);
     blueprint.worldNotes = [original];

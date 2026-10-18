@@ -59,10 +59,6 @@ describe("UserMenuComponent", () => {
     fixture.detectChanges();
   });
 
-  it("creates", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("Content language", () => {
     function itemLabelled(label: string) {
       return component.userMenuItems.find((item) => item.label === label);

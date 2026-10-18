@@ -47,58 +47,36 @@ describe("AppComponent", () => {
     }).compileComponents();
   });
 
-  it("should create the app", () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it(`should have as title 'blueprintnotincluded'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual("blueprintnotincluded");
-  });
-
-  // The local theme must be applied before any network call, so the first
-  // paint is never the wrong palette.
-  it("applies the locally stored theme on init", () => {
+  it("applies the locally stored theme and content locale on init, fetching nothing for a logged-out visitor", () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     expect(themeService.initFromLocal).toHaveBeenCalled();
-  });
-
-  it("does not fetch the account theme for a logged-out visitor", () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
+    expect(contentLocaleService.initFromLocal).toHaveBeenCalled();
     expect(themeService.loadForUser).not.toHaveBeenCalled();
+    expect(contentLocaleService.loadForUser).not.toHaveBeenCalled();
   });
 
-  it("fetches the account theme once a session exists", () => {
+  // The local theme must be applied before any network call, so the first
+  // paint is never the wrong palette. The content locale decides which title
+  // every read request asks for, so it has to be settled before the first list
+  // request, not after.
+  it("fetches the account theme and content locale once a session exists, after the local copies", () => {
     loggedIn = true;
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     expect(themeService.loadForUser).toHaveBeenCalled();
-  });
-
-  // The content locale decides which title every read request asks for, so it
-  // has to be settled before the first list request, not after.
-  it("applies the locally stored content locale on init", () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    expect(contentLocaleService.initFromLocal).toHaveBeenCalled();
-  });
-
-  it("does not fetch the account content locale for a logged-out visitor", () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    expect(contentLocaleService.loadForUser).not.toHaveBeenCalled();
-  });
-
-  it("fetches the account content locale once a session exists", () => {
-    loggedIn = true;
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
     expect(contentLocaleService.loadForUser).toHaveBeenCalled();
+
+    const firstFetch = Math.min(
+      themeService.loadForUser.mock.invocationCallOrder[0],
+      contentLocaleService.loadForUser.mock.invocationCallOrder[0],
+    );
+    expect(themeService.initFromLocal.mock.invocationCallOrder[0]).toBeLessThan(
+      firstFetch,
+    );
+    expect(
+      contentLocaleService.initFromLocal.mock.invocationCallOrder[0],
+    ).toBeLessThan(firstFetch);
   });
 
   // Login completes via an in-SPA route navigation, not a page reload, so

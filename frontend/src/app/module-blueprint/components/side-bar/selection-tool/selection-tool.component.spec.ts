@@ -1,45 +1,31 @@
-import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { NO_ERRORS_SCHEMA } from "@angular/core";
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
-} from "@angular/common/http";
-import { RouterTestingModule } from "@angular/router/testing";
-
-import { AuthenticationService } from "src/app/module-blueprint/services/authentification-service";
-import { BuildTool } from "src/app/module-blueprint/common/tools/build-tool";
-import { ElementReport } from "src/app/module-blueprint/common/tools/element-report";
 import { ComponentSideSelectionToolComponent } from "./selection-tool.component";
-import { SelectTool } from "src/app/module-blueprint/common/tools/select-tool";
-import { ScissorsTool } from "src/app/module-blueprint/common/tools/scissors-tool";
 
+// The accordion is the only view of which same-item groups are selected, so
+// its open panels and the select tool's `selected` flags must stay in step in
+// both directions.
 describe("ComponentSideSelectionToolComponent", () => {
+  let collections: { selected: boolean }[];
   let component: ComponentSideSelectionToolComponent;
-  let fixture: ComponentFixture<ComponentSideSelectionToolComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ComponentSideSelectionToolComponent],
-      schemas: [NO_ERRORS_SCHEMA],
-      imports: [RouterTestingModule.withRoutes([])],
-      providers: [
-        AuthenticationService,
-        BuildTool,
-        ElementReport,
-        SelectTool,
-        ScissorsTool,
-        provideHttpClient(withInterceptorsFromDi()),
-      ],
-    }).compileComponents();
-  });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ComponentSideSelectionToolComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    collections = [{ selected: false }, { selected: true }, { selected: true }];
+    component = new ComponentSideSelectionToolComponent(
+      { selectTool: { sameItemCollections: collections } } as any,
+      {} as any,
+    );
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
+  it("opens the panels of the selected groups", () => {
+    expect(component.activePanels).toEqual([1, 2]);
+  });
+
+  it("selects exactly the group a single-panel change opens", () => {
+    component.onPanelChange(0);
+    expect(collections.map((c) => c.selected)).toEqual([true, false, false]);
+  });
+
+  it("selects every group a multi-panel change opens", () => {
+    component.onPanelChange([0, 2]);
+    expect(collections.map((c) => c.selected)).toEqual([true, false, true]);
   });
 });

@@ -190,10 +190,6 @@ export class ComponentSideBuildToolComponent
     this.uiItemChanged();
   }
 
-  onFocus() {
-    //this.focusTarget.nativeElement.focus();
-  }
-
   // IObsBuildItemChanged
   itemChanged(templateItem: BlueprintItem) {
     this.currentItem = templateItem.oniItem;

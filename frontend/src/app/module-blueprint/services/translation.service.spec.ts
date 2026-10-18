@@ -43,12 +43,13 @@ describe("TranslationService", () => {
   });
 
   describe("viewerLang", () => {
-    it("maps en-US to en", () => {
-      expect(makeService("en-US").viewerLang).toBe("en");
-    });
-
-    it("passes zh-Hans, ru, ko through unchanged", () => {
-      expect(makeService("zh-Hans").viewerLang).toBe("zh-Hans");
+    it.each([
+      ["en-US", "en"],
+      ["zh-Hans", "zh-Hans"],
+      ["ru", "ru"],
+      ["ko", "ko"],
+    ])("maps the %s build to %s", (locale, lang) => {
+      expect(makeService(locale).viewerLang).toBe(lang);
     });
 
     it("falls back to en for an unrecognized locale", () => {
@@ -156,8 +157,15 @@ describe("TranslationService", () => {
         ],
       });
 
-      service.translateComments("bp1", ["c1"]).subscribe();
+      let second: any;
+      service.translateComments("bp1", ["c1"]).subscribe((r) => (second = r));
       httpMock.expectNone("/api/blueprints/bp1/comments/translate");
+      expect(second.translations).toEqual([
+        expect.objectContaining({
+          id: "c1",
+          segments: [{ type: "text", text: "one" }],
+        }),
+      ]);
     });
   });
 });
