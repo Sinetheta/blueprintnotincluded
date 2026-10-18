@@ -149,7 +149,8 @@ export class ComponentBlueprintParentComponent
     private router: Router,
   ) {}
 
-  private shortcutSubscriptions: (() => void)[] = [];
+  // Undone on destroy: shortcut registrations and window listeners
+  private teardowns: (() => void)[] = [];
 
   get showElementReport() {
     if (CameraService.cameraService == null) return false;
@@ -232,12 +233,14 @@ export class ComponentBlueprintParentComponent
         });
       });
     */
-    this.renderer.listen("window", "load", () => {
-      this.resizeTools();
-    });
-    this.renderer.listen("window", "resize", () => {
-      this.resizeTools();
-    });
+    this.teardowns.push(
+      this.renderer.listen("window", "load", () => {
+        this.resizeTools();
+      }),
+      this.renderer.listen("window", "resize", () => {
+        this.resizeTools();
+      }),
+    );
 
     this.registerShortcuts();
   }
@@ -253,8 +256,8 @@ export class ComponentBlueprintParentComponent
   ngOnDestroy() {
     this.blueprintService.unsubscribeBlueprintChanged(this);
     this.blueprintService.unsubscribeImportError(this.onImportError);
-    for (const unregister of this.shortcutSubscriptions) unregister();
-    this.shortcutSubscriptions = [];
+    for (const teardown of this.teardowns) teardown();
+    this.teardowns = [];
   }
 
   // File-upload imports fail inside a FileReader callback — the service
@@ -494,7 +497,7 @@ export class ComponentBlueprintParentComponent
       // Dead code: direct JSON fetch, replaced by the zip approach above.
       // The loose database.json in frontend/src/assets/database/ is a legacy copy
       // of database-repack.json and is NOT the same file that lives inside the zip.
-      // To patch sceneLayer / z-index values, edit inside database.zip (see AssetPaths comments).
+      // The zip is now generated from database-2024.json (frontend/scripts/build-database-zip.js).
       fetch("/assets/database/database.json")
         .then(response => { return response.json(); })
         .then(json => {
@@ -580,9 +583,7 @@ export class ComponentBlueprintParentComponent
       action: ShortcutActionId,
       handler: () => boolean | void,
     ) => {
-      this.shortcutSubscriptions.push(
-        this.shortcutService.register(action, handler),
-      );
+      this.teardowns.push(this.shortcutService.register(action, handler));
     };
 
     register(ShortcutAction.blueprintNew, () => {
