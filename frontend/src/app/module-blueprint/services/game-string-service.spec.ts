@@ -107,6 +107,14 @@ describe("GameStringService", () => {
       ["<alpha=#80>Faint</color>", "Faint"],
       ["<indent=#5>Indented</indent>", "Indented"],
       ["Has <b>bold</b> and <i>italic</i> words", "Has bold and italic words"],
+      ["<b>Bold across\na line</b>", "Bold across\na line"],
+      ["<alpha=#AA><size=12>nested</size></color>", "nested"],
+      ["<uppercase>{0}</uppercase>", "{0}"],
+      ["<u>under</u> <sub>sub</sub> <sup>sup</sup>", "under sub sup"],
+      // Not markup: the codex's addresses and placeholders are text.
+      ["<jstern@gravitas.nova>", "<jstern@gravitas.nova>"],
+      ["<DESC>", "<DESC>"],
+      ["<missing traits>", "<missing traits>"],
       ["Plain text", "Plain text"],
     ])("strips %s to %s", async (raw, expected) => {
       expect(await strip(raw)).toBe(expected);

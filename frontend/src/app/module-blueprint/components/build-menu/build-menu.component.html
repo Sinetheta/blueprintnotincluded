@@ -111,7 +111,7 @@
   <span class="build-menu-entry-icon">
     <img [src]="entry.item.iconUrl" alt="" />
     <span
-      *ngIf="dlcLabels(entry).length"
+      *ngIf="entry.dlcLabels.length"
       class="build-dlc-badge"
       i18n="DLC badge on a build-menu icon|buildTool.dlcBadge"
       >DLC</span
@@ -125,6 +125,7 @@
       <ol
         *ngIf="menu.results.length; else noResults"
         class="build-menu-results"
+        (mousemove)="trackPointer($event)"
       >
         <li
           *ngFor="
@@ -139,12 +140,9 @@
             [class.build-menu-entry--highlight]="index === highlight"
             [class.build-menu-entry--current]="isCurrent(result.entry)"
             [attr.data-result-index]="index"
-            [attr.aria-label]="label(result.entry)"
+            [attr.aria-label]="result.entry.tooltip"
             (click)="choose(result.entry)"
-            (mouseenter)="
-              highlight = index;
-              showEntryTip(result.entry, $event.currentTarget)
-            "
+            (mouseenter)="onResultEnter(index, result.entry, $event)"
             (mouseleave)="hideTip()"
           >
             <ng-container
@@ -183,7 +181,7 @@
               [class.build-menu-entry--row]="viewMode === 'list'"
               [class.build-menu-entry--current]="isCurrent(entry)"
               [attr.aria-pressed]="isCurrent(entry)"
-              [attr.aria-label]="label(entry)"
+              [attr.aria-label]="entry.tooltip"
               (click)="choose(entry)"
               (mouseenter)="showEntryTip(entry, $event.currentTarget)"
               (mouseleave)="hideTip()"
@@ -227,9 +225,10 @@
 <!-- Small screens: one button bottom-left, and a sheet with the search on
      top and the categories as a row. -->
 <ng-template #compactLayout>
-  <div class="build-menu-launcher">
+  <!-- Nothing to open until the database has loaded the categories. -->
+  <div *ngIf="menu.loaded" class="build-menu-launcher">
     <app-toolbar-button
-      [iconUrl]="categories[0]?.iconUrl ?? ''"
+      [iconUrl]="categories[0].iconUrl"
       label="Build menu"
       i18n-label="build menu"
       [active]="isOpen"

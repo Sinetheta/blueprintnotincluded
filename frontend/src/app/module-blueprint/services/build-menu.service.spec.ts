@@ -7,6 +7,7 @@ import {
   OniItem,
 } from "../../../../../lib/index";
 import { ToolType } from "../common/tools/tool";
+import { CanvasRightClick } from "./tool-service";
 import { ShortcutAction } from "../keybindings/shortcut-actions";
 import { BuildMenuService } from "./build-menu.service";
 import { KeybindingService } from "./keybinding.service";
@@ -52,11 +53,11 @@ describe("BuildMenuService", () => {
   let service: BuildMenuService;
   let shortcuts: KeyboardShortcutService;
   let toolService: any;
-  let rightClicked: Subject<ToolType>;
+  let rightClicked: Subject<CanvasRightClick>;
 
   beforeEach(() => {
     localStorage.clear();
-    rightClicked = new Subject<ToolType>();
+    rightClicked = new Subject<CanvasRightClick>();
     toolService = {
       currentToolType: ToolType.select,
       changeTool: vi.fn((toolType: ToolType) => {
@@ -264,9 +265,9 @@ describe("BuildMenuService", () => {
   });
 
   describe("right-click", () => {
-    it("closes the menu when there was no building in hand", () => {
+    it("closes the menu when there was nothing in hand", () => {
       service.toggleCategory(BASE);
-      rightClicked.next(ToolType.select);
+      rightClicked.next({ toolType: ToolType.select, dropped: false });
       expect(service.isOpen).toBe(false);
     });
 
@@ -274,14 +275,36 @@ describe("BuildMenuService", () => {
     // the menu stays for the next pick, as the game's does.
     it("keeps the menu open on the right-click that drops the building", () => {
       service.toggleCategory(BASE);
-      rightClicked.next(ToolType.build);
+      rightClicked.next({ toolType: ToolType.build, dropped: true });
       expect(service.isOpen).toBe(true);
+    });
+
+    it("keeps the menu open on the right-click that drops a selection", () => {
+      service.toggleCategory(BASE);
+      rightClicked.next({ toolType: ToolType.select, dropped: true });
+      expect(service.isOpen).toBe(true);
+      rightClicked.next({ toolType: ToolType.select, dropped: false });
+      expect(service.isOpen).toBe(false);
     });
 
     it("leaves other tools' right-click alone", () => {
       service.toggleCategory(BASE);
-      rightClicked.next(ToolType.dig);
+      rightClicked.next({ toolType: ToolType.dig, dropped: false });
       expect(service.isOpen).toBe(true);
+    });
+
+    it("tells the component when it was dismissed from outside", () => {
+      const dismissed = vi.fn();
+      service.dismissed.subscribe(dismissed);
+      service.toggleCategory(BASE);
+      service.query = "pump";
+      shortcuts.handleKeyEvent(
+        new KeyboardEvent("keydown", { code: "Escape", cancelable: true }),
+      );
+      expect(service.query).toBe("");
+      expect(dismissed).toHaveBeenCalledTimes(1);
+      rightClicked.next({ toolType: ToolType.select, dropped: false });
+      expect(dismissed).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -295,6 +318,10 @@ describe("BuildMenuService", () => {
 
       expect(toolService.changeTool).toHaveBeenCalledWith(ToolType.build);
       expect(toolService.buildTool.changeItem).toHaveBeenCalledWith(instance);
+      // Brush before tool, so entering the tool finds nothing to rebuild.
+      expect(
+        toolService.buildTool.changeItem.mock.invocationCallOrder[0],
+      ).toBeLessThan(toolService.changeTool.mock.invocationCallOrder[0]);
       expect(service.isOpen).toBe(true);
     });
 

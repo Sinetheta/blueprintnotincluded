@@ -22,7 +22,6 @@ import {
 } from "../../services/build-menu.service";
 import { KeybindingService } from "../../services/keybinding.service";
 import { KeyboardShortcutService } from "../../services/keyboard-shortcut.service";
-import { buildingDlcLabels, buildingTooltip } from "./building-labels";
 import { BuildMenuLayout, EDGE_GAP, NAV_GAP } from "./build-menu-layout";
 
 const PANEL_WIDTH = 344;
@@ -56,6 +55,12 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
   // Search results the arrow keys have moved to; Enter picks it.
   highlight = 0;
   tip: BuildMenuTip | null = null;
+  // Where the pointer was when the keyboard last moved the highlight. The
+  // scroll that follows slides rows under a resting pointer, and the browser
+  // then fires mouseenter on the row that lands there — from the same spot,
+  // which is how such an event is told apart from the pointer moving.
+  private pointerAtKeyMove: { x: number; y: number } | null = null;
+  private lastPointer: { x: number; y: number } | null = null;
 
   readonly isApple =
     typeof navigator != "undefined" &&
@@ -77,6 +82,10 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     this.registerShortcuts();
     this.subscriptions.push(
       this.menu.focusSearchRequests.subscribe(() => this.focusSearchBox()),
+      this.menu.dismissed.subscribe(() => {
+        this.tip = null;
+        this.highlight = 0;
+      }),
     );
   }
 
@@ -183,14 +192,6 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     if (this.layout.compact) this.menu.close();
   }
 
-  dlcLabels(entry: BuildMenuItemEntry): string[] {
-    return buildingDlcLabels(entry.item);
-  }
-
-  label(entry: BuildMenuItemEntry): string {
-    return buildingTooltip(entry.item);
-  }
-
   trackGroup(_index: number, group: { key: string }) {
     return group.key;
   }
@@ -212,6 +213,22 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     this.menu.query = query;
     this.highlight = 0;
     this.tip = null;
+    this.pointerAtKeyMove = null;
+  }
+
+  // A result the pointer came to rest on, unless it was the list that moved.
+  onResultEnter(index: number, entry: BuildMenuItemEntry, event: MouseEvent) {
+    const at = this.pointerAtKeyMove;
+    if (at != null && event.clientX == at.x && event.clientY == at.y) return;
+    this.pointerAtKeyMove = null;
+    this.highlight = index;
+    this.showEntryTip(entry, event.currentTarget);
+  }
+
+  // Over the results list only: the whole window would run change detection
+  // on every pointer move.
+  trackPointer(event: MouseEvent) {
+    this.lastPointer = { x: event.clientX, y: event.clientY };
   }
 
   clearQuery() {
@@ -254,6 +271,7 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
 
   private moveHighlight(index: number) {
     this.highlight = index;
+    this.pointerAtKeyMove = this.lastPointer;
     // Rendered on the next check; then bring the row into view and say what
     // it is, as hovering it would.
     setTimeout(() => {
@@ -305,7 +323,7 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     this.showTip(
       target,
       {
-        title: buildingTooltip(item),
+        title: entry.tooltip,
         lines: entry.effect ? [entry.effect] : [],
         meta,
       },
