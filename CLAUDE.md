@@ -110,7 +110,8 @@ run the single repeatable step:
   site's own PNG (`assets/manual/ui_image/<prefabId>.png`) and `uiImageRect` for a prefab whose
   export art is wrong (none today); the import fails when the export's art for a pinned prefab
   changes, so the pin is re-judged. Connection-sprite scale is read from the export's
-  `connection_sprite_cells.json`, not measured. Rocket modules get `permittedRotations`
+  `connection_sprite_cells.json`; only an export without it, or a connectable it has no entry
+  for, falls back to measuring `15.png` (the import log names each one). Rocket modules get `permittedRotations`
   overridden to `FlipH` and are appended to the rocketry build-menu tab from the export's
   `rocketModuleMenu`, under the site's own `rocketmodules` subcategory; every other entry keeps
   the game's subcategory from `buildingAndSubcategoryDataPairs`. Details:

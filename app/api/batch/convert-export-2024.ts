@@ -479,11 +479,12 @@ const CONNECTION_CELL_CENTRE_TOLERANCE = 0.005;
 // renderer must apply (with a centre anchor) so the cell maps to one tile and neighbours join
 // flush. Tiles are 1.5, wires ~1.06, pipes 1.08, the transit tube 2.4 (its all-connected
 // state's corner fillets overhang, which is why measuring 15.png read it as ~1.0). Returns
-// a problem instead when the entry cannot be drawn from as-is: malformed, not the size of
-// the PNGs it describes, or off-centre.
+// a problem instead when the entry cannot be drawn from as-is: malformed, a cell reaching
+// past its canvas, off-centre, or a canvas that is not the size of every one of the PNGs it
+// describes. `pngSizes` holds those PNGs' sizes, state by state (null when unreadable).
 export function connectionScaleFromCells(
   entry: ConnectionSpriteCells,
-  pngSize: { x: number; y: number } | null
+  pngSizes: ({ x: number; y: number } | null)[]
 ): { scale: { x: number; y: number } } | { problem: string } {
   const { canvas, cell } = entry ?? ({} as ConnectionSpriteCells);
   const finite = (...v: unknown[]) => v.every((n) => typeof n === 'number' && Number.isFinite(n));
@@ -497,10 +498,25 @@ export function connectionScaleFromCells(
     cell.h <= 0
   )
     return { problem: `malformed ${JSON.stringify(entry)}` };
-  if (pngSize != null && (pngSize.x !== canvas.w || pngSize.y !== canvas.h))
+  // A cell larger than its canvas could still be centred, and would draw the sprite smaller
+  // than one tile. The epsilon only absorbs float rounding in the declared real numbers.
+  const EPS = 1e-6;
+  if (
+    cell.x < -EPS ||
+    cell.y < -EPS ||
+    cell.x + cell.w > canvas.w + EPS ||
+    cell.y + cell.h > canvas.h + EPS
+  )
     return {
-      problem: `canvas ${canvas.w}x${canvas.h} but 15.png is ${pngSize.x}x${pngSize.y}`,
+      problem: `cell ${JSON.stringify(cell)} reaches past its ${canvas.w}x${canvas.h} canvas`,
     };
+  const unreadable = pngSizes.flatMap((size, state) => (size == null ? [`${state}.png`] : []));
+  if (unreadable.length) return { problem: `unreadable PNG size: ${unreadable.join(', ')}` };
+  const mismatched = pngSizes.flatMap((size, state) =>
+    size!.x !== canvas.w || size!.y !== canvas.h ? [`${state}.png is ${size!.x}x${size!.y}`] : []
+  );
+  if (mismatched.length)
+    return { problem: `canvas ${canvas.w}x${canvas.h} but ${mismatched.join(', ')}` };
   const offX = (canvas.w / 2 - (cell.x + cell.w / 2)) / cell.w;
   const offY = (canvas.h / 2 - (cell.y + cell.h / 2)) / cell.h;
   if (
@@ -710,10 +726,11 @@ export function convertExport2024(opts: ConvertOptions): void {
       connectionScaleFallbacks.push(prefab);
       return measureConnectionScale(connectionDir, prefab);
     }
-    const result = connectionScaleFromCells(
-      entry,
-      readPngSize(path.join(connectionDir, prefab, '15.png'))
+    // All 16 states share the one declared canvas (contract clause 5), so each is checked.
+    const pngSizes = Array.from({ length: CONNECTION_SPRITE_COUNT }, (_, state) =>
+      readPngSize(path.join(connectionDir, prefab, state + '.png'))
     );
+    const result = connectionScaleFromCells(entry, pngSizes);
     if ('problem' in result) {
       connectionCellProblems.push(`${prefab}: ${result.problem}`);
       return { x: 1, y: 1 };
