@@ -153,8 +153,9 @@ export class BlueprintService implements IObsBlueprintChange {
         this.openJsonBlueprint(fileList[0]);
       else if (fileType == BlueprintFileType.BSON)
         this.openBsonBlueprint(fileList[0]);
-
-      this.resetUndoStates();
+      // Each reader resets the undo stack once its file has loaded, not
+      // here: the canvas taking the file in is itself a change, and a reset
+      // before it would let undo step back into the previous blueprint
     }
   }
 
@@ -162,6 +163,7 @@ export class BlueprintService implements IObsBlueprintChange {
     const reader = new FileReader();
     reader.onloadend = () => {
       this.loadYamlBlueprint(reader.result as string);
+      this.resetUndoStates();
     };
     reader.readAsText(file);
   }
@@ -181,10 +183,13 @@ export class BlueprintService implements IObsBlueprintChange {
   private openJsonBlueprint(file: File) {
     const reader = new FileReader();
     reader.onloadend = () => {
-      this.loadJsonBlueprint(reader.result as string).catch((error) => {
-        console.error("Blueprint import failed", error);
-        this.emitImportError(error);
-      });
+      this.loadJsonBlueprint(reader.result as string).then(
+        () => this.resetUndoStates(),
+        (error) => {
+          console.error("Blueprint import failed", error);
+          this.emitImportError(error);
+        },
+      );
     };
     reader.readAsText(file);
   }
@@ -248,6 +253,7 @@ export class BlueprintService implements IObsBlueprintChange {
     const reader = new FileReader();
     reader.onloadend = () => {
       this.loadBsonBlueprint(reader.result as ArrayBuffer);
+      this.resetUndoStates();
     };
     reader.readAsArrayBuffer(file);
   }
@@ -466,14 +472,7 @@ export class BlueprintService implements IObsBlueprintChange {
     if (this.undoIndex < this.undoStates.length - 1)
       this.undoStates.splice(this.undoIndex + 1);
 
-    const newState = this.blueprint.toMdbBlueprint();
-    /*if (this.undoStates.length > 0) {
-      let oldState = this.undoStates[this.undoStates.length - 1];
-      let oldHash = this.hashMdb(oldState);
-      let newHash = this.hashMdb(newState);
-      if (oldHash != newHash) this.undoStates.push(newState);
-    }
-    else */ this.undoStates.push(newState);
+    this.undoStates.push(this.blueprint.toMdbBlueprint());
 
     while (this.undoStates.length > 50) {
       this.undoStates.splice(0, 1);
@@ -484,20 +483,6 @@ export class BlueprintService implements IObsBlueprintChange {
 
     this.undoIndex = this.undoStates.length - 1;
     this.persistUnsavedWork();
-  }
-
-  hashMdb(mdb: MdbBlueprint) {
-    const s = JSON.stringify(mdb);
-    let hash = 0,
-      i,
-      chr;
-    if (s.length === 0) return hash;
-    for (i = 0; i < s.length; i++) {
-      chr = s.charCodeAt(i);
-      hash = (hash << 5) - hash + chr;
-      hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
   }
 
   // TODO return observable here so we can close the browse window on success?

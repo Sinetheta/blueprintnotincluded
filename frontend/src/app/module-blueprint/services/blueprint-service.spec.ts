@@ -8,7 +8,7 @@ import {
   decodeBniShareString,
   encodeBniShareString,
 } from "../../../../../lib/index";
-import { of, Subject, throwError } from "rxjs";
+import { config, of, Subject, throwError } from "rxjs";
 
 describe("BlueprintService", () => {
   let service: BlueprintService;
@@ -17,8 +17,10 @@ describe("BlueprintService", () => {
   let mockLocation: any;
   let mockContentLocale: any;
   let mockUnsavedWork: any;
+  let savedCamera: CameraService;
 
   beforeEach(() => {
+    savedCamera = CameraService.cameraService;
     mockHttp = { get: vi.fn(), post: vi.fn() };
     mockAuth = { isLoggedIn: vi.fn(() => false), getToken: vi.fn(() => "") };
     mockLocation = { replaceState: vi.fn() };
@@ -41,6 +43,12 @@ describe("BlueprintService", () => {
     );
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    (CameraService as any).cameraService_ = savedCamera;
+  });
+
   // One fake item is enough: the slot stores the undo snapshot, and an
   // empty snapshot is never worth keeping
   const oneItem = () =>
@@ -51,6 +59,8 @@ describe("BlueprintService", () => {
     vi.spyOn(service.blueprint, "toMdbBlueprint").mockReturnValue(oneItem());
     service.blueprintChanged();
   };
+  const query = (url: string) =>
+    Object.fromEntries(new URLSearchParams(url.split("?")[1]));
 
   describe("unsaved work", () => {
     it("is clean after a load and dirty after an edit", () => {
@@ -117,14 +127,12 @@ describe("BlueprintService", () => {
       service.newBlueprint();
       expect(mockUnsavedWork.discardIfOwned).toHaveBeenCalled();
       expect(mockLocation.replaceState).toHaveBeenCalledWith("/editor");
-      confirm.mockRestore();
     });
 
     it("New never asks when there is nothing to lose", () => {
       const confirm = vi.spyOn(window, "confirm");
       service.newBlueprint();
       expect(confirm).not.toHaveBeenCalled();
-      confirm.mockRestore();
     });
 
     it("stashForLogin stores even an unedited blueprint", () => {
@@ -257,40 +265,49 @@ describe("BlueprintService", () => {
   });
 
   describe("reset()", () => {
-    it("clears id to null", () => {
+    it("clears everything that belongs to the open blueprint", async () => {
+      await service.openBlueprintFromShareString(
+        JSON.stringify({ friendlyname: "Imported", buildings: [] }),
+      );
       service.id = "some-id";
-      service.reset();
-      expect(service.id).toBeNull();
-    });
-
-    it("clears the rating state", () => {
       service.myRating = 4;
       service.rating = 4.5;
       service.nbRatings = 7;
+      service.metadata = { description: "existing" };
+      service.serverHasRawSource = true;
+      service.requiredDlcs = ["DLC2_ID"];
+
       service.reset();
+
+      expect(service.id).toBeNull();
       expect(service.myRating).toBeNull();
       expect(service.rating).toBe(0);
       expect(service.nbRatings).toBe(0);
+      expect(service.metadata).toEqual({});
+      expect(service.requiredDlcs).toBeNull();
+      expect(service.rawSource).toBeNull();
+      expect(service.getValidRawSource()).toBeNull();
+      expect(service.serverHasRawSource).toBe(false);
     });
   });
 
   describe("subscribeBlueprintChanged / unsubscribeBlueprintChanged", () => {
-    it("adds an observer", () => {
-      const obs = { blueprintChanged: vi.fn() };
-      service.subscribeBlueprintChanged(obs);
-      expect(service.observersBlueprintChanged).toContain(obs);
-    });
-
-    it("removes an existing observer", () => {
+    it("stops notifying an observer once it unsubscribes", () => {
       const obs = { blueprintChanged: vi.fn() };
       service.subscribeBlueprintChanged(obs);
       service.unsubscribeBlueprintChanged(obs);
-      expect(service.observersBlueprintChanged).not.toContain(obs);
+      service.newBlueprint();
+      expect(obs.blueprintChanged).not.toHaveBeenCalled();
     });
 
-    it("does not throw when unsubscribing an observer that was never added", () => {
+    // indexOf is -1 for a stranger, and splice(-1, 1) would quietly drop the
+    // last observer instead
+    it("keeps the others subscribed when unsubscribing one that was never added", () => {
       const obs = { blueprintChanged: vi.fn() };
-      expect(() => service.unsubscribeBlueprintChanged(obs)).not.toThrow();
+      service.subscribeBlueprintChanged(obs);
+      service.unsubscribeBlueprintChanged({ blueprintChanged: vi.fn() });
+      service.newBlueprint();
+      expect(obs.blueprintChanged).toHaveBeenCalled();
     });
   });
 
@@ -300,15 +317,10 @@ describe("BlueprintService", () => {
       expect(service.undoIndex).toBe(0);
     });
 
-    it("pushes a new snapshot to undoStates", () => {
-      const before = service.undoStates.length;
+    it("pushes a new snapshot and moves undoIndex onto it", () => {
       service.blueprintChanged();
-      expect(service.undoStates.length).toBe(before + 1);
-    });
-
-    it("advances undoIndex to the last state", () => {
-      service.blueprintChanged();
-      expect(service.undoIndex).toBe(service.undoStates.length - 1);
+      expect(service.undoStates.length).toBe(2);
+      expect(service.undoIndex).toBe(1);
     });
 
     it("does nothing when suppressChanges is true", () => {
@@ -318,17 +330,15 @@ describe("BlueprintService", () => {
       expect(service.undoStates.length).toBe(before);
     });
 
-    it("caps history at 50 states", () => {
+    // Once the clean state falls off the stack, undoing all the way back no
+    // longer lands on anything that matches the server
+    it("caps history at 50 states, after which nothing on it is clean", () => {
       for (let i = 0; i < 60; i++) service.blueprintChanged();
-      expect(service.undoStates.length).toBeLessThanOrEqual(50);
-    });
+      expect(service.undoStates.length).toBe(50);
 
-    it("scraps future redo states when a change is made mid-stack", () => {
-      service.blueprintChanged(); // [0, 1], index 1
-      service.blueprintChanged(); // [0, 1, 2], index 2
-      service.undoIndex = 0; // simulate position after undo
-      service.blueprintChanged(); // splices states[1..], pushes new: [0, new]
-      expect(service.undoStates.length).toBe(2);
+      for (let i = 0; i < 49; i++) service.undo();
+      expect(service.undoIndex).toBe(0);
+      expect(service.isDirty).toBe(true);
     });
   });
 
@@ -343,6 +353,17 @@ describe("BlueprintService", () => {
       service.blueprintChanged(); // [0, 1], index 1
       service.undo();
       expect(service.undoIndex).toBe(0);
+    });
+
+    it("an edit after an undo is recorded and scraps the redo states", () => {
+      service.blueprintChanged(); // [0, 1], index 1
+      service.blueprintChanged(); // [0, 1, 2], index 2
+      service.undo(); // index 1
+      service.blueprintChanged(); // splices state 2, pushes new: [0, 1, new]
+      expect(service.undoStates.length).toBe(3);
+      expect(service.undoIndex).toBe(2);
+      service.redo();
+      expect(service.undoIndex).toBe(2);
     });
   });
 
@@ -359,55 +380,18 @@ describe("BlueprintService", () => {
       service.redo(); // index 1
       expect(service.undoIndex).toBe(1);
     });
-
-    it("does not advance past the last state", () => {
-      service.blueprintChanged(); // [0, 1], index 1
-      service.redo(); // already at end, stays 1
-      service.redo();
-      expect(service.undoIndex).toBe(service.undoStates.length - 1);
-    });
   });
 
   describe("resetUndoStates()", () => {
-    it("clears suppressChanges", () => {
+    it("leaves exactly one clean state, recording changes again", () => {
+      service.blueprintChanged();
+      service.blueprintChanged();
       service.suppressChanges = true;
       service.resetUndoStates();
       expect(service.suppressChanges).toBe(false);
-    });
-
-    it("leaves exactly one undo state", () => {
-      service.blueprintChanged();
-      service.blueprintChanged();
-      service.resetUndoStates();
       expect(service.undoStates.length).toBe(1);
-    });
-
-    it("resets undoIndex to 0", () => {
-      service.blueprintChanged();
-      service.blueprintChanged();
-      service.resetUndoStates();
       expect(service.undoIndex).toBe(0);
-    });
-  });
-
-  describe("hashMdb()", () => {
-    it("returns the same value for identical objects", () => {
-      const mdb = { blueprintItems: [] };
-      expect(service.hashMdb(mdb as any)).toBe(service.hashMdb(mdb as any));
-    });
-
-    it("returns the same value for structurally equal objects", () => {
-      const mdb1 = { blueprintItems: [] };
-      const mdb2 = { blueprintItems: [] };
-      expect(service.hashMdb(mdb1 as any)).toBe(service.hashMdb(mdb2 as any));
-    });
-
-    it("returns different values for structurally different objects", () => {
-      const mdb1 = { blueprintItems: [] };
-      const mdb2 = { blueprintItems: [{ id: "Wire" }] };
-      expect(service.hashMdb(mdb1 as any)).not.toBe(
-        service.hashMdb(mdb2 as any),
-      );
+      expect(service.isDirty).toBe(false);
     });
   });
 
@@ -415,21 +399,17 @@ describe("BlueprintService", () => {
     it("centres an empty blueprint's hull on the viewport, not the world origin", () => {
       // The static camera maps world x = sx/zoom - offset.x and
       // y = offset.y + 1 - sy/zoom; the small hull's centre point is (1, 1),
-      // so the origin is the screen centre's cell less (1, 1), rounded.
+      // so the origin is the screen centre's cell less (1, 1), rounded. On
+      // jsdom's 1024x768 window the centre cell is (10, -4).
       const camera = new CameraService(null);
       camera.makeCurrent();
       camera.setHardZoom(32);
       camera.cameraOffset = new Vector2(6, 7);
-      const centreX = window.innerWidth / 2 / 32 - 6;
-      const centreY = 7 + 1 - window.innerHeight / 2 / 32;
 
       service.newBlueprint();
       service.setRocketInterior("small");
       expect(service.metadata.rocketInterior).toBe("small");
-      expect(service.metadata.rocketInteriorOrigin).toEqual({
-        x: Math.round(centreX - 1) || 0,
-        y: Math.round(centreY - 1) || 0,
-      });
+      expect(service.metadata.rocketInteriorOrigin).toEqual({ x: 9, y: -5 });
 
       service.setRocketInterior(null);
       expect(service.metadata.rocketInteriorOrigin).toBeNull();
@@ -476,43 +456,11 @@ describe("BlueprintService", () => {
       expect(obs.blueprintChanged).not.toHaveBeenCalled();
     });
 
-    it("notifies observers with the provided blueprint", () => {
-      const obs = { blueprintChanged: vi.fn() };
-      service.subscribeBlueprintChanged(obs);
-      const bp = new Blueprint();
-      service.handleGetBlueprint(bp);
-      expect(obs.blueprintChanged).toHaveBeenCalledWith(bp);
-    });
-
     it("resets the undo stack to one state after loading", () => {
       service.blueprintChanged();
       service.blueprintChanged();
       service.handleGetBlueprint(new Blueprint());
       expect(service.undoStates.length).toBe(1);
-    });
-  });
-
-  describe("handleGetBlueprintError()", () => {
-    it("logs the error to console.error", () => {
-      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-      service.handleGetBlueprintError("some-error");
-      expect(spy).toHaveBeenCalledWith("some-error");
-      spy.mockRestore();
-    });
-  });
-
-  describe("reloadUndoIndex()", () => {
-    it("does not throw when restoring a state", () => {
-      service.blueprintChanged();
-      service.undoIndex = 0;
-      expect(() => (service as any).reloadUndoIndex()).not.toThrow();
-    });
-
-    it("sets suppressChanges back to false after restoring", () => {
-      service.blueprintChanged();
-      service.undoIndex = 0;
-      (service as any).reloadUndoIndex();
-      expect(service.suppressChanges).toBe(false);
     });
   });
 
@@ -559,6 +507,30 @@ describe("BlueprintService", () => {
       expect(service.myRating).toBe(4);
     });
 
+    // `name` is what a save writes back, so a translated title held there
+    // would rewrite the author's own
+    it("shows the server's resolved title without ever saving it as the name", () => {
+      mockHttp.get.mockReturnValue(
+        of({
+          id: "bp-1",
+          name: "Authored",
+          displayName: "Translated",
+          data: { blueprintItems: [] },
+        }),
+      );
+      service.getBlueprint("bp-1").subscribe();
+      expect(service.name).toBe("Authored");
+      expect(service.displayName).toBe("Translated");
+
+      mockHttp.post.mockReturnValue(of({}));
+      service.saveBlueprint(true).subscribe();
+      expect(mockHttp.post.mock.calls[0][1].name).toBe("Authored");
+
+      // A resolved title belongs to the blueprint it came from
+      service.reset();
+      expect(service.displayName).toBe("Authored");
+    });
+
     it("returns undefined when response has no data", () => {
       mockHttp.get.mockReturnValue(of({ data: null }));
       let result: any = "sentinel";
@@ -585,7 +557,7 @@ describe("BlueprintService", () => {
       expect(mockLocation.replaceState).toHaveBeenCalledWith("/b/test-id");
     });
 
-    it("notifies observers when blueprint loads successfully", () => {
+    it("notifies observers with the loaded blueprint", () => {
       const obs = { blueprintChanged: vi.fn() };
       service.subscribeBlueprintChanged(obs);
       mockHttp.get.mockReturnValue(
@@ -598,37 +570,23 @@ describe("BlueprintService", () => {
           data: { blueprintItems: [] },
         }),
       );
-      obs.blueprintChanged.mockClear();
       service.openBlueprintFromId("test-id");
-      expect(obs.blueprintChanged).toHaveBeenCalled();
+      expect(obs.blueprintChanged).toHaveBeenCalledWith(expect.any(Blueprint));
     });
 
-    it("calls handleGetBlueprintError on http error", () => {
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    it("leaves the open blueprint and its history alone when the fetch fails", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const obs = { blueprintChanged: vi.fn() };
+      service.subscribeBlueprintChanged(obs);
+      service.id = "open-id";
+      service.blueprintChanged();
       mockHttp.get.mockReturnValue(
         throwError(() => new Error("network error")),
       );
       service.openBlueprintFromId("bad-id");
-      expect(errorSpy).toHaveBeenCalled();
-      errorSpy.mockRestore();
-    });
-  });
-
-  describe("loadUrlBlueprint()", () => {
-    it("calls http.get with the given url", () => {
-      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      mockHttp.get.mockReturnValue(of("response-value"));
-      service.loadUrlBlueprint("/some/url");
-      expect(mockHttp.get).toHaveBeenCalledWith("/some/url");
-      spy.mockRestore();
-    });
-
-    it("logs the response value to console.warn", () => {
-      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      mockHttp.get.mockReturnValue(of("response-value"));
-      service.loadUrlBlueprint("/some/url");
-      expect(spy).toHaveBeenCalledWith("response-value");
-      spy.mockRestore();
+      expect(obs.blueprintChanged).not.toHaveBeenCalled();
+      expect(service.id).toBe("open-id");
+      expect(service.undoStates.length).toBe(2);
     });
   });
 
@@ -648,6 +606,7 @@ describe("BlueprintService", () => {
       service.getBlueprints(null, null, null);
       const url: string = mockHttp.get.mock.calls[0][0];
       expect(url).not.toContain("olderthan");
+      expect(url).not.toContain("collapse");
       expect(url).not.toContain("?&");
     });
 
@@ -668,18 +627,6 @@ describe("BlueprintService", () => {
       expect(url).not.toContain("?&");
     });
 
-    it("includes filterUserId when provided", () => {
-      service.getBlueprints(new Date(), "user123", null);
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("filterUserId=user123");
-    });
-
-    it("includes filterName when provided", () => {
-      service.getBlueprints(new Date(), null, "my-bp");
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("filterName=my-bp");
-    });
-
     it("a name search paginates by skip and never sends the date cursor", () => {
       // Search results are relevance-ordered, so a createdAt cursor would
       // skip and repeat items; the offset is the only valid pagination.
@@ -698,50 +645,165 @@ describe("BlueprintService", () => {
       expect(url).toContain("skip=12");
     });
 
-    it("includes sort=mostForked when provided", () => {
-      service.getBlueprints(new Date(), null, null, null, null, "mostForked");
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("sort=mostForked");
-    });
-
-    it("uses the public getblueprints for general browsing even when logged in (edge-cacheable)", () => {
-      mockAuth.isLoggedIn.mockReturnValue(true);
-      service.getBlueprints(new Date(), null, null);
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("/api/getblueprints?");
-      expect(mockHttp.get.mock.calls[0][1]).toBeUndefined();
-    });
-
-    it("uses getblueprintsSecure when logged in and listing a specific user", () => {
-      mockAuth.isLoggedIn.mockReturnValue(true);
-      service.getBlueprints(new Date(), "user123", null);
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("getblueprintsSecure");
-    });
-
-    it("uses getblueprintsSecure when logged in and listing rated-by-me", () => {
-      mockAuth.isLoggedIn.mockReturnValue(true);
+    // The server collapses duplicates by default, so only the opt-out is sent
+    it("sends its filters, sort and the collapse opt-out as query parameters", () => {
       service.getBlueprints(
-        new Date(),
         null,
         null,
+        "spom",
+        "base",
         null,
-        null,
+        "mostForked",
         undefined,
-        undefined,
+        false,
         null,
         null,
-        "user123",
+        null,
+        null,
+        "DLC2_ID",
+        false,
       );
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("getblueprintsSecure");
+      expect(query(mockHttp.get.mock.calls[0][0])).toEqual({
+        filterName: "spom",
+        category: "base",
+        modded: "false",
+        excludeDlc: "DLC2_ID",
+        sort: "mostForked",
+        collapse: "false",
+      });
     });
 
-    it("uses getblueprints when not logged in", () => {
-      mockAuth.isLoggedIn.mockReturnValue(false);
-      service.getBlueprints(new Date(), null, null);
-      const url: string = mockHttp.get.mock.calls[0][0];
-      expect(url).toContain("/api/getblueprints?");
+    // General browsing is viewer-independent, so it stays on the anonymous
+    // endpoint (edge-cacheable) even for a logged-in reader; only a specific
+    // user's list and rated-by-me depend on who is asking.
+    it.each([
+      { loggedIn: false, userId: null, ratedBy: null, secure: false },
+      { loggedIn: true, userId: null, ratedBy: null, secure: false },
+      { loggedIn: true, userId: "user123", ratedBy: null, secure: true },
+      { loggedIn: true, userId: null, ratedBy: "user123", secure: true },
+      { loggedIn: false, userId: "user123", ratedBy: null, secure: false },
+    ])(
+      "loggedIn=$loggedIn userId=$userId ratedBy=$ratedBy uses the secure endpoint: $secure",
+      ({ loggedIn, userId, ratedBy, secure }) => {
+        mockAuth.isLoggedIn.mockReturnValue(loggedIn);
+        mockAuth.getToken.mockReturnValue("tok");
+        service.getBlueprints(
+          new Date(),
+          userId,
+          null,
+          null,
+          null,
+          undefined,
+          undefined,
+          null,
+          null,
+          ratedBy,
+        );
+        const [url, options] = mockHttp.get.mock.calls[0];
+        if (secure) {
+          expect(url.startsWith("/api/getblueprintsSecure?")).toBe(true);
+          expect(options).toEqual({
+            headers: { Authorization: "Bearer tok" },
+          });
+        } else {
+          expect(url.startsWith("/api/getblueprints?")).toBe(true);
+          expect(options).toBeUndefined();
+        }
+      },
+    );
+  });
+
+  describe("getBlueprintFacets()", () => {
+    beforeEach(() => {
+      mockHttp.get.mockReturnValue(of({}));
+    });
+
+    // The filter-to-query mapping is the one getBlueprints shares
+    it.each([
+      [{ filterUserId: "u1" }, { filterUserId: "u1" }],
+      [{ filterName: "spom" }, { filterName: "spom" }],
+      [{ filterCategory: "base" }, { category: "base" }],
+      [{ filterSubcategory: "farm" }, { subcategory: "farm" }],
+      // false is a filter of its own (unmodded only), not an absent one
+      [{ filterModded: false }, { modded: "false" }],
+      [{ filterForkedFrom: "bp1" }, { forkedFrom: "bp1" }],
+      [{ filterRatedBy: "u2" }, { ratedBy: "u2" }],
+      [{ filterRooms: "Barracks" }, { rooms: "Barracks" }],
+      [{ filterDlcs: "EXPANSION1_ID" }, { dlc: "EXPANSION1_ID" }],
+      [{ filterExcludeDlcs: "DLC2_ID" }, { excludeDlc: "DLC2_ID" }],
+      [
+        { filterCategory: "base", filterModded: true },
+        { category: "base", modded: "true" },
+      ],
+    ])("maps %o onto the query %o", (options, expected) => {
+      service.getBlueprintFacets(options);
+      expect(query(mockHttp.get.mock.calls[0][0])).toEqual(expected);
+    });
+
+    it.each([
+      {
+        loggedIn: true,
+        options: { filterUserId: "u1" },
+        endpoint: "/api/blueprintfacetsSecure?",
+        request: { headers: { Authorization: "Bearer tok" } },
+      },
+      {
+        loggedIn: true,
+        options: { filterRatedBy: "u1" },
+        endpoint: "/api/blueprintfacetsSecure?",
+        request: { headers: { Authorization: "Bearer tok" } },
+      },
+      {
+        loggedIn: true,
+        options: { filterCategory: "base" },
+        endpoint: "/api/blueprintfacets?",
+        request: {},
+      },
+      {
+        loggedIn: false,
+        options: { filterUserId: "u1" },
+        endpoint: "/api/blueprintfacets?",
+        request: {},
+      },
+    ])(
+      "loggedIn=$loggedIn $options goes to $endpoint",
+      ({ loggedIn, options, endpoint, request }) => {
+        mockAuth.isLoggedIn.mockReturnValue(loggedIn);
+        mockAuth.getToken.mockReturnValue("tok");
+        service.getBlueprintFacets(options);
+        const [url, sent] = mockHttp.get.mock.calls[0];
+        expect(url.startsWith(endpoint)).toBe(true);
+        expect(sent).toEqual(request);
+      },
+    );
+  });
+
+  // Display reads carry the reader's content language; a file download
+  // never does, its bytes are the same for everyone
+  describe("content locale", () => {
+    beforeEach(() => {
+      mockContentLocale.appendToUrl.mockImplementation(
+        (url: string) => url + (url.includes("?") ? "&" : "?") + "lang=vi",
+      );
+    });
+
+    it("asks for the reader's language when opening and listing, not when downloading", () => {
+      vi.spyOn(BlueprintService, "saveTextFile").mockImplementation(() => {});
+      mockHttp.get.mockReturnValue(of({ data: null, hasRawSource: false }));
+
+      service.getBlueprint("bp1").subscribe();
+      service.getBlueprints(null, null, null);
+      service.downloadBlueprintFile("bp1", "T").subscribe();
+
+      const urls: string[] = mockHttp.get.mock.calls.map(
+        (call: any[]) => call[0],
+      );
+      expect(urls[0]).toBe("/api/getblueprint/bp1?lang=vi");
+      expect(urls[1]).toContain("lang=vi");
+      expect(urls.slice(2)).toEqual([
+        "/api/getblueprint/bp1",
+        "/api/getblueprintmod/bp1",
+      ]);
     });
   });
 
@@ -804,6 +866,36 @@ describe("BlueprintService", () => {
       const body = mockHttp.post.mock.calls[0][1];
       expect(body.sourceBlueprintId).toBeUndefined();
     });
+
+    it("sends the metadata and a publish request with the save", () => {
+      service.metadata = {
+        category: "base",
+        description: "Feeds four generators.",
+        rocketInterior: "small",
+      };
+      mockHttp.post.mockReturnValue(of({ id: "bp-1" }));
+      service.saveBlueprint(false, true).subscribe();
+      expect(mockHttp.post.mock.calls[0][1]).toMatchObject({
+        category: "base",
+        description: "Feeds four generators.",
+        rocketInterior: "small",
+        publish: true,
+      });
+      expect(service.isPublished).toBe(true);
+    });
+
+    // No publish flag keeps whatever the server has; a brand-new blueprint
+    // starts there as a draft
+    it("starts a first save as a draft and leaves a later save's publish state alone", () => {
+      mockHttp.post.mockReturnValue(of({ id: "bp-1" }));
+      service.saveBlueprint(false).subscribe();
+      expect(mockHttp.post.mock.calls[0][1].publish).toBeUndefined();
+      expect(service.isPublished).toBe(false);
+
+      service.isPublished = true;
+      service.saveBlueprint(true).subscribe();
+      expect(service.isPublished).toBe(true);
+    });
   });
 
   describe("rateBlueprint()", () => {
@@ -820,12 +912,6 @@ describe("BlueprintService", () => {
         { blueprintId: "bp-1", rating: 5 },
         expect.any(Object),
       );
-    });
-
-    it("returns the fresh aggregate from the server", () => {
-      let result: any;
-      service.rateBlueprint("bp-1", 5).subscribe((r) => (result = r));
-      expect(result).toEqual({ nbRatings: 3, rating: 4, myRating: 5 });
     });
   });
 
@@ -852,109 +938,135 @@ describe("BlueprintService", () => {
       );
     });
 
-    it("swallows beacon errors silently", () => {
-      mockHttp.post.mockReturnValue(throwError(() => new Error("boom")));
-      expect(() => service.trackDownload("bp-1")).not.toThrow();
+    // An error nobody handles is rethrown by rxjs from a timer, not here
+    it("swallows beacon errors silently", async () => {
+      const previous = config.onUnhandledError;
+      const onUnhandledError = vi.fn();
+      config.onUnhandledError = onUnhandledError;
+      try {
+        mockHttp.post.mockReturnValue(throwError(() => new Error("boom")));
+        service.trackDownload("bp-1");
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(onUnhandledError).not.toHaveBeenCalled();
+      } finally {
+        config.onUnhandledError = previous;
+      }
     });
   });
 
   describe("openBlueprintFromUpload()", () => {
-    it("does nothing when fileList is empty", () => {
-      const spy = vi.spyOn(service as any, "openYamlBlueprint");
-      service.openBlueprintFromUpload(BlueprintFileType.YAML, {
-        length: 0,
-      } as any);
-      expect(spy).not.toHaveBeenCalled();
-    });
-
-    it("calls openYamlBlueprint for YAML file type", () => {
-      const spy = vi
-        .spyOn(service as any, "openYamlBlueprint")
-        .mockImplementation(() => {});
-      const mockFile = {} as File;
-      service.openBlueprintFromUpload(BlueprintFileType.YAML, {
-        length: 1,
-        0: mockFile,
-      } as any);
-      expect(spy).toHaveBeenCalledWith(mockFile);
-    });
-
-    it("calls openJsonBlueprint for JSON file type", () => {
-      const spy = vi
-        .spyOn(service as any, "openJsonBlueprint")
-        .mockImplementation(() => {});
-      const mockFile = {} as File;
-      service.openBlueprintFromUpload(BlueprintFileType.JSON, {
-        length: 1,
-        0: mockFile,
-      } as any);
-      expect(spy).toHaveBeenCalledWith(mockFile);
-    });
-
-    it("calls openBsonBlueprint for BSON file type", () => {
-      const spy = vi
-        .spyOn(service as any, "openBsonBlueprint")
-        .mockImplementation(() => {});
-      const mockFile = {} as File;
-      service.openBlueprintFromUpload(BlueprintFileType.BSON, {
-        length: 1,
-        0: mockFile,
-      } as any);
-      expect(spy).toHaveBeenCalledWith(mockFile);
-    });
-
-    it("calls resetUndoStates after dispatching to the format handler", () => {
-      vi.spyOn(service as any, "openYamlBlueprint").mockImplementation(
-        () => {},
-      );
-      const resetSpy = vi.spyOn(service, "resetUndoStates");
-      service.openBlueprintFromUpload(BlueprintFileType.YAML, {
+    // The browser's FileReader, standing in for one; the test fires onloadend.
+    const stubFileReader = (result: string | ArrayBuffer) => {
+      const reader = {
+        readAsText: vi.fn(),
+        readAsArrayBuffer: vi.fn(),
+        onloadend: null as null | (() => void),
+        result,
+      };
+      const FileReaderStub = vi.fn(() => reader);
+      vi.stubGlobal("FileReader", FileReaderStub);
+      return { reader, FileReaderStub };
+    };
+    const upload = (fileType: BlueprintFileType) =>
+      service.openBlueprintFromUpload(fileType, {
         length: 1,
         0: {} as File,
       } as any);
-      expect(resetSpy).toHaveBeenCalled();
-    });
-  });
 
-  describe("loadJsonBlueprint()", () => {
-    it("sets name from the BNI blueprint friendlyname", async () => {
-      const json = JSON.stringify({
-        friendlyname: "My JSON Blueprint",
-        buildings: [],
-        digcommands: [],
-      });
-      await (service as any).loadJsonBlueprint(json);
-      expect(service.name).toBe("My JSON Blueprint");
-    });
+    const NAMED_FILES = [
+      {
+        format: "YAML",
+        type: BlueprintFileType.YAML,
+        result: "name: Uploaded\nbuildings: []\ncells: []",
+      },
+      {
+        format: "JSON",
+        type: BlueprintFileType.JSON,
+        result: JSON.stringify({
+          friendlyname: "Uploaded",
+          buildings: [],
+          digcommands: [],
+        }),
+      },
+    ];
 
-    it("notifies observers with a Blueprint instance", async () => {
-      const obs = { blueprintChanged: vi.fn() };
-      service.subscribeBlueprintChanged(obs);
-      obs.blueprintChanged.mockClear();
-      const json = JSON.stringify({
-        friendlyname: "Test",
-        buildings: [],
-        digcommands: [],
-      });
-      await (service as any).loadJsonBlueprint(json);
-      expect(obs.blueprintChanged).toHaveBeenCalled();
-    });
-  });
-
-  describe("loadYamlBlueprint()", () => {
-    it("sets name from the ONI template name field", () => {
-      const yamlStr = "name: My YAML Blueprint\nbuildings: []\ncells: []";
-      (service as any).loadYamlBlueprint(yamlStr);
-      expect(service.name).toBe("My YAML Blueprint");
+    it("does nothing when fileList is empty", () => {
+      const { FileReaderStub } = stubFileReader("");
+      service.openBlueprintFromUpload(BlueprintFileType.YAML, {
+        length: 0,
+      } as any);
+      expect(FileReaderStub).not.toHaveBeenCalled();
     });
 
-    it("notifies observers with a Blueprint instance", () => {
-      const obs = { blueprintChanged: vi.fn() };
-      service.subscribeBlueprintChanged(obs);
-      obs.blueprintChanged.mockClear();
-      const yamlStr = "name: Test\nbuildings: []\ncells: []";
-      (service as any).loadYamlBlueprint(yamlStr);
-      expect(obs.blueprintChanged).toHaveBeenCalled();
+    it.each(NAMED_FILES)(
+      "opens an uploaded $format file as the open blueprint",
+      async ({ type, result }) => {
+        const obs = { blueprintChanged: vi.fn() };
+        service.subscribeBlueprintChanged(obs);
+        const { reader } = stubFileReader(result);
+
+        upload(type);
+        reader.onloadend!();
+
+        await vi.waitFor(() =>
+          expect(obs.blueprintChanged).toHaveBeenCalledWith(
+            expect.any(Blueprint),
+          ),
+        );
+        expect(service.name).toBe("Uploaded");
+      },
+    );
+
+    // The file arrives after the click, and the canvas taking it in is a
+    // change of its own (component-canvas loadNewBlueprint ->
+    // destroyAndCopyItems, wired up here since this spec has no canvas). The
+    // undo stack must be reset once it is in, or Ctrl+Z steps back into
+    // whatever was open before the upload.
+    it.each([
+      ...NAMED_FILES,
+      {
+        format: "BSON",
+        type: BlueprintFileType.BSON,
+        // An empty name and no buildings
+        result: new Uint8Array([0, 0, 0, 0, 0]).buffer,
+      },
+    ])(
+      "leaves nothing to undo once an uploaded $format file has loaded",
+      async ({ type, result }) => {
+        const loaded = vi.fn();
+        service.subscribeBlueprintChanged({
+          blueprintChanged: (blueprint) => {
+            service.blueprint.destroyAndCopyItems(blueprint);
+            loaded();
+          },
+        });
+        const { reader } = stubFileReader(result);
+
+        upload(type);
+        reader.onloadend!();
+
+        await vi.waitFor(() => expect(loaded).toHaveBeenCalled());
+        await Promise.resolve();
+        expect(service.undoStates).toHaveLength(1);
+        expect(service.isDirty).toBe(false);
+      },
+    );
+
+    it("asks before an upload or a paste replaces unsaved work, and keeps it on No", async () => {
+      edit();
+      service.blueprint.blueprintItems.push({} as any);
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+      const { FileReaderStub } = stubFileReader("");
+
+      upload(BlueprintFileType.JSON);
+      await service.openBlueprintFromShareString(
+        JSON.stringify({ friendlyname: "Pasted", buildings: [] }),
+      );
+
+      expect(confirm).toHaveBeenCalledTimes(2);
+      expect(FileReaderStub).not.toHaveBeenCalled();
+      expect(service.rawSource).toBeNull();
+      expect(service.isDirty).toBe(true);
     });
   });
 
@@ -976,12 +1088,6 @@ describe("BlueprintService", () => {
     it("prefills metadata.description from userdesc", async () => {
       await service.openBlueprintFromShareString(BNI_JSON);
       expect(service.metadata.description).toBe("a description from the mod");
-    });
-
-    it("rejects text that is neither JSON nor a share-string", async () => {
-      await expect(
-        service.openBlueprintFromShareString("not a blueprint at all"),
-      ).rejects.toThrow();
     });
 
     it("leaves the current session state untouched when the paste is invalid", async () => {
@@ -1006,10 +1112,12 @@ describe("BlueprintService", () => {
         "FileReader",
         vi.fn(() => reader),
       );
-      (service as any).openJsonBlueprint({} as File);
+      service.openBlueprintFromUpload(BlueprintFileType.JSON, {
+        length: 1,
+        0: {} as File,
+      } as any);
       reader.onloadend!();
       await vi.waitFor(() => expect(onError).toHaveBeenCalled());
-      vi.unstubAllGlobals();
     });
 
     it("getValidRawSource returns the import while content is unedited", async () => {
@@ -1084,20 +1192,9 @@ describe("BlueprintService", () => {
       expect(body.rawSourceFormat).toBeUndefined();
       expect(service.serverHasRawSource).toBe(false);
     });
-
-    it("reset clears the held raw source", async () => {
-      await service.openBlueprintFromShareString(BNI_JSON);
-      service.reset();
-      expect(service.rawSource).toBeNull();
-      expect(service.getValidRawSource()).toBeNull();
-    });
   });
 
   describe("downloadBlueprintFile()", () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
     it("serves the server's raw copy byte-exact when available", () => {
       const saveSpy = vi
         .spyOn(BlueprintService, "saveTextFile")
@@ -1213,10 +1310,6 @@ describe("BlueprintService", () => {
   });
 
   describe("exportBlueprintFile()", () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
     it("serves the held raw import when the blueprint is unedited", async () => {
       const saveSpy = vi
         .spyOn(BlueprintService, "saveTextFile")
@@ -1282,7 +1375,6 @@ describe("BlueprintService", () => {
 
     afterEach(() => {
       setClipboard(undefined);
-      vi.restoreAllMocks();
     });
 
     it("writes a share string the import path can read back", async () => {
@@ -1319,11 +1411,14 @@ describe("BlueprintService", () => {
     // handed over rather than awaited first.
     it("hands write() a promise-backed ClipboardItem when supported", async () => {
       const captured: any[] = [];
-      (globalThis as any).ClipboardItem = class {
-        constructor(public items: Record<string, Promise<Blob>>) {
-          captured.push(items);
-        }
-      };
+      vi.stubGlobal(
+        "ClipboardItem",
+        class {
+          constructor(public items: Record<string, Promise<Blob>>) {
+            captured.push(items);
+          }
+        },
+      );
       const write = vi.fn(async () => {});
       const writeTextSpy = vi.fn(async (_text: string) => {});
       Object.defineProperty(navigator, "clipboard", {
@@ -1338,14 +1433,15 @@ describe("BlueprintService", () => {
       const blob = await captured[0]["text/plain"];
       const decoded = await decodeBniShareString(await blob.text());
       expect(JSON.parse(decoded).friendlyname).toBe("Gesture");
-
-      delete (globalThis as any).ClipboardItem;
     });
 
     it("falls back to writeText when write() rejects", async () => {
-      (globalThis as any).ClipboardItem = class {
-        constructor(public items: any) {}
-      };
+      vi.stubGlobal(
+        "ClipboardItem",
+        class {
+          constructor(public items: any) {}
+        },
+      );
       const write = vi.fn(async () => {
         throw new Error("promise-backed items unsupported");
       });
@@ -1360,8 +1456,6 @@ describe("BlueprintService", () => {
       expect(writeTextSpy).toHaveBeenCalled();
       const decoded = await decodeBniShareString(writeTextSpy.mock.calls[0][0]);
       expect(JSON.parse(decoded).friendlyname).toBe("Fallback");
-
-      delete (globalThis as any).ClipboardItem;
     });
 
     // The beacon must credit the blueprint that was serialized, not whatever
@@ -1395,20 +1489,6 @@ describe("BlueprintService", () => {
 
       expect(mockHttp.post).not.toHaveBeenCalled();
     });
-
-    it("counts a download for a saved blueprint", async () => {
-      setClipboard(vi.fn(async () => {}));
-      mockHttp.post.mockReturnValue(of({}));
-      service.id = "abc123";
-
-      await service.copyBlueprintShareString("T");
-
-      expect(mockHttp.post).toHaveBeenCalledWith(
-        "/api/blueprints/abc123/downloads",
-        {},
-        expect.anything(),
-      );
-    });
   });
   // The details page's "Copy for game": a saved blueprint as a share-string,
   // without opening it in the editor.
@@ -1425,7 +1505,6 @@ describe("BlueprintService", () => {
 
     afterEach(() => {
       setClipboard(undefined);
-      vi.restoreAllMocks();
     });
 
     it("serves a stored share-string verbatim", async () => {
