@@ -54,10 +54,16 @@ export class BuildMenuCategory {
 export class BuildMenuItem {
   category: number = 0;
   buildingId: string = '';
+  // The game's subcategory id ("ladders", "tiles", "pumps"), or the site's own
+  // "rocketmodules" for the rocket modules, which the game files nowhere. Only
+  // unique within a category: "pipes" is under plumbing and ventilation both.
+  // A database written before the field existed loads it as "".
+  subcategory: string = '';
 
   public importFrom(original: BuildMenuItem) {
     this.category = original.category;
     this.buildingId = original.buildingId;
+    this.subcategory = original.subcategory ?? '';
   }
 
   // Static
