@@ -44,6 +44,7 @@
         pTooltip="Toggle Grid View"
         i18n-pTooltip="build menu"
         tooltipPosition="top"
+        [tooltipDisabled]="layout.compact"
         (click)="setViewMode('grid')"
       >
         <i class="pi pi-th-large" aria-hidden="true"></i>
@@ -58,6 +59,7 @@
         pTooltip="Toggle List View"
         i18n-pTooltip="build menu"
         tooltipPosition="top"
+        [tooltipDisabled]="layout.compact"
         (click)="setViewMode('list')"
       >
         <i class="pi pi-list" aria-hidden="true"></i>
