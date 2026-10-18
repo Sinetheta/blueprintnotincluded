@@ -181,6 +181,7 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
 
   filterNameSubject = new Subject<string>();
   filterFacetSubject = new Subject<void>();
+  private filterSubs = new Subscription();
 
   loadingBlueprintItem: BlueprintListItem;
   nothingBlueprintItem: BlueprintListItem;
@@ -227,15 +228,19 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
       nbDownloads: 0,
     };
 
-    this.filterNameSubject.pipe(debounceTime(600)).subscribe(() => {
-      this.applyFiltersToUrl();
-      this.transitionList();
-    });
+    this.filterSubs.add(
+      this.filterNameSubject.pipe(debounceTime(600)).subscribe(() => {
+        this.applyFiltersToUrl();
+        this.transitionList();
+      }),
+    );
 
-    this.filterFacetSubject.pipe(debounceTime(0)).subscribe(() => {
-      this.applyFiltersToUrl();
-      this.transitionList();
-    });
+    this.filterSubs.add(
+      this.filterFacetSubject.pipe(debounceTime(0)).subscribe(() => {
+        this.applyFiltersToUrl();
+        this.transitionList();
+      }),
+    );
   }
 
   private initialized = false;
@@ -295,8 +300,9 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.paramsSub?.unsubscribe();
-    this.filterNameSubject.complete();
-    this.filterFacetSubject.complete();
+    // Unsubscribe, not complete(): debounceTime emits a pending value on
+    // completion, which would apply a filter change after the page is gone
+    this.filterSubs.unsubscribe();
     if (this.switchTimer) clearTimeout(this.switchTimer);
     if (this.dwellTimer) clearTimeout(this.dwellTimer);
     if (this.autoFillTimer) clearTimeout(this.autoFillTimer);
