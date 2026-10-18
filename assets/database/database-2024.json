@@ -54190,1619 +54190,2023 @@
   "buildMenuItems": [
     {
       "category": -2955855,
-      "buildingId": "Ladder"
+      "buildingId": "Ladder",
+      "subcategory": "ladders"
     },
     {
       "category": -2955855,
-      "buildingId": "FirePole"
+      "buildingId": "FirePole",
+      "subcategory": "ladders"
     },
     {
       "category": -2955855,
-      "buildingId": "LadderFast"
+      "buildingId": "LadderFast",
+      "subcategory": "ladders"
     },
     {
       "category": -2955855,
-      "buildingId": "Tile"
+      "buildingId": "Tile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "SnowTile"
+      "buildingId": "SnowTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "WoodTile"
+      "buildingId": "WoodTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "GasPermeableMembrane"
+      "buildingId": "GasPermeableMembrane",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "MeshTile"
+      "buildingId": "MeshTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "RubberTile"
+      "buildingId": "RubberTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "InsulationTile"
+      "buildingId": "InsulationTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "PlasticTile"
+      "buildingId": "PlasticTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "MetalTile"
+      "buildingId": "MetalTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "GlassTile"
+      "buildingId": "GlassTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "StorageTile"
+      "buildingId": "StorageTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "BunkerTile"
+      "buildingId": "BunkerTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "CarpetTile"
+      "buildingId": "CarpetTile",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "ExteriorWall"
+      "buildingId": "ExteriorWall",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "GlassExteriorWall"
+      "buildingId": "GlassExteriorWall",
+      "subcategory": "tiles"
     },
     {
       "category": -2955855,
-      "buildingId": "ExobaseHeadquarters"
+      "buildingId": "ExobaseHeadquarters",
+      "subcategory": "printingpods"
     },
     {
       "category": -2955855,
-      "buildingId": "Door"
+      "buildingId": "Door",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "WoodenDoor"
+      "buildingId": "WoodenDoor",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "ManualPressureDoor"
+      "buildingId": "ManualPressureDoor",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "InsulatedDoor"
+      "buildingId": "InsulatedDoor",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "PAirlockDoorInsulated"
+      "buildingId": "PAirlockDoorInsulated",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "PressureDoor"
+      "buildingId": "PressureDoor",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "PAirlockDoor"
+      "buildingId": "PAirlockDoor",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "BunkerDoor"
+      "buildingId": "BunkerDoor",
+      "subcategory": "doors"
     },
     {
       "category": -2955855,
-      "buildingId": "StorageLocker"
+      "buildingId": "StorageLocker",
+      "subcategory": "storage"
     },
     {
       "category": -2955855,
-      "buildingId": "StorageLockerSmart"
+      "buildingId": "StorageLockerSmart",
+      "subcategory": "storage"
     },
     {
       "category": -2955855,
-      "buildingId": "LiquidReservoir"
+      "buildingId": "LiquidReservoir",
+      "subcategory": "storage"
     },
     {
       "category": -2955855,
-      "buildingId": "GasReservoir"
+      "buildingId": "GasReservoir",
+      "subcategory": "storage"
     },
     {
       "category": -2955855,
-      "buildingId": "ObjectDispenser"
+      "buildingId": "ObjectDispenser",
+      "subcategory": "storage"
     },
     {
       "category": -2955855,
-      "buildingId": "TravelTube"
+      "buildingId": "TravelTube",
+      "subcategory": "transport"
     },
     {
       "category": -2955855,
-      "buildingId": "TravelTubeEntrance"
+      "buildingId": "TravelTubeEntrance",
+      "subcategory": "transport"
     },
     {
       "category": -2955855,
-      "buildingId": "TravelTubeWallBridge"
+      "buildingId": "TravelTubeWallBridge",
+      "subcategory": "transport"
     },
     {
       "category": -2955855,
-      "buildingId": "NaturalTile"
+      "buildingId": "NaturalTile",
+      "subcategory": "uncategorized"
     },
     {
       "category": -1528777920,
-      "buildingId": "MineralDeoxidizer"
+      "buildingId": "MineralDeoxidizer",
+      "subcategory": "producers"
     },
     {
       "category": -1528777920,
-      "buildingId": "SublimationStation"
+      "buildingId": "SublimationStation",
+      "subcategory": "producers"
     },
     {
       "category": -1528777920,
-      "buildingId": "Oxysconce"
+      "buildingId": "Oxysconce",
+      "subcategory": "producers"
     },
     {
       "category": -1528777920,
-      "buildingId": "AlgaeHabitat"
+      "buildingId": "AlgaeHabitat",
+      "subcategory": "scrubbers"
     },
     {
       "category": -1528777920,
-      "buildingId": "AirFilter"
+      "buildingId": "AirFilter",
+      "subcategory": "scrubbers"
     },
     {
       "category": -1528777920,
-      "buildingId": "CO2Scrubber"
+      "buildingId": "CO2Scrubber",
+      "subcategory": "scrubbers"
     },
     {
       "category": -1528777920,
-      "buildingId": "Electrolyzer"
+      "buildingId": "Electrolyzer",
+      "subcategory": "producers"
     },
     {
       "category": -1528777920,
-      "buildingId": "RustDeoxidizer"
+      "buildingId": "RustDeoxidizer",
+      "subcategory": "producers"
     },
     {
       "category": -1528777920,
-      "buildingId": "UnderwaterBreathingStation"
+      "buildingId": "UnderwaterBreathingStation",
+      "subcategory": "distributors"
     },
     {
       "category": 517759365,
-      "buildingId": "ManualGenerator"
+      "buildingId": "ManualGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "Generator"
+      "buildingId": "Generator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "WoodGasGenerator"
+      "buildingId": "WoodGasGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "PeatGenerator"
+      "buildingId": "PeatGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "ReefGenerator"
+      "buildingId": "ReefGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "HydrogenGenerator"
+      "buildingId": "HydrogenGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "MethaneGenerator"
+      "buildingId": "MethaneGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "PetroleumGenerator"
+      "buildingId": "PetroleumGenerator",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "SteamTurbine2"
+      "buildingId": "SteamTurbine2",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "SolarPanel"
+      "buildingId": "SolarPanel",
+      "subcategory": "generators"
     },
     {
       "category": 517759365,
-      "buildingId": "Wire"
+      "buildingId": "Wire",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireBridge"
+      "buildingId": "WireBridge",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "HighWattageWire"
+      "buildingId": "HighWattageWire",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireBridgeHighWattage"
+      "buildingId": "WireBridgeHighWattage",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireRefined"
+      "buildingId": "WireRefined",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireRefinedBridge"
+      "buildingId": "WireRefinedBridge",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireRefinedHighWattage"
+      "buildingId": "WireRefinedHighWattage",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireRefinedBridgeHighWattage"
+      "buildingId": "WireRefinedBridgeHighWattage",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireRubber"
+      "buildingId": "WireRubber",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "WireRubberBridge"
+      "buildingId": "WireRubberBridge",
+      "subcategory": "wires"
     },
     {
       "category": 517759365,
-      "buildingId": "Battery"
+      "buildingId": "Battery",
+      "subcategory": "batteries"
     },
     {
       "category": 517759365,
-      "buildingId": "BatteryMedium"
+      "buildingId": "BatteryMedium",
+      "subcategory": "batteries"
     },
     {
       "category": 517759365,
-      "buildingId": "BatterySmart"
+      "buildingId": "BatterySmart",
+      "subcategory": "batteries"
     },
     {
       "category": 517759365,
-      "buildingId": "ElectrobankCharger"
+      "buildingId": "ElectrobankCharger",
+      "subcategory": "electrobankbuildings"
     },
     {
       "category": 517759365,
-      "buildingId": "SmallElectrobankDischarger"
+      "buildingId": "SmallElectrobankDischarger",
+      "subcategory": "electrobankbuildings"
     },
     {
       "category": 517759365,
-      "buildingId": "LargeElectrobankDischarger"
+      "buildingId": "LargeElectrobankDischarger",
+      "subcategory": "electrobankbuildings"
     },
     {
       "category": 517759365,
-      "buildingId": "PowerTransformerSmall"
+      "buildingId": "PowerTransformerSmall",
+      "subcategory": "powercontrol"
     },
     {
       "category": 517759365,
-      "buildingId": "PowerTransformer"
+      "buildingId": "PowerTransformer",
+      "subcategory": "powercontrol"
     },
     {
       "category": 517759365,
-      "buildingId": "Switch"
+      "buildingId": "Switch",
+      "subcategory": "switches"
     },
     {
       "category": 517759365,
-      "buildingId": "LogicPowerRelay"
+      "buildingId": "LogicPowerRelay",
+      "subcategory": "switches"
     },
     {
       "category": -1060175682,
-      "buildingId": "UnderwaterMilkFeeder"
+      "buildingId": "UnderwaterMilkFeeder",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "MicrobeMusher"
+      "buildingId": "MicrobeMusher",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "CookingStation"
+      "buildingId": "CookingStation",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "Deepfryer"
+      "buildingId": "Deepfryer",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "GourmetCookingStation"
+      "buildingId": "GourmetCookingStation",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "SpiceGrinder"
+      "buildingId": "SpiceGrinder",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "FoodDehydrator"
+      "buildingId": "FoodDehydrator",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "FoodRehydrator"
+      "buildingId": "FoodRehydrator",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "Smoker"
+      "buildingId": "Smoker",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "SushiBar"
+      "buildingId": "SushiBar",
+      "subcategory": "cooking"
     },
     {
       "category": -1060175682,
-      "buildingId": "PlanterBox"
+      "buildingId": "PlanterBox",
+      "subcategory": "farming"
     },
     {
       "category": -1060175682,
-      "buildingId": "FarmTile"
+      "buildingId": "FarmTile",
+      "subcategory": "farming"
     },
     {
       "category": -1060175682,
-      "buildingId": "HydroponicFarm"
+      "buildingId": "HydroponicFarm",
+      "subcategory": "farming"
     },
     {
       "category": -1060175682,
-      "buildingId": "WideFarmTile"
+      "buildingId": "WideFarmTile",
+      "subcategory": "farming"
     },
     {
       "category": -1060175682,
-      "buildingId": "LargeBackwallFarm"
+      "buildingId": "LargeBackwallFarm",
+      "subcategory": "farming"
     },
     {
       "category": -1060175682,
-      "buildingId": "RationBox"
+      "buildingId": "RationBox",
+      "subcategory": "storage"
     },
     {
       "category": -1060175682,
-      "buildingId": "Refrigerator"
+      "buildingId": "Refrigerator",
+      "subcategory": "storage"
     },
     {
       "category": -1060175682,
-      "buildingId": "MiniFridge"
+      "buildingId": "MiniFridge",
+      "subcategory": "storage"
     },
     {
       "category": -1060175682,
-      "buildingId": "CritterPickUp"
+      "buildingId": "CritterPickUp",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "CritterDropOff"
+      "buildingId": "CritterDropOff",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "FishPickUp"
+      "buildingId": "FishPickUp",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "FishDeliveryPoint"
+      "buildingId": "FishDeliveryPoint",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "CreatureFeeder"
+      "buildingId": "CreatureFeeder",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "FishFeeder"
+      "buildingId": "FishFeeder",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "MilkFeeder"
+      "buildingId": "MilkFeeder",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "EggIncubator"
+      "buildingId": "EggIncubator",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "EggCracker"
+      "buildingId": "EggCracker",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "CreatureGroundTrap"
+      "buildingId": "CreatureGroundTrap",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "WaterTrap"
+      "buildingId": "WaterTrap",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "CreatureAirTrap"
+      "buildingId": "CreatureAirTrap",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "CritterCondo"
+      "buildingId": "CritterCondo",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "UnderwaterCritterCondo"
+      "buildingId": "UnderwaterCritterCondo",
+      "subcategory": "ranching"
     },
     {
       "category": -1060175682,
-      "buildingId": "AirBorneCritterCondo"
+      "buildingId": "AirBorneCritterCondo",
+      "subcategory": "ranching"
     },
     {
       "category": -1014650956,
-      "buildingId": "Outhouse"
+      "buildingId": "Outhouse",
+      "subcategory": "washroom"
     },
     {
       "category": -1014650956,
-      "buildingId": "FlushToilet"
+      "buildingId": "FlushToilet",
+      "subcategory": "washroom"
     },
     {
       "category": -1014650956,
-      "buildingId": "WallToilet"
+      "buildingId": "WallToilet",
+      "subcategory": "washroom"
     },
     {
       "category": -1014650956,
-      "buildingId": "Shower"
+      "buildingId": "Shower",
+      "subcategory": "washroom"
     },
     {
       "category": -1014650956,
-      "buildingId": "GunkEmptier"
+      "buildingId": "GunkEmptier",
+      "subcategory": "washroom"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidPumpingStation"
+      "buildingId": "LiquidPumpingStation",
+      "subcategory": "pumps"
     },
     {
       "category": -1014650956,
-      "buildingId": "BottleEmptier"
+      "buildingId": "BottleEmptier",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "BottleEmptierConduitLiquid"
+      "buildingId": "BottleEmptierConduitLiquid",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidBottler"
+      "buildingId": "LiquidBottler",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidConduit"
+      "buildingId": "LiquidConduit",
+      "subcategory": "pipes"
     },
     {
       "category": -1014650956,
-      "buildingId": "InsulatedLiquidConduit"
+      "buildingId": "InsulatedLiquidConduit",
+      "subcategory": "pipes"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidConduitRadiant"
+      "buildingId": "LiquidConduitRadiant",
+      "subcategory": "pipes"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidConduitBridge"
+      "buildingId": "LiquidConduitBridge",
+      "subcategory": "pipes"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidPump"
+      "buildingId": "LiquidPump",
+      "subcategory": "pumps"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidMiniPump"
+      "buildingId": "LiquidMiniPump",
+      "subcategory": "pumps"
     },
     {
       "category": -1014650956,
-      "buildingId": "PeterHan_FilteredLiquidPump"
+      "buildingId": "PeterHan_FilteredLiquidPump",
+      "subcategory": "pumps"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidVent"
+      "buildingId": "LiquidVent",
+      "subcategory": "pipes"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidFilter"
+      "buildingId": "LiquidFilter",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidValve"
+      "buildingId": "LiquidValve",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidLogicValve"
+      "buildingId": "LiquidLogicValve",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidLimitValve"
+      "buildingId": "LiquidLimitValve",
+      "subcategory": "valves"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidConduitElementSensor"
+      "buildingId": "LiquidConduitElementSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidConduitDiseaseSensor"
+      "buildingId": "LiquidConduitDiseaseSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -1014650956,
-      "buildingId": "LiquidConduitTemperatureSensor"
+      "buildingId": "LiquidConduitTemperatureSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -1014650956,
-      "buildingId": "ModularLaunchpadPortLiquid"
+      "buildingId": "ModularLaunchpadPortLiquid",
+      "subcategory": "buildmenuports"
     },
     {
       "category": -1014650956,
-      "buildingId": "ModularLaunchpadPortLiquidUnloader"
+      "buildingId": "ModularLaunchpadPortLiquidUnloader",
+      "subcategory": "buildmenuports"
     },
     {
       "category": -1014650956,
-      "buildingId": "ContactConductivePipeBridge"
+      "buildingId": "ContactConductivePipeBridge",
+      "subcategory": "pipes"
     },
     {
       "category": -1014650956,
-      "buildingId": "MJSplitterMKIILiquid"
+      "buildingId": "MJSplitterMKIILiquid",
+      "subcategory": "uncategorized"
     },
     {
       "category": -1014650956,
-      "buildingId": "FairLiquidWallPump"
+      "buildingId": "FairLiquidWallPump",
+      "subcategory": "uncategorized"
     },
     {
       "category": -1014650956,
-      "buildingId": "FairLiquidWallVent"
+      "buildingId": "FairLiquidWallVent",
+      "subcategory": "uncategorized"
     },
     {
       "category": -1014650956,
-      "buildingId": "Drain"
+      "buildingId": "Drain",
+      "subcategory": "uncategorized"
     },
     {
       "category": 557910864,
-      "buildingId": "GasConduit"
+      "buildingId": "GasConduit",
+      "subcategory": "pipes"
     },
     {
       "category": 557910864,
-      "buildingId": "InsulatedGasConduit"
+      "buildingId": "InsulatedGasConduit",
+      "subcategory": "pipes"
     },
     {
       "category": 557910864,
-      "buildingId": "GasConduitRadiant"
+      "buildingId": "GasConduitRadiant",
+      "subcategory": "pipes"
     },
     {
       "category": 557910864,
-      "buildingId": "GasConduitBridge"
+      "buildingId": "GasConduitBridge",
+      "subcategory": "pipes"
     },
     {
       "category": 557910864,
-      "buildingId": "GasPump"
+      "buildingId": "GasPump",
+      "subcategory": "pumps"
     },
     {
       "category": 557910864,
-      "buildingId": "GasMiniPump"
+      "buildingId": "GasMiniPump",
+      "subcategory": "pumps"
     },
     {
       "category": 557910864,
-      "buildingId": "PeterHan_FilteredGasPump"
+      "buildingId": "PeterHan_FilteredGasPump",
+      "subcategory": "pumps"
     },
     {
       "category": 557910864,
-      "buildingId": "VacuumPump"
+      "buildingId": "VacuumPump",
+      "subcategory": "pumps"
     },
     {
       "category": 557910864,
-      "buildingId": "GasVent"
+      "buildingId": "GasVent",
+      "subcategory": "pipes"
     },
     {
       "category": 557910864,
-      "buildingId": "GasVentHighPressure"
+      "buildingId": "GasVentHighPressure",
+      "subcategory": "pipes"
     },
     {
       "category": 557910864,
-      "buildingId": "GasFilter"
+      "buildingId": "GasFilter",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "GasValve"
+      "buildingId": "GasValve",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "GasLogicValve"
+      "buildingId": "GasLogicValve",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "GasLimitValve"
+      "buildingId": "GasLimitValve",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "GasBottler"
+      "buildingId": "GasBottler",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "BottleEmptierGas"
+      "buildingId": "BottleEmptierGas",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "BottleEmptierConduitGas"
+      "buildingId": "BottleEmptierConduitGas",
+      "subcategory": "valves"
     },
     {
       "category": 557910864,
-      "buildingId": "ModularLaunchpadPortGas"
+      "buildingId": "ModularLaunchpadPortGas",
+      "subcategory": "buildmenuports"
     },
     {
       "category": 557910864,
-      "buildingId": "ModularLaunchpadPortGasUnloader"
+      "buildingId": "ModularLaunchpadPortGasUnloader",
+      "subcategory": "buildmenuports"
     },
     {
       "category": 557910864,
-      "buildingId": "GasConduitElementSensor"
+      "buildingId": "GasConduitElementSensor",
+      "subcategory": "sensors"
     },
     {
       "category": 557910864,
-      "buildingId": "GasConduitDiseaseSensor"
+      "buildingId": "GasConduitDiseaseSensor",
+      "subcategory": "sensors"
     },
     {
       "category": 557910864,
-      "buildingId": "GasConduitTemperatureSensor"
+      "buildingId": "GasConduitTemperatureSensor",
+      "subcategory": "sensors"
     },
     {
       "category": 557910864,
-      "buildingId": "MJSplitterMKIIGas"
+      "buildingId": "MJSplitterMKIIGas",
+      "subcategory": "uncategorized"
     },
     {
       "category": 557910864,
-      "buildingId": "FairGasWallPump"
+      "buildingId": "FairGasWallPump",
+      "subcategory": "uncategorized"
     },
     {
       "category": 557910864,
-      "buildingId": "FairGasWallVent"
+      "buildingId": "FairGasWallVent",
+      "subcategory": "uncategorized"
     },
     {
       "category": 557910864,
-      "buildingId": "VentHighPressure"
+      "buildingId": "VentHighPressure",
+      "subcategory": "uncategorized"
     },
     {
       "category": 8593386,
-      "buildingId": "FabricatedWoodMaker"
+      "buildingId": "FabricatedWoodMaker",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "Compost"
+      "buildingId": "Compost",
+      "subcategory": "organic"
     },
     {
       "category": 8593386,
-      "buildingId": "WaterPurifier"
+      "buildingId": "WaterPurifier",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "Desalinator"
+      "buildingId": "Desalinator",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "FertilizerMaker"
+      "buildingId": "FertilizerMaker",
+      "subcategory": "organic"
     },
     {
       "category": 8593386,
-      "buildingId": "AlgaeDistillery"
+      "buildingId": "AlgaeDistillery",
+      "subcategory": "organic"
     },
     {
       "category": 8593386,
-      "buildingId": "EthanolDistillery"
+      "buildingId": "EthanolDistillery",
+      "subcategory": "organic"
     },
     {
       "category": 8593386,
-      "buildingId": "RockCrusher"
+      "buildingId": "RockCrusher",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "Kiln"
+      "buildingId": "Kiln",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "SludgePress"
+      "buildingId": "SludgePress",
+      "subcategory": "organic"
     },
     {
       "category": 8593386,
-      "buildingId": "MetalRefinery"
+      "buildingId": "MetalRefinery",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "GlassForge"
+      "buildingId": "GlassForge",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "OilRefinery"
+      "buildingId": "OilRefinery",
+      "subcategory": "oil"
     },
     {
       "category": 8593386,
-      "buildingId": "Polymerizer"
+      "buildingId": "Polymerizer",
+      "subcategory": "oil"
     },
     {
       "category": 8593386,
-      "buildingId": "RubberMaker"
+      "buildingId": "RubberMaker",
+      "subcategory": "materials"
     },
     {
       "category": 8593386,
-      "buildingId": "OxyliteRefinery"
+      "buildingId": "OxyliteRefinery",
+      "subcategory": "advanced"
     },
     {
       "category": 8593386,
-      "buildingId": "Chlorinator"
+      "buildingId": "Chlorinator",
+      "subcategory": "advanced"
     },
     {
       "category": 8593386,
-      "buildingId": "ChemicalRefinery"
+      "buildingId": "ChemicalRefinery",
+      "subcategory": "advanced"
     },
     {
       "category": 8593386,
-      "buildingId": "SupermaterialRefinery"
+      "buildingId": "SupermaterialRefinery",
+      "subcategory": "advanced"
     },
     {
       "category": 8593386,
-      "buildingId": "DiamondPress"
+      "buildingId": "DiamondPress",
+      "subcategory": "advanced"
     },
     {
       "category": 8593386,
-      "buildingId": "MilkFatSeparator"
+      "buildingId": "MilkFatSeparator",
+      "subcategory": "organic"
     },
     {
       "category": 8593386,
-      "buildingId": "MilkPress"
+      "buildingId": "MilkPress",
+      "subcategory": "organic"
     },
     {
       "category": -1098138447,
-      "buildingId": "WashBasin"
+      "buildingId": "WashBasin",
+      "subcategory": "hygiene"
     },
     {
       "category": -1098138447,
-      "buildingId": "WashSink"
+      "buildingId": "WashSink",
+      "subcategory": "hygiene"
     },
     {
       "category": -1098138447,
-      "buildingId": "HandSanitizer"
+      "buildingId": "HandSanitizer",
+      "subcategory": "hygiene"
     },
     {
       "category": -1098138447,
-      "buildingId": "DecontaminationShower"
+      "buildingId": "DecontaminationShower",
+      "subcategory": "hygiene"
     },
     {
       "category": -1098138447,
-      "buildingId": "OilChanger"
+      "buildingId": "OilChanger",
+      "subcategory": "wellness"
     },
     {
       "category": -1098138447,
-      "buildingId": "Apothecary"
+      "buildingId": "Apothecary",
+      "subcategory": "medical"
     },
     {
       "category": -1098138447,
-      "buildingId": "DoctorStation"
+      "buildingId": "DoctorStation",
+      "subcategory": "medical"
     },
     {
       "category": -1098138447,
-      "buildingId": "AdvancedDoctorStation"
+      "buildingId": "AdvancedDoctorStation",
+      "subcategory": "medical"
     },
     {
       "category": -1098138447,
-      "buildingId": "MedicalCot"
+      "buildingId": "MedicalCot",
+      "subcategory": "medical"
     },
     {
       "category": -1098138447,
-      "buildingId": "MassageTable"
+      "buildingId": "MassageTable",
+      "subcategory": "wellness"
     },
     {
       "category": -1098138447,
-      "buildingId": "Grave"
+      "buildingId": "Grave",
+      "subcategory": "wellness"
     },
     {
       "category": -1264537710,
-      "buildingId": "Shelf"
+      "buildingId": "Shelf",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "Bed"
+      "buildingId": "Bed",
+      "subcategory": "beds"
     },
     {
       "category": -1264537710,
-      "buildingId": "LuxuryBed"
+      "buildingId": "LuxuryBed",
+      "subcategory": "beds"
     },
     {
       "category": -1264537710,
-      "buildingId": "LadderBed"
+      "buildingId": "LadderBed",
+      "subcategory": "beds"
     },
     {
       "category": -1264537710,
-      "buildingId": "FloorLamp"
+      "buildingId": "FloorLamp",
+      "subcategory": "lights"
     },
     {
       "category": -1264537710,
-      "buildingId": "CeilingLight"
+      "buildingId": "CeilingLight",
+      "subcategory": "lights"
     },
     {
       "category": -1264537710,
-      "buildingId": "GlassCeilingLight"
+      "buildingId": "GlassCeilingLight",
+      "subcategory": "lights"
     },
     {
       "category": -1264537710,
-      "buildingId": "SunLamp"
+      "buildingId": "SunLamp",
+      "subcategory": "lights"
     },
     {
       "category": -1264537710,
-      "buildingId": "MercuryCeilingLight"
+      "buildingId": "MercuryCeilingLight",
+      "subcategory": "lights"
     },
     {
       "category": -1264537710,
-      "buildingId": "DiningTable"
+      "buildingId": "DiningTable",
+      "subcategory": "dining"
     },
     {
       "category": -1264537710,
-      "buildingId": "MultiMinionDiningTable"
+      "buildingId": "MultiMinionDiningTable",
+      "subcategory": "dining"
     },
     {
       "category": -1264537710,
-      "buildingId": "WaterCooler"
+      "buildingId": "WaterCooler",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "Phonobox"
+      "buildingId": "Phonobox",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "ArcadeMachine"
+      "buildingId": "ArcadeMachine",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "EspressoMachine"
+      "buildingId": "EspressoMachine",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "HotTub"
+      "buildingId": "HotTub",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "MechanicalSurfboard"
+      "buildingId": "MechanicalSurfboard",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "Sauna"
+      "buildingId": "Sauna",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "Juicer"
+      "buildingId": "Juicer",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "SodaFountain"
+      "buildingId": "SodaFountain",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "BeachChair"
+      "buildingId": "BeachChair",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "VerticalWindTunnel"
+      "buildingId": "VerticalWindTunnel",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "PixelPack"
+      "buildingId": "PixelPack",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "Telephone"
+      "buildingId": "Telephone",
+      "subcategory": "recreation"
     },
     {
       "category": -1264537710,
-      "buildingId": "FlowerVase"
+      "buildingId": "FlowerVase",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "FlowerVaseWall"
+      "buildingId": "FlowerVaseWall",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "FlowerVaseHanging"
+      "buildingId": "FlowerVaseHanging",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "FlowerVaseHangingFancy"
+      "buildingId": "FlowerVaseHangingFancy",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "SmallSculpture"
+      "buildingId": "SmallSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "Sculpture"
+      "buildingId": "Sculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "IceSculpture"
+      "buildingId": "IceSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "WoodSculpture"
+      "buildingId": "WoodSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "MarbleSculpture"
+      "buildingId": "MarbleSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "MetalSculpture"
+      "buildingId": "MetalSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "FossilSculpture"
+      "buildingId": "FossilSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "CeilingFossilSculpture"
+      "buildingId": "CeilingFossilSculpture",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "CrownMoulding"
+      "buildingId": "CrownMoulding",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "CornerMoulding"
+      "buildingId": "CornerMoulding",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "Canvas"
+      "buildingId": "Canvas",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "CanvasWide"
+      "buildingId": "CanvasWide",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "CanvasTall"
+      "buildingId": "CanvasTall",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "ItemPedestal"
+      "buildingId": "ItemPedestal",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "MonumentBottom"
+      "buildingId": "MonumentBottom",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "MonumentMiddle"
+      "buildingId": "MonumentMiddle",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "MonumentTop"
+      "buildingId": "MonumentTop",
+      "subcategory": "decor"
     },
     {
       "category": -1264537710,
-      "buildingId": "ParkSign"
+      "buildingId": "ParkSign",
+      "subcategory": "decor"
     },
     {
       "category": -154862930,
-      "buildingId": "ResearchCenter"
+      "buildingId": "ResearchCenter",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "AdvancedResearchCenter"
+      "buildingId": "AdvancedResearchCenter",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "NuclearResearchCenter"
+      "buildingId": "NuclearResearchCenter",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "OrbitalResearchCenter"
+      "buildingId": "OrbitalResearchCenter",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "DLC1CosmicResearchCenter"
+      "buildingId": "DLC1CosmicResearchCenter",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "GeoTuner"
+      "buildingId": "GeoTuner",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "DataMiner"
+      "buildingId": "DataMiner",
+      "subcategory": "research"
     },
     {
       "category": -154862930,
-      "buildingId": "PowerControlStation"
+      "buildingId": "PowerControlStation",
+      "subcategory": "industrialstation"
     },
     {
       "category": -154862930,
-      "buildingId": "FarmStation"
+      "buildingId": "FarmStation",
+      "subcategory": "farming"
     },
     {
       "category": -154862930,
-      "buildingId": "GeneticAnalysisStation"
+      "buildingId": "GeneticAnalysisStation",
+      "subcategory": "farming"
     },
     {
       "category": -154862930,
-      "buildingId": "RanchStation"
+      "buildingId": "RanchStation",
+      "subcategory": "ranching"
     },
     {
       "category": -154862930,
-      "buildingId": "ShearingStation"
+      "buildingId": "ShearingStation",
+      "subcategory": "ranching"
     },
     {
       "category": -154862930,
-      "buildingId": "MilkingStation"
+      "buildingId": "MilkingStation",
+      "subcategory": "ranching"
     },
     {
       "category": -154862930,
-      "buildingId": "UnderwaterRanchStation"
+      "buildingId": "UnderwaterRanchStation",
+      "subcategory": "ranching"
     },
     {
       "category": -154862930,
-      "buildingId": "UnderwaterShearingStation"
+      "buildingId": "UnderwaterShearingStation",
+      "subcategory": "ranching"
     },
     {
       "category": -154862930,
-      "buildingId": "UnderwaterMilkingStation"
+      "buildingId": "UnderwaterMilkingStation",
+      "subcategory": "ranching"
     },
     {
       "category": -154862930,
-      "buildingId": "ResetSkillsStation"
+      "buildingId": "ResetSkillsStation",
+      "subcategory": "industrialstation"
     },
     {
       "category": -154862930,
-      "buildingId": "ArtifactAnalysisStation"
+      "buildingId": "ArtifactAnalysisStation",
+      "subcategory": "archaeology"
     },
     {
       "category": -154862930,
-      "buildingId": "RemoteWorkerDock"
+      "buildingId": "RemoteWorkerDock",
+      "subcategory": "operations"
     },
     {
       "category": -154862930,
-      "buildingId": "RemoteWorkTerminal"
+      "buildingId": "RemoteWorkTerminal",
+      "subcategory": "operations"
     },
     {
       "category": -154862930,
-      "buildingId": "MissileFabricator"
+      "buildingId": "MissileFabricator",
+      "subcategory": "meteordefense"
     },
     {
       "category": -154862930,
-      "buildingId": "CraftingTable"
+      "buildingId": "CraftingTable",
+      "subcategory": "manufacturing"
     },
     {
       "category": -154862930,
-      "buildingId": "AdvancedCraftingTable"
+      "buildingId": "AdvancedCraftingTable",
+      "subcategory": "manufacturing"
     },
     {
       "category": -154862930,
-      "buildingId": "ClothingFabricator"
+      "buildingId": "ClothingFabricator",
+      "subcategory": "manufacturing"
     },
     {
       "category": -154862930,
-      "buildingId": "ClothingAlterationStation"
+      "buildingId": "ClothingAlterationStation",
+      "subcategory": "manufacturing"
     },
     {
       "category": -154862930,
-      "buildingId": "SuitFabricator"
+      "buildingId": "SuitFabricator",
+      "subcategory": "manufacturing"
     },
     {
       "category": -154862930,
-      "buildingId": "OxygenMaskMarker"
+      "buildingId": "OxygenMaskMarker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "OxygenMaskLocker"
+      "buildingId": "OxygenMaskLocker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "SuitMarker"
+      "buildingId": "SuitMarker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "SuitLocker"
+      "buildingId": "SuitLocker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "JetSuitMarker"
+      "buildingId": "JetSuitMarker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "JetSuitLocker"
+      "buildingId": "JetSuitLocker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "LeadSuitMarker"
+      "buildingId": "LeadSuitMarker",
+      "subcategory": "equipment"
     },
     {
       "category": -154862930,
-      "buildingId": "LeadSuitLocker"
+      "buildingId": "LeadSuitLocker",
+      "subcategory": "equipment"
     },
     {
       "category": -1237303894,
-      "buildingId": "UnderwaterVentDrill"
+      "buildingId": "UnderwaterVentDrill",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1237303894,
-      "buildingId": "Campfire"
+      "buildingId": "Campfire",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "IceKettle"
+      "buildingId": "IceKettle",
+      "subcategory": "materials"
     },
     {
       "category": -1237303894,
-      "buildingId": "SpaceHeater"
+      "buildingId": "SpaceHeater",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "LiquidHeater"
+      "buildingId": "LiquidHeater",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "IceCooledFan"
+      "buildingId": "IceCooledFan",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "IceMachine"
+      "buildingId": "IceMachine",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "AirConditioner"
+      "buildingId": "AirConditioner",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "LiquidConditioner"
+      "buildingId": "LiquidConditioner",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "OreScrubber"
+      "buildingId": "OreScrubber",
+      "subcategory": "sanitation"
     },
     {
       "category": -1237303894,
-      "buildingId": "OilWellCap"
+      "buildingId": "OilWellCap",
+      "subcategory": "oil"
     },
     {
       "category": -1237303894,
-      "buildingId": "ThermalBlock"
+      "buildingId": "ThermalBlock",
+      "subcategory": "temperature"
     },
     {
       "category": -1237303894,
-      "buildingId": "SweepBotStation"
+      "buildingId": "SweepBotStation",
+      "subcategory": "sanitation"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicWire"
+      "buildingId": "LogicWire",
+      "subcategory": "wires"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicWireBridge"
+      "buildingId": "LogicWireBridge",
+      "subcategory": "wires"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicRibbon"
+      "buildingId": "LogicRibbon",
+      "subcategory": "wires"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicRibbonBridge"
+      "buildingId": "LogicRibbonBridge",
+      "subcategory": "wires"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicSwitch"
+      "buildingId": "LogicSwitch",
+      "subcategory": "switches"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicDuplicantSensor"
+      "buildingId": "LogicDuplicantSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicPressureSensorGas"
+      "buildingId": "LogicPressureSensorGas",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicPressureSensorLiquid"
+      "buildingId": "LogicPressureSensorLiquid",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicTemperatureSensor"
+      "buildingId": "LogicTemperatureSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicLightSensor"
+      "buildingId": "LogicLightSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicWattageSensor"
+      "buildingId": "LogicWattageSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicTimeOfDaySensor"
+      "buildingId": "LogicTimeOfDaySensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicTimerSensor"
+      "buildingId": "LogicTimerSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicDiseaseSensor"
+      "buildingId": "LogicDiseaseSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicElementSensorGas"
+      "buildingId": "LogicElementSensorGas",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicElementSensorLiquid"
+      "buildingId": "LogicElementSensorLiquid",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicCritterCountSensor"
+      "buildingId": "LogicCritterCountSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicRadiationSensor"
+      "buildingId": "LogicRadiationSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicHEPSensor"
+      "buildingId": "LogicHEPSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicCounter"
+      "buildingId": "LogicCounter",
+      "subcategory": "logicmanager"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicAlarm"
+      "buildingId": "LogicAlarm",
+      "subcategory": "logicmanager"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicHammer"
+      "buildingId": "LogicHammer",
+      "subcategory": "logicaudio"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicInterasteroidSender"
+      "buildingId": "LogicInterasteroidSender",
+      "subcategory": "transmissions"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicInterasteroidReceiver"
+      "buildingId": "LogicInterasteroidReceiver",
+      "subcategory": "transmissions"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicRibbonReader"
+      "buildingId": "LogicRibbonReader",
+      "subcategory": "wires"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicRibbonWriter"
+      "buildingId": "LogicRibbonWriter",
+      "subcategory": "wires"
     },
     {
       "category": -470492617,
-      "buildingId": "FloorSwitch"
+      "buildingId": "FloorSwitch",
+      "subcategory": "switches"
     },
     {
       "category": -470492617,
-      "buildingId": "Checkpoint"
+      "buildingId": "Checkpoint",
+      "subcategory": "logicmanager"
     },
     {
       "category": -470492617,
-      "buildingId": "CometDetector"
+      "buildingId": "CometDetector",
+      "subcategory": "sensors"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateNOT"
+      "buildingId": "LogicGateNOT",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateAND"
+      "buildingId": "LogicGateAND",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateOR"
+      "buildingId": "LogicGateOR",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateBUFFER"
+      "buildingId": "LogicGateBUFFER",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateFILTER"
+      "buildingId": "LogicGateFILTER",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateXOR"
+      "buildingId": "LogicGateXOR",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicMemory"
+      "buildingId": "LogicMemory",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateMultiplexer"
+      "buildingId": "LogicGateMultiplexer",
+      "subcategory": "logicgates"
     },
     {
       "category": -470492617,
-      "buildingId": "LogicGateDemultiplexer"
+      "buildingId": "LogicGateDemultiplexer",
+      "subcategory": "logicgates"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidTransferArm"
+      "buildingId": "SolidTransferArm",
+      "subcategory": "automated"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduit"
+      "buildingId": "SolidConduit",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduitBridge"
+      "buildingId": "SolidConduitBridge",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduitInbox"
+      "buildingId": "SolidConduitInbox",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduitOutbox"
+      "buildingId": "SolidConduitOutbox",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidFilter"
+      "buildingId": "SolidFilter",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidVent"
+      "buildingId": "SolidVent",
+      "subcategory": "conveyancestructures"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidLogicValve"
+      "buildingId": "SolidLogicValve",
+      "subcategory": "valves"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidLimitValve"
+      "buildingId": "SolidLimitValve",
+      "subcategory": "valves"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduitDiseaseSensor"
+      "buildingId": "SolidConduitDiseaseSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduitElementSensor"
+      "buildingId": "SolidConduitElementSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -1745293257,
-      "buildingId": "SolidConduitTemperatureSensor"
+      "buildingId": "SolidConduitTemperatureSensor",
+      "subcategory": "sensors"
     },
     {
       "category": -1745293257,
-      "buildingId": "AutoMiner"
+      "buildingId": "AutoMiner",
+      "subcategory": "automated"
     },
     {
       "category": -1745293257,
-      "buildingId": "ModularLaunchpadPortSolid"
+      "buildingId": "ModularLaunchpadPortSolid",
+      "subcategory": "buildmenuports"
     },
     {
       "category": -1745293257,
-      "buildingId": "ModularLaunchpadPortSolidUnloader"
+      "buildingId": "ModularLaunchpadPortSolidUnloader",
+      "subcategory": "buildmenuports"
     },
     {
       "category": -1745293257,
-      "buildingId": "MJSplitterMKIISolid"
+      "buildingId": "MJSplitterMKIISolid",
+      "subcategory": "uncategorized"
     },
     {
       "category": 104161307,
-      "buildingId": "ClusterTelescope"
+      "buildingId": "ClusterTelescope",
+      "subcategory": "telescopes"
     },
     {
       "category": 104161307,
-      "buildingId": "ClusterTelescopeEnclosed"
+      "buildingId": "ClusterTelescopeEnclosed",
+      "subcategory": "telescopes"
     },
     {
       "category": 104161307,
-      "buildingId": "MissionControlCluster"
+      "buildingId": "MissionControlCluster",
+      "subcategory": "rocketnav"
     },
     {
       "category": 104161307,
-      "buildingId": "LaunchPad"
+      "buildingId": "LaunchPad",
+      "subcategory": "rocketstructures"
     },
     {
       "category": 104161307,
-      "buildingId": "Gantry"
+      "buildingId": "Gantry",
+      "subcategory": "rocketstructures"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketControlStation"
+      "buildingId": "RocketControlStation",
+      "subcategory": "rocketnav"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorPowerPlug"
+      "buildingId": "RocketInteriorPowerPlug",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorLiquidInput"
+      "buildingId": "RocketInteriorLiquidInput",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorLiquidOutput"
+      "buildingId": "RocketInteriorLiquidOutput",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorGasInput"
+      "buildingId": "RocketInteriorGasInput",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorGasOutput"
+      "buildingId": "RocketInteriorGasOutput",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorSolidInput"
+      "buildingId": "RocketInteriorSolidInput",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RocketInteriorSolidOutput"
+      "buildingId": "RocketInteriorSolidOutput",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "LogicClusterLocationSensor"
+      "buildingId": "LogicClusterLocationSensor",
+      "subcategory": "rocketnav"
     },
     {
       "category": 104161307,
-      "buildingId": "RailGun"
+      "buildingId": "RailGun",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "RailGunPayloadOpener"
+      "buildingId": "RailGunPayloadOpener",
+      "subcategory": "fittings"
     },
     {
       "category": 104161307,
-      "buildingId": "LandingBeacon"
+      "buildingId": "LandingBeacon",
+      "subcategory": "rocketnav"
     },
     {
       "category": 104161307,
-      "buildingId": "MissileLauncher"
+      "buildingId": "MissileLauncher",
+      "subcategory": "missiles"
     },
     {
       "category": 104161307,
-      "buildingId": "ModularLaunchpadPortBridge"
+      "buildingId": "ModularLaunchpadPortBridge",
+      "subcategory": "rocketstructures"
     },
     {
       "category": 865822131,
-      "buildingId": "RadiationLight"
+      "buildingId": "RadiationLight",
+      "subcategory": "producers"
     },
     {
       "category": 865822131,
-      "buildingId": "ManualHighEnergyParticleSpawner"
+      "buildingId": "ManualHighEnergyParticleSpawner",
+      "subcategory": "producers"
     },
     {
       "category": 865822131,
-      "buildingId": "NuclearReactor"
+      "buildingId": "NuclearReactor",
+      "subcategory": "producers"
     },
     {
       "category": 865822131,
-      "buildingId": "UraniumCentrifuge"
+      "buildingId": "UraniumCentrifuge",
+      "subcategory": "producers"
     },
     {
       "category": 865822131,
-      "buildingId": "HighEnergyParticleSpawner"
+      "buildingId": "HighEnergyParticleSpawner",
+      "subcategory": "producers"
     },
     {
       "category": 865822131,
-      "buildingId": "HighEnergyParticleRedirector"
+      "buildingId": "HighEnergyParticleRedirector",
+      "subcategory": "transmissions"
     },
     {
       "category": 865822131,
-      "buildingId": "HEPBattery"
+      "buildingId": "HEPBattery",
+      "subcategory": "batteries"
     },
     {
       "category": 865822131,
-      "buildingId": "HEPBridgeTile"
+      "buildingId": "HEPBridgeTile",
+      "subcategory": "transmissions"
     },
     {
       "category": 104161307,
-      "buildingId": "CO2Engine"
+      "buildingId": "CO2Engine",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "SugarEngine"
+      "buildingId": "SugarEngine",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "SteamEngineCluster"
+      "buildingId": "SteamEngineCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "KeroseneEngineClusterSmall"
+      "buildingId": "KeroseneEngineClusterSmall",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "KeroseneEngineCluster"
+      "buildingId": "KeroseneEngineCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "BiodieselEngineCluster"
+      "buildingId": "BiodieselEngineCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "HEPEngine"
+      "buildingId": "HEPEngine",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "HydrogenEngineCluster"
+      "buildingId": "HydrogenEngineCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "HabitatModuleSmall"
+      "buildingId": "HabitatModuleSmall",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "HabitatModuleMedium"
+      "buildingId": "HabitatModuleMedium",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "RoboPilotModule"
+      "buildingId": "RoboPilotModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "NoseconeBasic"
+      "buildingId": "NoseconeBasic",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "NoseconeHarvest"
+      "buildingId": "NoseconeHarvest",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "OrbitalCargoModule"
+      "buildingId": "OrbitalCargoModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "ScoutModule"
+      "buildingId": "ScoutModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "PioneerModule"
+      "buildingId": "PioneerModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "LiquidFuelTankCluster"
+      "buildingId": "LiquidFuelTankCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "SmallOxidizerTank"
+      "buildingId": "SmallOxidizerTank",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "OxidizerTankCluster"
+      "buildingId": "OxidizerTankCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "OxidizerTankLiquidCluster"
+      "buildingId": "OxidizerTankLiquidCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "SolidCargoBaySmall"
+      "buildingId": "SolidCargoBaySmall",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "LiquidCargoBaySmall"
+      "buildingId": "LiquidCargoBaySmall",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "GasCargoBaySmall"
+      "buildingId": "GasCargoBaySmall",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "CargoBayCluster"
+      "buildingId": "CargoBayCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "LiquidCargoBayCluster"
+      "buildingId": "LiquidCargoBayCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "GasCargoBayCluster"
+      "buildingId": "GasCargoBayCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "ResearchClusterModule"
+      "buildingId": "ResearchClusterModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "SpecialCargoBayCluster"
+      "buildingId": "SpecialCargoBayCluster",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "BatteryModule"
+      "buildingId": "BatteryModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "SolarPanelModule"
+      "buildingId": "SolarPanelModule",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "ArtifactCargoBay"
+      "buildingId": "ArtifactCargoBay",
+      "subcategory": "rocketmodules"
     },
     {
       "category": 104161307,
-      "buildingId": "ScannerModule"
+      "buildingId": "ScannerModule",
+      "subcategory": "rocketmodules"
     }
   ],
   "elements": [
