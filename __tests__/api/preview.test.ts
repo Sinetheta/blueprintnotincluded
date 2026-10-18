@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import sharp from 'sharp';
+import sinon from 'sinon';
 
 // Load test environment first
 dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
@@ -22,28 +23,40 @@ import {
   PREVIEW_VARIANTS,
 } from '../../app/api/services/preview-image-service';
 import { Types } from 'mongoose';
+import { drainBackgroundTasks } from '../../app/api/services/background-tasks';
 
-// Waits for a fire-and-forget prerender to finish (or fail) by polling.
-async function waitFor(condition: () => boolean, timeoutMs = 2000): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (!condition()) {
-    if (Date.now() > deadline) throw new Error('waitFor timed out');
-    await new Promise(resolve => setTimeout(resolve, 10));
-  }
+// A promise plus the function that resolves it — lets a fake renderer signal
+// "the render has started" and hold itself open until the test releases it.
+function signal(): { promise: Promise<void>; resolve: () => void } {
+  let resolve!: () => void;
+  const promise = new Promise<void>(r => (resolve = r));
+  return { promise, resolve };
 }
 
 describe('Blueprint preview images', function () {
   let testData: any;
   let blueprintId: string;
+  let tempDirs: string[];
+
+  // A fresh cache dir, removed after the test whether it passed or not.
+  function tempCacheDir(prefix: string): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+    tempDirs.push(dir);
+    return dir;
+  }
 
   beforeEach(async function () {
     this.timeout(5000);
+    tempDirs = [];
     testData = await TestSetup.beforeEach();
     blueprintId = testData.blueprints.popularBlueprint._id.toString();
   });
 
   afterEach(async function () {
     this.timeout(5000);
+    // Finish any prerender before its cache dir goes.
+    await drainBackgroundTasks();
+    for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
     PreviewImageService.setInstance(null);
     await TestSetup.afterEach();
   });
@@ -106,7 +119,7 @@ describe('Blueprint preview images', function () {
 
     it('serves rendered variants and re-renders when the blueprint is modified', async function () {
       this.timeout(10000);
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-test-'));
+      const cacheDir = tempCacheDir('preview-test-');
       let renderCount = 0;
       const fakeMaster = await sharp({
         create: {
@@ -155,13 +168,11 @@ describe('Blueprint preview images', function () {
       );
       expect(rerendered.status).to.equal(200);
       expect(renderCount).to.equal(2);
-
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
 
     it('derives variants from a raw-pixel master (the render worker format)', async function () {
       this.timeout(10000);
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-raw-'));
+      const cacheDir = tempCacheDir('preview-raw-');
       // 64x64 opaque green RGBA — what the worker ships instead of a PNG.
       const raw = Buffer.alloc(64 * 64 * 4);
       for (let i = 0; i < raw.length; i += 4) {
@@ -196,13 +207,11 @@ describe('Blueprint preview images', function () {
         .toBuffer();
       expect(center[1]).to.be.greaterThan(center[0]);
       expect(center[1]).to.be.greaterThan(center[2]);
-
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
 
     it('renders one master at a time even when requests arrive together', async function () {
       this.timeout(10000);
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-queue-'));
+      const cacheDir = tempCacheDir('preview-queue-');
       const fakeMaster = await sharp({
         create: { width: 8, height: 8, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 1 } },
       })
@@ -231,28 +240,24 @@ describe('Blueprint preview images', function () {
 
       results.forEach(result => expect(result).to.not.be.null);
       expect(maxActive).to.equal(1);
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
 
     it('fails fast (fallback, not hang) when the render queue is full', async function () {
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-queue-'));
+      const cacheDir = tempCacheDir('preview-queue-');
       const fakeMaster = await sharp({
         create: { width: 8, height: 8, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 1 } },
       })
         .png()
         .toBuffer();
-      let releaseFirst!: () => void;
-      const firstStarted = new Promise<void>(resolve => {
-        releaseFirst = resolve;
-      });
-      let renderStarted = false;
+      const renderStarted = signal();
+      const releaseFirst = signal();
       const service = new PreviewImageService({
         cacheDir,
         disabled: false,
         renderQueueMax: 1,
         renderMasterFn: async () => {
-          renderStarted = true;
-          await firstStarted;
+          renderStarted.resolve();
+          await releaseFirst.promise;
           return fakeMaster;
         },
       });
@@ -262,8 +267,8 @@ describe('Blueprint preview images', function () {
       // getVariant awaits a real Mongo lookup before it reaches the queue-depth
       // check, so a single setImmediate tick isn't a reliable enough signal
       // that the first request has claimed its queue slot under CI load.
-      // Poll for the render actually starting instead.
-      await waitFor(() => renderStarted);
+      // Wait for the render actually starting instead.
+      await renderStarted.promise;
 
       // Queue holds one render (the active one); the next request is shed
       // immediately so the controller serves the legacy thumbnail.
@@ -275,13 +280,12 @@ describe('Blueprint preview images', function () {
       );
       expect(second).to.be.null;
 
-      releaseFirst();
+      releaseFirst.resolve();
       expect(await first).to.not.be.null;
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
 
     it('falls back to the legacy thumbnail when the renderer fails', async function () {
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-test-'));
+      const cacheDir = tempCacheDir('preview-test-');
       PreviewImageService.setInstance(
         new PreviewImageService({
           cacheDir,
@@ -297,8 +301,6 @@ describe('Blueprint preview images', function () {
       );
       expect(response.status).to.equal(200);
       expect(response.headers['content-type']).to.match(/image\/png/);
-
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
   });
 
@@ -314,11 +316,7 @@ describe('Blueprint preview images', function () {
     let cacheDir: string;
 
     beforeEach(function () {
-      cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-oom-'));
-    });
-
-    afterEach(function () {
-      fs.rmSync(cacheDir, { recursive: true, force: true });
+      cacheDir = tempCacheDir('preview-oom-');
     });
 
     const mdbWith = (itemCount: number) => ({
@@ -424,18 +422,15 @@ describe('Blueprint preview images', function () {
       })
         .png()
         .toBuffer();
-      let releaseFirst!: () => void;
-      const firstStarted = new Promise<void>(resolve => {
-        releaseFirst = resolve;
-      });
-      let renderStarted = false;
+      const renderStarted = signal();
+      const releaseFirst = signal();
       const service = new PreviewImageService({
         cacheDir,
         disabled: false,
         renderQueueMax: 1,
         renderMasterFn: async () => {
-          renderStarted = true;
-          await firstStarted;
+          renderStarted.resolve();
+          await releaseFirst.promise;
           return fakeMaster;
         },
       });
@@ -443,9 +438,9 @@ describe('Blueprint preview images', function () {
       const shedId = new Types.ObjectId().toString();
 
       const first = service.getVariant(new Types.ObjectId().toString(), null, 'card.webp', loadMdb);
-      await waitFor(() => renderStarted);
+      await renderStarted.promise;
       expect(await service.getVariant(shedId, null, 'card.webp', loadMdb)).to.equal(null);
-      releaseFirst();
+      releaseFirst.resolve();
       await first;
 
       expect(service.failedRenderCount).to.equal(0);
@@ -632,8 +627,7 @@ describe('Blueprint preview images', function () {
       await service.getVariant(blueprintId, modifiedAt, 'card.webp', loadMdb);
       expect(renders).to.equal(1);
 
-      service.prerender(blueprintId, modifiedAt, loadMdb);
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await service.prerender(blueprintId, modifiedAt, loadMdb);
       expect(renders).to.equal(1);
     });
   });
@@ -649,55 +643,65 @@ describe('Blueprint preview images', function () {
     let cacheDir: string;
 
     beforeEach(function () {
-      cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-idle-'));
+      cacheDir = tempCacheDir('preview-idle-');
     });
 
-    afterEach(function () {
-      fs.rmSync(cacheDir, { recursive: true, force: true });
+    // The fake clock is installed and restored inside one synchronous test
+    // body, so no other code (the Mongo driver's own timers) ever runs on it.
+    it('holds the worker while renders are queued, and releases it once they drain', function () {
+      const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        // Drives the idle timer directly: scheduleIdleShutdown only runs on the
+        // real-worker path, which unit tests deliberately never fork.
+        const service = new PreviewImageService({
+          cacheDir,
+          disabled: false,
+          idleShutdownMs: 20,
+        }) as unknown as {
+          renderQueueDepth: number;
+          stopWorker: () => void;
+          scheduleIdleShutdown: () => void;
+        };
+        let stops = 0;
+        service.stopWorker = () => {
+          stops++;
+        };
+
+        // A render is waiting its turn behind the active one: every idle
+        // check re-arms instead of stopping.
+        service.renderQueueDepth = 1;
+        service.scheduleIdleShutdown();
+        clock.tick(100);
+        expect(stops).to.equal(0);
+
+        // Queue drained — the next check releases it.
+        service.renderQueueDepth = 0;
+        clock.tick(20);
+        expect(stops).to.equal(1);
+      } finally {
+        clock.restore();
+      }
     });
 
-    it('holds the worker while renders are queued, and releases it once they drain', async function () {
-      // Drives the idle timer directly: scheduleIdleShutdown only runs on the
-      // real-worker path, which unit tests deliberately never fork.
-      const service = new PreviewImageService({
-        cacheDir,
-        disabled: false,
-        idleShutdownMs: 20,
-      }) as unknown as {
-        renderQueueDepth: number;
-        stopWorker: () => void;
-        scheduleIdleShutdown: () => void;
-      };
-      let stops = 0;
-      service.stopWorker = () => {
-        stops++;
-      };
-
-      // A render is waiting its turn behind the active one.
-      service.renderQueueDepth = 1;
-      service.scheduleIdleShutdown();
-      await new Promise(resolve => setTimeout(resolve, 80));
-      expect(stops).to.equal(0);
-
-      // Queue drained — the next check releases it.
-      service.renderQueueDepth = 0;
-      await waitFor(() => stops > 0, 1000);
-      expect(stops).to.be.greaterThan(0);
-    });
-
-    it('does not arm an idle shutdown when the feature is disabled with 0', async function () {
-      const service = new PreviewImageService({
-        cacheDir,
-        disabled: false,
-        idleShutdownMs: 0,
-      }) as unknown as { stopWorker: () => void; scheduleIdleShutdown: () => void };
-      let stops = 0;
-      service.stopWorker = () => {
-        stops++;
-      };
-      service.scheduleIdleShutdown();
-      await new Promise(resolve => setTimeout(resolve, 60));
-      expect(stops).to.equal(0);
+    it('does not arm an idle shutdown when the feature is disabled with 0', function () {
+      const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        const service = new PreviewImageService({
+          cacheDir,
+          disabled: false,
+          idleShutdownMs: 0,
+        }) as unknown as { stopWorker: () => void; scheduleIdleShutdown: () => void };
+        let stops = 0;
+        service.stopWorker = () => {
+          stops++;
+        };
+        service.scheduleIdleShutdown();
+        clock.tick(60_000);
+        expect(stops).to.equal(0);
+        expect(clock.countTimers()).to.equal(0);
+      } finally {
+        clock.restore();
+      }
     });
   });
 
@@ -711,7 +715,7 @@ describe('Blueprint preview images', function () {
     let renderedMdbs: unknown[];
 
     beforeEach(async function () {
-      cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-prerender-'));
+      cacheDir = tempCacheDir('preview-prerender-');
       renderCount = 0;
       renderedMdbs = [];
       const fakeMaster = await sharp({
@@ -732,15 +736,11 @@ describe('Blueprint preview images', function () {
       );
     });
 
-    afterEach(function () {
-      fs.rmSync(cacheDir, { recursive: true, force: true });
-    });
-
     it('prerender writes every variant, then reads serve from cache without rendering', async function () {
       const service = PreviewImageService.instance;
-      service.prerender(blueprintId, new Date(), async () => ({ items: [] }));
-      await waitFor(() => fs.existsSync(path.join(cacheDir, blueprintId, 'og.png')));
+      await service.prerender(blueprintId, new Date(), async () => ({ items: [] }));
       expect(renderCount).to.equal(1);
+      expect(fs.existsSync(path.join(cacheDir, blueprintId, 'og.png'))).to.equal(true);
       expect(fs.existsSync(path.join(cacheDir, blueprintId, 'card.webp'))).to.equal(true);
       expect(fs.existsSync(path.join(cacheDir, blueprintId, 'hero.webp'))).to.equal(true);
 
@@ -755,8 +755,9 @@ describe('Blueprint preview images', function () {
       expect(renderCount).to.equal(1);
 
       // A repeated prerender against a fresh cache is a no-op.
-      service.prerender(blueprintId, new Date(Date.now() - 60_000), async () => ({ items: [] }));
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await service.prerender(blueprintId, new Date(Date.now() - 60_000), async () => ({
+        items: [],
+      }));
       expect(renderCount).to.equal(1);
     });
 
@@ -768,9 +769,8 @@ describe('Blueprint preview images', function () {
           throw new Error('worker exploded');
         },
       });
-      service.prerender(blueprintId, new Date(), async () => ({ items: [] }));
-      // Nothing to await — just verify no unhandled rejection escapes.
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Resolves, never rejects: no unhandled rejection escapes the save path.
+      await service.prerender(blueprintId, new Date(), async () => ({ items: [] }));
       expect(fs.existsSync(path.join(cacheDir, blueprintId))).to.equal(false);
     });
 
@@ -788,7 +788,9 @@ describe('Blueprint preview images', function () {
       expect(response.status).to.equal(200);
       const savedId = response.body.id;
 
-      await waitFor(() => fs.existsSync(path.join(cacheDir, savedId, 'og.png')));
+      // The prerender is fire-and-forget after the response.
+      await drainBackgroundTasks();
+      expect(fs.existsSync(path.join(cacheDir, savedId, 'og.png'))).to.equal(true);
       expect(renderCount).to.equal(1);
       expect(renderedMdbs[0]).to.deep.equal({
         ...data,
@@ -805,7 +807,8 @@ describe('Blueprint preview images', function () {
       expect(response.status).to.equal(200);
       const forkId = response.body.id;
 
-      await waitFor(() => fs.existsSync(path.join(cacheDir, forkId, 'og.png')));
+      await drainBackgroundTasks();
+      expect(fs.existsSync(path.join(cacheDir, forkId, 'og.png'))).to.equal(true);
       expect(renderCount).to.equal(1);
       expect(renderedMdbs[0]).to.deep.equal({
         ...testData.blueprints.popularBlueprint.data,
@@ -833,7 +836,8 @@ describe('Blueprint preview images', function () {
       const after = (await BlueprintModel.model.findById(blueprintId))!.modifiedAt;
       expect(after.getTime()).to.be.greaterThan(before.getTime());
 
-      await waitFor(() => fs.existsSync(path.join(cacheDir, blueprintId, 'og.png')));
+      await drainBackgroundTasks();
+      expect(fs.existsSync(path.join(cacheDir, blueprintId, 'og.png'))).to.equal(true);
       expect(renderCount).to.equal(1);
       expect(renderedMdbs[0]).to.deep.equal({
         ...restoredData,
@@ -919,12 +923,8 @@ describe('Blueprint preview images', function () {
     }
 
     beforeEach(function () {
-      cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-mongo-'));
+      cacheDir = tempCacheDir('preview-mongo-');
       renderCount = 0;
-    });
-
-    afterEach(function () {
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
 
     // The backfill script calls renderAndStore directly, which skips the
@@ -1034,8 +1034,7 @@ describe('Blueprint preview images', function () {
       await seedMongoRows(modifiedAt);
       const service = makeService();
 
-      service.prerender(blueprintId, modifiedAt, async () => ({ items: [] }));
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await service.prerender(blueprintId, modifiedAt, async () => ({ items: [] }));
       expect(renderCount).to.equal(0);
     });
   });
@@ -1046,7 +1045,7 @@ describe('Blueprint preview images', function () {
   describe('cell-pitch grid (framing)', function () {
     it('bakes a phase-aligned grid into card.webp and hero.webp when framing is present', async function () {
       this.timeout(10000);
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-grid-'));
+      const cacheDir = tempCacheDir('preview-grid-');
       const size = 64;
       const raw = Buffer.alloc(size * size * 4); // fully transparent
       const framing = { tileSize: 8, offsetPx: { x: 0, y: 0 } };
@@ -1081,13 +1080,11 @@ describe('Blueprint preview images', function () {
       // Hero keeps the master's own size (no resize): lines land at x = n*8.
       expect(heroAlphaAt(8, 30)).to.be.greaterThan(15);
       expect(heroAlphaAt(4, 30)).to.be.lessThan(15);
-
-      fs.rmSync(cacheDir, { recursive: true, force: true });
     });
 
     it('composites no grid when the master carries no framing', async function () {
       this.timeout(10000);
-      const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-grid-none-'));
+      const cacheDir = tempCacheDir('preview-grid-none-');
       // A legacy renderMasterFn shape (a plain Buffer) has no way to carry
       // framing at all — same as a RawMaster whose framing came back null.
       const transparentMaster = await sharp({
@@ -1104,13 +1101,9 @@ describe('Blueprint preview images', function () {
       const card = await service.getVariant(blueprintId, null, 'card.webp', async () => ({
         items: [],
       }));
-      const { data, info } = await sharp(card!.buffer)
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      for (let i = 3; i < data.length; i += info.channels) expect(data[i]).to.equal(0);
-
-      fs.rmSync(cacheDir, { recursive: true, force: true });
+      // Fully transparent everywhere: no grid line was composited.
+      const { channels } = await sharp(card!.buffer).ensureAlpha().stats();
+      expect(channels[3].max).to.equal(0);
     });
 
     it('leaves og.png unaffected by framing while still changing card.webp', async function () {
@@ -1139,7 +1132,7 @@ describe('Blueprint preview images', function () {
       const idWithGrid = new Types.ObjectId().toString();
       const idNoGrid = new Types.ObjectId().toString();
 
-      const cacheDirWithGrid = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-og-grid-'));
+      const cacheDirWithGrid = tempCacheDir('preview-og-grid-');
       const withGrid = new PreviewImageService({
         cacheDir: cacheDirWithGrid,
         disabled: false,
@@ -1148,7 +1141,7 @@ describe('Blueprint preview images', function () {
       const cardWithGrid = await withGrid.getVariant(idWithGrid, null, 'card.webp', loadMdb);
       const ogWithGrid = await withGrid.getVariant(idWithGrid, null, 'og.png', loadMdb);
 
-      const cacheDirNoGrid = fs.mkdtempSync(path.join(os.tmpdir(), 'preview-og-nogrid-'));
+      const cacheDirNoGrid = tempCacheDir('preview-og-nogrid-');
       const noGrid = new PreviewImageService({
         cacheDir: cacheDirNoGrid,
         disabled: false,
@@ -1159,9 +1152,6 @@ describe('Blueprint preview images', function () {
 
       expect(ogWithGrid!.buffer.equals(ogNoGrid!.buffer)).to.equal(true);
       expect(cardWithGrid!.buffer.equals(cardNoGrid!.buffer)).to.equal(false);
-
-      fs.rmSync(cacheDirWithGrid, { recursive: true, force: true });
-      fs.rmSync(cacheDirNoGrid, { recursive: true, force: true });
     });
   });
 });

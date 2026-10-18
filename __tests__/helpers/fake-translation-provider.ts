@@ -8,9 +8,6 @@ export class FakeTranslationProvider implements TranslationProvider {
   public calls: { texts: string[]; targetLang: string }[] = [];
   public detectedSourceLang: string | undefined = 'fr';
   public failNext = false;
-  // Artificial per-call latency, for tests that need a window to act while a
-  // translation is still in flight (e.g. simulating a concurrent save).
-  public delayMs = 0;
 
   isConfigured(): boolean {
     return this.configured;
@@ -18,7 +15,6 @@ export class FakeTranslationProvider implements TranslationProvider {
 
   async translate(texts: string[], targetLang: string): Promise<TranslatedText[]> {
     this.calls.push({ texts, targetLang });
-    if (this.delayMs > 0) await new Promise(resolve => setTimeout(resolve, this.delayMs));
     if (this.failNext) {
       this.failNext = false;
       throw new Error('fake provider failure');

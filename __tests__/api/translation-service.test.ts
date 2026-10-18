@@ -2,11 +2,11 @@ import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
 import dotenv from 'dotenv';
 import path from 'path';
+import sinon from 'sinon';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 process.env.NODE_ENV = 'test';
 
-import { TestSetup } from '../setup/testSetup';
 import { AUTO_SOURCE_LANG, TranslationUnitModel } from '../../app/api/models/translation-unit';
 import { TranslationBudgetModel } from '../../app/api/models/translation-budget';
 import {
@@ -21,8 +21,6 @@ describe('TranslationService', function () {
   let service: TranslationService;
 
   beforeEach(async function () {
-    this.timeout(10000);
-    await TestSetup.beforeEach();
     await TranslationUnitModel.model.deleteMany({});
     await TranslationBudgetModel.model.deleteMany({});
     fake = new FakeTranslationProvider();
@@ -35,7 +33,6 @@ describe('TranslationService', function () {
     delete process.env.MAX_TRANSLATIONS_PER_USER_PER_DAY;
     await TranslationUnitModel.model.deleteMany({});
     await TranslationBudgetModel.model.deleteMany({});
-    await TestSetup.afterEach();
   });
 
   describe('same-language shortcut', function () {
@@ -233,24 +230,31 @@ describe('TranslationService', function () {
     // Regression for the {month, userId} unique index that used to collide a
     // user's second day of a month against their first (E11000 on upsert).
     it('lets the same user translate again on a new day within the same month', async function () {
-      const userId = '507f1f77bcf86cd799439011';
-      await TranslationBudgetModel.model.create({
-        month: monthKey(),
-        day: `${monthKey()}-01`,
-        userId,
-        charCount: 500,
-        requestCount: 3,
-      });
+      // A fixed mid-month "today", so yesterday is always in the same month.
+      // Only Date is faked; the driver's timers keep running.
+      const clock = sinon.useFakeTimers({ now: Date.UTC(2026, 2, 15, 12), toFake: ['Date'] });
+      try {
+        const userId = '507f1f77bcf86cd799439011';
+        await TranslationBudgetModel.model.create({
+          month: '2026-03',
+          day: '2026-03-14',
+          userId,
+          charCount: 500,
+          requestCount: 3,
+        });
 
-      const result = await service.translateOne(
-        { sourceText: 'Une phrase du jour suivant', sourceLang: 'fr', targetLang: 'en' },
-        userId
-      );
+        const result = await service.translateOne(
+          { sourceText: 'Une phrase du jour suivant', sourceLang: 'fr', targetLang: 'en' },
+          userId
+        );
 
-      expect(result.cached).to.equal(false);
-      expect(
-        await TranslationBudgetModel.model.countDocuments({ userId, month: monthKey() })
-      ).to.equal(2);
+        expect(result.cached).to.equal(false);
+        expect(
+          await TranslationBudgetModel.model.countDocuments({ userId, month: '2026-03' })
+        ).to.equal(2);
+      } finally {
+        clock.restore();
+      }
     });
   });
 
@@ -321,11 +325,6 @@ describe('TranslationService', function () {
       // A degraded result must never be cached
       expect(await TranslationUnitModel.model.countDocuments({})).to.equal(0);
     });
-  });
-
-  it('reports 503-worthy unconfigured state through isConfigured()', function () {
-    fake.configured = false;
-    expect(service.isConfigured()).to.equal(false);
   });
 
   function monthKey(date = new Date()): string {

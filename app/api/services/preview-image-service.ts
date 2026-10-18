@@ -20,6 +20,7 @@ import mongoose from 'mongoose';
 import sharp from 'sharp';
 import { RocketInteriorCell, RocketInteriorModule } from '../../../lib';
 import { PreviewImageModel } from '../models/preview-image';
+import { runInBackground } from './background-tasks';
 import { buildPreviewGridSvg, PreviewFraming } from './preview-grid';
 import { resolveMaxOldSpaceMb } from './render-memory';
 
@@ -448,28 +449,31 @@ export class PreviewImageService {
    * save/fork/restore serves from cache. Skips when the cache is already
    * fresh; shares the single-flight map and queue cap with getVariant, so a
    * shed or failed render just means the lazy read path picks it up later —
-   * never a user-visible failure.
+   * never a user-visible failure. The returned promise never rejects; request
+   * paths don't await it.
    */
   public prerender(
     blueprintId: string,
     modifiedAt: Date | null | undefined,
     loadMdb: () => Promise<unknown | null>
-  ): void {
-    if (this.disabled) return;
+  ): Promise<void> {
+    if (this.disabled) return Promise.resolve();
     const allFresh = PREVIEW_VARIANTS.every(variant =>
       this.isFresh(this.variantPath(blueprintId, variant), modifiedAt)
     );
-    if (allFresh) return;
+    if (allFresh) return Promise.resolve();
 
-    (async () => {
-      // Fresh durable rows mean the read path serves (and hydrates disk)
-      // without rendering — nothing to do.
-      if (await this.allFreshInMongo(blueprintId, modifiedAt)) return;
-      await this.renderSingleFlight(blueprintId, modifiedAt, loadMdb);
-    })().catch(e => {
-      if (!(e instanceof PreviewRenderSkippedError))
-        console.log(`preview prerender failed for ${blueprintId}:`, e);
-    });
+    return runInBackground(
+      (async () => {
+        // Fresh durable rows mean the read path serves (and hydrates disk)
+        // without rendering — nothing to do.
+        if (await this.allFreshInMongo(blueprintId, modifiedAt)) return;
+        await this.renderSingleFlight(blueprintId, modifiedAt, loadMdb);
+      })().catch(e => {
+        if (!(e instanceof PreviewRenderSkippedError))
+          console.log(`preview prerender failed for ${blueprintId}:`, e);
+      })
+    );
   }
 
   /**

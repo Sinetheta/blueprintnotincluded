@@ -1,4 +1,5 @@
 import { SearchQueryModel } from '../models/search-query';
+import { runInBackground } from './background-tasks';
 
 // Fire-and-forget telemetry write for the query pipeline (phase 4). Never
 // awaited by a caller — a search response must not wait on it, same
@@ -9,14 +10,16 @@ export function recordSearchQuery(
   translated: boolean
 ): void {
   if (normalizedQuery.length === 0) return;
-  SearchQueryModel.model
-    .updateOne(
-      { normalizedQuery, sourceLang },
-      { $set: { translated, lastSeenAt: new Date() }, $inc: { hitCount: 1 } },
-      { upsert: true }
-    )
-    .catch(err => {
-      console.log('search query telemetry error');
-      console.log(err);
-    });
+  runInBackground(
+    SearchQueryModel.model
+      .updateOne(
+        { normalizedQuery, sourceLang },
+        { $set: { translated, lastSeenAt: new Date() }, $inc: { hitCount: 1 } },
+        { upsert: true }
+      )
+      .catch(err => {
+        console.log('search query telemetry error');
+        console.log(err);
+      })
+  );
 }

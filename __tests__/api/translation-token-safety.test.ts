@@ -72,15 +72,17 @@ describe('translation-token-safety', function () {
         'a {{user:507f1f77bcf86cd799439011}} b {{blueprint:507f191e810c19729de860ea}}'
       );
       // Drop the second placeholder entirely
-      const mangled = text.replace(/xxBNIREFx1xx/, 'gone');
+      const secondPlaceholder = text.split(' b ')[1];
+      const mangled = text.replace(secondPlaceholder, 'gone');
       expect(restoreReferences(mangled, tokens)).to.equal(null);
     });
 
     it('fails when the translated text contains a stray unrecognized placeholder-shaped sentinel', function () {
-      const { tokens } = tokenizeReferences('see {{blueprint:507f1f77bcf86cd799439011}}');
+      const { text, tokens } = tokenizeReferences('see {{blueprint:507f1f77bcf86cd799439011}}');
       // Only one real placeholder existed (index 0); an extra index-99 sentinel
       // appearing in the output means the round-trip cannot be trusted.
-      const withRestored = restoreReferences('see xxBNIREFx0xx and also xxBNIREFx99xx', tokens);
+      const stray = text.replace('see ', '').replace('0', '99');
+      const withRestored = restoreReferences(`${text} and also ${stray}`, tokens);
       expect(withRestored).to.equal(null);
     });
   });

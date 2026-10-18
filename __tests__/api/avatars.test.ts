@@ -93,9 +93,6 @@ describe('Avatar generation & pool API', function () {
   let fake: FakeProvider;
 
   before(function () {
-    AvatarModel.init();
-    AvatarBatchModel.init();
-    AvatarSeedUploadModel.init();
     // Refill fires asynchronously after assignments; a mid-test refill of fake
     // avatars would race the count assertions and afterEach cleanup
     process.env.AVATAR_POOL_LOW_WATER = '0';

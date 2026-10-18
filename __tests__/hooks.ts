@@ -38,6 +38,7 @@ delete process.env.AUTH_MODE;
 // what calls every Model.init(). The waitForDbReady hook below then blocks
 // the test run until that listener has actually run, instead of racing it.
 import '../app/app';
+import { drainBackgroundTasks } from '../app/api/services/background-tasks';
 
 const waitForDbReady = () => {
   if (mongoose.connection.readyState === 1) return;
@@ -85,4 +86,8 @@ export const mochaHooks: RootHookObject = {
     waitForDbReady,
     syncTestIndexes,
   ],
+  // Backstop for specs that don't go through TestSetup.afterEach: a previous
+  // test's fire-and-forget writes land before this test's own setup wipes the
+  // database, never in the middle of this test.
+  beforeEach: [drainBackgroundTasks],
 };
