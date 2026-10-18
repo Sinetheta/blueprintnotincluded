@@ -17,6 +17,8 @@ describe('deriveRequiredDlcs (DLC requirement set)', () => {
     expect(deriveRequiredDlcs([['DLC2_ID'], []])).to.deep.equal(['DLC2_ID']);
   });
 
+  // Owning one pack implies nothing about owning another, and Spaced Out is one
+  // id among the others: a blueprint using two packs must report both.
   it('unions the ids across buildings', () => {
     expect(deriveRequiredDlcs([['EXPANSION1_ID'], ['DLC2_ID'], []])).to.deep.equal([
       'DLC2_ID',
@@ -35,13 +37,6 @@ describe('deriveRequiredDlcs (DLC requirement set)', () => {
     expect(a).to.deep.equal(b);
   });
 
-  // The case the old single-valued model could not express at all: owning the
-  // Bionic Booster Pack implies nothing about owning Frosty Planet, so a
-  // blueprint using both must report both.
-  it('reports every pack a mixed blueprint needs', () => {
-    expect(deriveRequiredDlcs([['DLC2_ID'], ['DLC3_ID']])).to.deep.equal(['DLC2_ID', 'DLC3_ID']);
-  });
-
   // Multiple ids on one building are AND — RoboPilotModule needs Spaced Out AND
   // the Bionic Booster Pack — which is exactly what a union preserves.
   it('keeps both ids of an AND building', () => {
@@ -49,13 +44,6 @@ describe('deriveRequiredDlcs (DLC requirement set)', () => {
       'DLC3_ID',
       'EXPANSION1_ID',
     ]);
-  });
-
-  // Spaced Out gets no special treatment: it is one id among the others, and a
-  // blueprint that happens to use only classic content is buildable by anyone
-  // regardless of what its author was playing.
-  it('treats EXPANSION1_ID like any other id', () => {
-    expect(deriveRequiredDlcs([['EXPANSION1_ID'], []])).to.deep.equal(['EXPANSION1_ID']);
   });
 
   it('passes through ids it has never heard of', () => {

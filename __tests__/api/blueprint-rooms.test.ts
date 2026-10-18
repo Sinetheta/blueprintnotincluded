@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -109,15 +104,6 @@ describe('Blueprint rooms derivation API', function () {
         .get('/api/getblueprints')
         .query({ olderthan: Date.now(), ...query });
 
-    it('filters by a single room type', async function () {
-      const response = await list({ rooms: 'latrine' });
-      expect(response.status).to.equal(200);
-
-      const ids = response.body.blueprints.map((bp: any) => bp.id);
-      expect(ids).to.include(latrineId);
-      expect(ids).to.not.include(barracksId);
-    });
-
     it('matches any of a comma-separated list', async function () {
       const response = await list({ rooms: 'latrine,barracks' });
       expect(response.status).to.equal(200);
@@ -133,9 +119,11 @@ describe('Blueprint rooms derivation API', function () {
       expect(item.rooms).to.deep.equal(['latrine']);
     });
 
-    it('does not match blueprints whose rooms were never derived', async function () {
-      // Seeded fixtures predate room derivation (no rooms field).
+    it('filters by a single room type, never matching blueprints whose rooms were never derived', async function () {
+      // Seeded fixtures predate room derivation (no rooms field); the barracks
+      // upload has a different room. Only the latrine may come back.
       const response = await list({ rooms: 'latrine' });
+      expect(response.status).to.equal(200);
       const ids = response.body.blueprints.map((bp: any) => bp.id);
       expect(ids).to.deep.equal([latrineId]);
     });

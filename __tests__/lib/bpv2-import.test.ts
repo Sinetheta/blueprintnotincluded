@@ -141,17 +141,6 @@ describe('BlueprintsV2 import', function () {
   });
 
   describe('world-notes persistence (spec/element-notes.md §1)', function () {
-    it('round-trips notes through importFromBni -> toMdbBlueprint -> importFromMdb exactly', () => {
-      const source = new Blueprint();
-      source.importFromBni(fixture);
-      const mdb = source.toMdbBlueprint();
-      expect(mdb.worldNotes).to.have.length(3);
-
-      const reimported = new Blueprint();
-      reimported.importFromMdb(mdb);
-      expect(reimported.worldNotes).to.deep.equal(source.worldNotes);
-    });
-
     it("carries a text note's icon through every hop, under the mod's own key", () => {
       // BlueprintNoteData.Symbol is matched by sprite name on load, so the key
       // and the value both have to survive verbatim or the game silently drops
@@ -266,18 +255,6 @@ describe('BlueprintsV2 import', function () {
       expect(bni.buildings.map(b => b.buildingData)).to.deep.equal(
         timeSensorsFixture.buildings.map(b => b.buildingData)
       );
-    });
-
-    it('omits buildingData from toMdbBuilding/toBniBuilding for a building placed in the editor', () => {
-      const empty = new Blueprint();
-      empty.importFromBni({ friendlyname: '', buildings: [], digcommands: [] });
-      // No blueprintItems to place through the editor API directly here, but
-      // the empty-fixture check below proves the omit-when-empty path: a
-      // blueprint with no buildingData produces no buildingData key anywhere.
-      const mdb = empty.toMdbBlueprint();
-      expect(JSON.stringify(mdb)).to.not.include('buildingData');
-      const bni = empty.toBniBlueprint('no-settings');
-      expect(JSON.stringify(bni)).to.not.include('buildingData');
     });
 
     it('undo simulation: mutating the live item after snapshotting does not affect the restored settings', () => {

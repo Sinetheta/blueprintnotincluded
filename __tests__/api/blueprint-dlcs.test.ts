@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -112,20 +107,10 @@ describe('Blueprint DLC requirement derivation', function () {
       expect(saved!.requiredDlcs).to.deep.equal(['DLC2_ID', 'DLC5_ID']);
     });
 
-    it('stores [] for a base-game-only save', async function () {
-      const response = await upload({
-        name: 'Base Game Save',
-        blueprint: blueprintData([BASE_PREFAB]),
-      });
-
-      expect(response.status).to.equal(200);
-      const saved = await BlueprintModel.model.findById(response.body.id);
-      expect(saved!.requiredDlcs).to.deep.equal([]);
-    });
-
     // Requirements come from the blueprint's content, never from the client
     // (or from what the author happens to own) — same policy as rooms/mods.
-    it('ignores a client-supplied requiredDlcs field', async function () {
+    // A base-game save therefore stores [] whatever the client claims.
+    it('stores [] for a base-game save and ignores a client-supplied requiredDlcs field', async function () {
       const response = await upload({
         name: 'Client Dlcs Ignored',
         blueprint: blueprintData([BASE_PREFAB]),

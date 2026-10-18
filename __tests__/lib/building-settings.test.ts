@@ -380,30 +380,21 @@ describe('formatBuildingDataEntry', function () {
       Value: { maxCount: 10 },
     })!;
     expect(rows).to.deep.equal([{ field: 'maxCount', label: 'Target count', text: '10' }]);
-  });
 
-  it('does not eat trailing zeroes on other whole-number int fields (100, 20)', () => {
-    const rows100 = formatBuildingDataEntry({
-      Key: 'LogicCritterCountSensor',
-      Value: {
-        countThreshold: 100,
-        activateOnGreaterThan: true,
-        countCritters: true,
-        countEggs: false,
-      },
-    })!;
-    expect(rows100.find(r => r.field == 'countThreshold')!.text).to.equal('100');
-
-    const rows20 = formatBuildingDataEntry({
-      Key: 'LogicCritterCountSensor',
-      Value: {
-        countThreshold: 20,
-        activateOnGreaterThan: true,
-        countCritters: true,
-        countEggs: false,
-      },
-    })!;
-    expect(rows20.find(r => r.field == 'countThreshold')!.text).to.equal('20');
+    for (const countThreshold of [20, 100]) {
+      const critterRows = formatBuildingDataEntry({
+        Key: 'LogicCritterCountSensor',
+        Value: {
+          countThreshold,
+          activateOnGreaterThan: true,
+          countCritters: true,
+          countEggs: false,
+        },
+      })!;
+      expect(critterRows.find(r => r.field == 'countThreshold')!.text).to.equal(
+        String(countThreshold)
+      );
+    }
   });
 
   it('formats a Filterable element as its raw id, and Void as None', () => {
@@ -487,6 +478,30 @@ describe('BlueprintItem.setBuildingSetting / addBuildingSetting', function () {
       timeElapsedInCurrentState: 0,
       displayCyclesMode: false,
     });
+  });
+
+  // Every creatable Key goes through this one path, so a sweep over the table
+  // stands in for a "creates it from scratch" spec per Key; the default values
+  // themselves are pinned with each Key's own catalogue specs.
+  it('addBuildingSetting writes exactly the creatable defaults, for every creatable Key', () => {
+    const seen = new Set<string>();
+    for (const { id } of OniItem.oniItems) {
+      for (const key of creatableSettingsKeysFor(id)) {
+        const item = BlueprintHelpers.createInstance(id)!;
+        expect(item.addBuildingSetting(key), `${id} ${key}`).to.equal(true);
+        expect(item.buildingData!.find(e => e.Key == key)!.Value, `${id} ${key}`).to.deep.equal(
+          getCreatableSettingDefaults(id, key)
+        );
+        seen.add(key);
+      }
+    }
+    expect([...seen]).to.include.members([
+      'LogicTimerSensor',
+      'LogicCritterCountSensor',
+      'IThresholdSwitch',
+      'Filterable',
+      'TreeFilterable',
+    ]);
   });
 
   it('addBuildingSetting is a no-op (still true) when the Key is already present', () => {
@@ -641,11 +656,6 @@ describe('threshold sensors', function () {
     expect(radbolts.max).to.equal(500);
   });
 
-  it('suppresses the stowaway Switch on both of them too', () => {
-    expect(resolveSettingDescriptors('LogicWattageSensor', 'Switch')).to.deep.equal([]);
-    expect(resolveSettingDescriptors('LogicHEPSensor', 'Switch')).to.deep.equal([]);
-  });
-
   it('converts temperature between stored Kelvin and displayed Celsius', () => {
     const descriptor = resolveSettingDescriptors('LogicTemperatureSensor', 'IThresholdSwitch').find(
       d => d.field == 'Threshold'
@@ -688,7 +698,8 @@ describe('threshold sensors', function () {
   // Sensors extend Switch, so the mod's Switch handler matches them and a
   // copied sensor carries a stowaway switchedOn holding its sampled output.
   it('suppresses the stowaway Switch key on a sensor but not on a real switch', () => {
-    expect(resolveSettingDescriptors('LogicPressureSensorGas', 'Switch')).to.deep.equal([]);
+    for (const sensor of ['LogicPressureSensorGas', 'LogicWattageSensor', 'LogicHEPSensor'])
+      expect(resolveSettingDescriptors(sensor, 'Switch'), sensor).to.deep.equal([]);
     expect(resolveSettingDescriptors('LogicSwitch', 'Switch')).to.deep.equal(
       SETTINGS_CATALOG.Switch
     );
@@ -819,6 +830,15 @@ describe('BlueprintItem.removeBuildingSetting', function () {
     // return to "this blueprint says nothing about the threshold".
     expect(exportOf(edited)).to.deep.equal(exportOf(pristine));
     expect(exportOf(edited).buildingData).to.equal(undefined);
+
+    // Same for the stored model a save writes.
+    const storedOf = (item: typeof pristine) => {
+      const blueprint = new Blueprint();
+      blueprint.blueprintItems = [item];
+      return blueprint.toMdbBlueprint().blueprintItems[0];
+    };
+    expect(storedOf(edited)).to.deep.equal(storedOf(pristine));
+    expect(storedOf(pristine)).to.not.have.property('buildingData');
   });
 
 });
@@ -888,17 +908,6 @@ describe('critter sensor buildingData round-trip', function () {
     item.setBuildingSetting('LogicCritterCountSensor', 'countThreshold', 9);
     expect(item.buildingData!.map(e => e.Key)).to.deep.equal(['LogicCritterCountSensor']);
   });
-
-  it('creates its own Key from scratch with the real game defaults', () => {
-    const item = BlueprintHelpers.createInstance('LogicCritterCountSensor')!;
-    expect(item.addBuildingSetting('LogicCritterCountSensor')).to.equal(true);
-    expect(item.buildingData!.find(e => e.Key == 'LogicCritterCountSensor')!.Value).to.deep.equal({
-      countThreshold: 0,
-      activateOnGreaterThan: true,
-      countCritters: true,
-      countEggs: true,
-    });
-  });
 });
 
 describe('element sensor buildingData round-trip', function () {
@@ -919,14 +928,6 @@ describe('element sensor buildingData round-trip', function () {
     expect(building.buildingData).to.deep.include({
       Key: 'Filterable',
       Value: { SelectedTag: 'Oxygen' },
-    });
-  });
-
-  it('creates Filterable from scratch with SelectedTag Void', () => {
-    const item = BlueprintHelpers.createInstance('SolidConduitElementSensor')!;
-    expect(item.addBuildingSetting('Filterable')).to.equal(true);
-    expect(item.buildingData!.find(e => e.Key == 'Filterable')!.Value).to.deep.equal({
-      SelectedTag: 'Void',
     });
   });
 
@@ -1053,15 +1054,6 @@ describe('TreeFilterable round-trip', function () {
         label: 'Filter',
       });
     }
-  });
-
-  it('adds the key to an editor-placed loader with the game default', () => {
-    const item = BlueprintHelpers.createInstance('SolidConduitInbox')!;
-    expect(item.addBuildingSetting('TreeFilterable')).to.equal(true);
-    expect(item.buildingData!.find(e => e.Key == 'TreeFilterable')!.Value).to.deep.equal({
-      acceptedTagSet: '[]',
-      onlyFetchMarkedItems: false,
-    });
   });
 
   it('leaves a non-carrier alone', () => {

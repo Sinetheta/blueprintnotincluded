@@ -164,6 +164,8 @@ describe('BlueprintItem port markers on a disabled building', function () {
     (item as any).drawPixiUtility(camera, {});
     item.tempDisabled = false;
     (item as any).drawPixiUtility(camera, {});
-    for (const sprite of sprites.filter(s => s.visible)) expect(sprite.alpha).to.equal(1);
+    const shown = sprites.filter(s => s.visible);
+    expect(shown.length, 'markers in the liquid overlay').to.be.greaterThan(0);
+    for (const sprite of shown) expect(sprite.alpha).to.equal(1);
   });
 });

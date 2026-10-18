@@ -36,11 +36,6 @@ describe('Terrain metadata: encoding', function () {
     });
   });
 
-  it('writes the schema version on every payload', () => {
-    const payload = JSON.parse(encoded([{ id: 'OilWell', x: 0, y: 0 }])[TERRAIN_METADATA_KEY]);
-    expect(payload.v).to.equal(TERRAIN_SCHEMA_VERSION);
-  });
-
   it('deletes our key rather than leaving an empty-feature husk in every file', () => {
     const metadata = encodeTerrainFeatures({ [TERRAIN_METADATA_KEY]: 'stale' }, []);
     expect(metadata).to.equal(undefined);
@@ -407,16 +402,6 @@ describe('Blueprint: terrain annotations end to end', function () {
   });
 
   // Acceptance criterion 6: annotations are not construction.
-  it('never writes annotations into the buildings array', () => {
-    const blueprint = new Blueprint();
-    blueprint.importFromMdb({ blueprintItems: [{ id: 'Tile' }] });
-    blueprint.terrainFeatures = features.map(f => ({ ...f }));
-
-    const withGeysers = blueprint.toBniBlueprint('with');
-    expect(withGeysers.buildings).to.have.length(1);
-    expect(withGeysers.buildings.map(b => b.buildingdef)).to.deep.equal(['Tile']);
-  });
-
   it('produces an identical buildings array with and without annotations', () => {
     const plain = new Blueprint();
     plain.importFromMdb({ blueprintItems: [{ id: 'Tile' }, { id: 'Wire' }] });

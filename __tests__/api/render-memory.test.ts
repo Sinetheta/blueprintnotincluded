@@ -1,4 +1,4 @@
-import { describe, it } from 'mocha';
+import { describe, it, after } from 'mocha';
 import { expect } from 'chai';
 import fs from 'fs';
 import os from 'os';
@@ -64,11 +64,18 @@ describe('resolveMaxRssMb', () => {
 });
 
 describe('readCgroupMemoryLimitMb', () => {
+  const tempDirs: string[] = [];
   const tempFile = (contents: string): string => {
-    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cgroup-test-')), 'memory.max');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cgroup-test-'));
+    tempDirs.push(dir);
+    const file = path.join(dir, 'memory.max');
     fs.writeFileSync(file, contents);
     return file;
   };
+
+  after(() => {
+    for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
+  });
 
   it('reads a real limit in MB', () => {
     expect(readCgroupMemoryLimitMb([tempFile('536870912\n')])).to.equal(512);
@@ -111,15 +118,9 @@ describe('resolveMaxOldSpaceMb', () => {
     expect(resolveMaxOldSpaceMb({ env: '1e3' }).maxOldSpaceMb).to.equal(1000);
   });
 
-  it('rejects a fractional override, which V8 would refuse to boot with', () => {
-    // --max-old-space-size is parsed as a size_t: "256.5" is an illegal value
-    // and the worker never starts, so every render fails.
-    const { maxOldSpaceMb, detail } = resolveMaxOldSpaceMb({ env: '256.5' });
-    expect(maxOldSpaceMb).to.equal(DEFAULT_MAX_OLD_SPACE_MB);
-    expect(detail).to.contain('ignored invalid');
-  });
-
   it('falls back to the default on a garbage override, and says so', () => {
+    // --max-old-space-size is parsed as a size_t: a fractional "256.5" is an
+    // illegal value and the worker never starts, so every render fails.
     // 1e21 and up stringify in exponent form, which V8 rejects the same way.
     for (const env of ['nonsense', '0', '-64', '256.5', '1e21', 'Infinity']) {
       const { maxOldSpaceMb, detail } = resolveMaxOldSpaceMb({ env });

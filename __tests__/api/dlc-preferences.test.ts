@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 
@@ -133,39 +128,9 @@ describe('DLC exclusion preferences API', function () {
     });
   });
 
+  // Absence from the public profile is covered once, for every private
+  // preference, by the exact-keys test in social.test.ts.
   describe('privacy: the preference never leaks into another user\'s view', function () {
-    it('is absent from the public profile response', async function () {
-      const token = testData.users.user1.generateJwt();
-      await TestSetup.request()
-        .patch('/api/users/me/dlc-preferences')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ excludedDlcs: ['DLC3_ID'] });
-
-      const profile = await TestSetup.request().get(
-        `/api/users/${testData.users.user1.username}/profile`
-      );
-      expect(profile.status).to.equal(200);
-      expect(profile.body).to.not.have.property('excludedDlcs');
-      expect(profile.body).to.not.have.property('dlcPreferences');
-    });
-
-    it('is absent from the profileSecure response seen by another logged-in user', async function () {
-      const token1 = testData.users.user1.generateJwt();
-      await TestSetup.request()
-        .patch('/api/users/me/dlc-preferences')
-        .set('Authorization', `Bearer ${token1}`)
-        .send({ excludedDlcs: ['DLC3_ID'] });
-
-      const token2 = testData.users.user2.generateJwt();
-      const profile = await TestSetup.request()
-        .get(`/api/users/${testData.users.user1.username}/profileSecure`)
-        .set('Authorization', `Bearer ${token2}`);
-
-      expect(profile.status).to.equal(200);
-      expect(profile.body).to.not.have.property('excludedDlcs');
-      expect(profile.body).to.not.have.property('dlcPreferences');
-    });
-
     it('GET /api/users/me/dlc-preferences only ever returns the caller\'s own preference', async function () {
       const token1 = testData.users.user1.generateJwt();
       await TestSetup.request()

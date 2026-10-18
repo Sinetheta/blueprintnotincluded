@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 
@@ -91,40 +86,16 @@ describe('Content locale preference API', function () {
       expect(response.body.locale).to.equal('pt');
     });
 
-    it('rejects values that are not language tags', async function () {
+    it('rejects values that are not language tags, and a missing locale', async function () {
       const token = testData.users.user1.generateJwt();
-      for (const bad of ['', 'english', '<script>', 42, { locale: 'en' }, null]) {
+      // undefined drops the key from the JSON body: the missing-locale case.
+      for (const bad of ['', 'english', '<script>', 42, { locale: 'en' }, null, undefined]) {
         const response = await TestSetup.request()
           .patch('/api/users/me/locale-preference')
           .set('Authorization', `Bearer ${token}`)
           .send({ locale: bad });
         expect(response.status).to.equal(400, `expected ${JSON.stringify(bad)} to be rejected`);
       }
-    });
-
-    it('rejects a missing locale', async function () {
-      const token = testData.users.user1.generateJwt();
-      const response = await TestSetup.request()
-        .patch('/api/users/me/locale-preference')
-        .set('Authorization', `Bearer ${token}`)
-        .send({});
-      expect(response.status).to.equal(400);
-    });
-
-    // Private account data — what you read in is nobody else's business.
-    it('does not expose the locale on the public profile', async function () {
-      const token = testData.users.user1.generateJwt();
-      await TestSetup.request()
-        .patch('/api/users/me/locale-preference')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ locale: 'ru' });
-
-      const profile = await TestSetup.request().get(
-        `/api/users/${testData.users.user1.username}/profile`
-      );
-      expect(profile.status).to.equal(200);
-      expect(profile.body).to.not.have.property('localePreference');
-      expect(profile.body).to.not.have.property('locale');
     });
   });
 });

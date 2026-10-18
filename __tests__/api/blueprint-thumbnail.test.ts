@@ -1,12 +1,6 @@
-import { describe, it, beforeEach, afterEach, before } from 'mocha';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
 import mongoose, { Types } from 'mongoose';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup, TestDbHelper } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -30,11 +24,6 @@ const SAMPLE_BLUEPRINT_DATA = {
 describe('Blueprint thumbnails (slim lists)', function () {
   let testData: any;
   let blueprintId: string;
-
-  before(async function () {
-    this.timeout(10000);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  });
 
   beforeEach(async function () {
     this.timeout(5000);
