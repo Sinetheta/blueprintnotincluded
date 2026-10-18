@@ -8,16 +8,17 @@ import { Injectable } from "@angular/core";
 // English-only; the legacy per-locale .po files have been retired.
 const STRINGS_FILE = "assets/strings/strings.json";
 
-// Klei rich-text tags to strip for display. Each removes the wrapper and keeps the inner
-// text. Applied once per value at load time.
+// Klei rich-text tags to strip for display. Each removes every wrapper of its kind and
+// keeps the inner text. Applied once per value at load time. Global, so only ever used
+// with String.replace, which ignores and resets lastIndex.
 const MARKUP_PATTERNS: RegExp[] = [
-  /<color=#.+?>(.*?)<\/color>/i,
-  /<size=.+?>(.*?)<\/size>/i,
-  /<style=.+?>(.*?)<\/style>/i,
-  /<smallcaps>(.*?)<\/smallcaps>/i,
-  /<link=".+?">(.*?)<\/link>/i,
-  /<alpha=#.+?>((.|\n)*?)<\/color>/i,
-  /<indent=#.+?>((.|\n)*?)<\/indent>/i,
+  /<color=#.+?>(.*?)<\/color>/gi,
+  /<size=.+?>(.*?)<\/size>/gi,
+  /<style=.+?>(.*?)<\/style>/gi,
+  /<smallcaps>(.*?)<\/smallcaps>/gi,
+  /<link=".+?">(.*?)<\/link>/gi,
+  /<alpha=#.+?>((.|\n)*?)<\/color>/gi,
+  /<indent=#.+?>((.|\n)*?)<\/indent>/gi,
 ];
 
 function stripMarkup(value: string): string {
