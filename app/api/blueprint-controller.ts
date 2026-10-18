@@ -575,8 +575,11 @@ export class BlueprintController {
       res.status(503).send();
       return;
     }
-    // TODO checks here
     let id = String(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json(apiError(400, 'Invalid blueprint id'));
+      return;
+    }
 
     try {
       const blueprint = await BlueprintModel.model.findOne({ _id: id });
@@ -1767,6 +1770,10 @@ export class BlueprintController {
       };
     }
 
+    // Before anything reads `data`: the current version, the search row and
+    // the preview are all derived from it.
+    BatchUtils.correctPositions(data);
+
     blueprint.owner = ownerId;
     blueprint.name = name;
     blueprint.data = data;
@@ -1923,13 +1930,6 @@ export class BlueprintController {
         rocketInteriorOrigin: newBlueprint.rocketInteriorOrigin ?? null,
       })
     );
-
-    try {
-      BatchUtils.UpdatePositionCorrection(newBlueprint);
-    } catch (error) {
-      console.log('Position correction error');
-      console.log(error);
-    }
 
     // TODO: duplicate detection
     // The old approach (UpdateBasedOn) loaded every blueprint into memory on each upload — removed due to OOM crashes.

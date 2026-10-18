@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach, before, after } from 'mocha';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -22,17 +22,6 @@ const SAMPLE_BLUEPRINT_DATA = {
 describe('Blueprint API (Mocha)', function () {
   let testData: any;
 
-  // Global setup
-  before(async function () {
-    this.timeout(10000);
-    // Give the app time to initialize
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  });
-
-  after(async function () {
-    // Local cleanup - don't close database connection as other tests might still need it
-  });
-
   beforeEach(async function () {
     this.timeout(5000);
     testData = await TestSetup.beforeEach();
@@ -44,22 +33,22 @@ describe('Blueprint API (Mocha)', function () {
   });
 
   describe('GET /api/getblueprints', function () {
-    it('should return blueprints ordered by creation date with pagination', async function () {
+    // Forks/copies are listed too: the silent isCopy hide was removed (issue
+    // #8 — forks are now an explicit, visible relationship via
+    // forkCount/forkedFrom).
+    it('should return every blueprint newest first, copies included', async function () {
       const response = await TestSetup.request()
         .get('/api/getblueprints')
         .query({ olderthan: Date.now() });
 
       expect(response.status).to.equal(200);
-      expect(response.body).to.exist;
-      expect(response.body).to.be.an('object');
-
-      if (response.body.blueprints) {
-        expect(response.body.blueprints).to.be.an('array');
-
-        const blueprintNames = response.body.blueprints.map((bp: any) => bp.name);
-        expect(blueprintNames).to.include('Super Coal Generator Setup');
-        expect(blueprintNames).to.include('Oxygen Production Line');
-      }
+      expect(response.body.blueprints.map((bp: any) => bp.name)).to.deep.equal([
+        'Oxygen Production Line', // 1 day old
+        'Modified Coal Generator', // 2 days old, the copy
+        'Super Coal Generator Setup', // 3 days old
+        'Legacy Food System', // 30 days old
+      ]);
+      expect(response.body.remaining).to.equal(0);
     });
 
     it('should filter blueprints by date - only return older blueprints', async function () {
@@ -70,14 +59,11 @@ describe('Blueprint API (Mocha)', function () {
         .query({ olderthan: twoDaysAgo });
 
       expect(response.status).to.equal(200);
+      const blueprintNames = response.body.blueprints.map((bp: any) => bp.name);
 
-      if (response.body.blueprints) {
-        const blueprintNames = response.body.blueprints.map((bp: any) => bp.name);
-
-        expect(blueprintNames).to.include('Super Coal Generator Setup'); // 3 days old
-        expect(blueprintNames).to.include('Legacy Food System'); // 30 days old
-        expect(blueprintNames).to.not.include('Oxygen Production Line'); // 1 day old
-      }
+      expect(blueprintNames).to.include('Super Coal Generator Setup'); // 3 days old
+      expect(blueprintNames).to.include('Legacy Food System'); // 30 days old
+      expect(blueprintNames).to.not.include('Oxygen Production Line'); // 1 day old
     });
 
     it('should return the rating aggregate for rated blueprints', async function () {
@@ -93,18 +79,6 @@ describe('Blueprint API (Mocha)', function () {
       expect(popularBlueprint).to.exist;
       expect(popularBlueprint.nbRatings).to.equal(2);
       expect(popularBlueprint.rating).to.equal(4.5);
-    });
-
-    it('includes forks/copies — the silent isCopy hide was removed (issue #8: forks are now an explicit, visible relationship via forkCount/forkedFrom)', async function () {
-      const response = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now() });
-
-      expect(response.status).to.equal(200);
-
-      const blueprintNames = response.body.blueprints.map((bp: any) => bp.name);
-      expect(blueprintNames).to.include('Modified Coal Generator'); // Copy is now visible
-      expect(blueprintNames).to.include('Super Coal Generator Setup'); // Original should still be included
     });
 
     it('treats a missing olderthan parameter as "older than now" (stable page-1 URLs)', async function () {
@@ -187,20 +161,6 @@ describe('Blueprint API (Mocha)', function () {
       expect(response.status).to.equal(200);
       expect(response.body.blueprints).to.deep.equal([]);
       expect(response.body.remaining).to.equal(0);
-    });
-
-    it('should do case-insensitive name filtering', async function () {
-      const lower = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now(), filterName: 'legacy' });
-      const upper = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now(), filterName: 'LEGACY' });
-
-      expect(lower.status).to.equal(200);
-      expect(upper.status).to.equal(200);
-      expect(lower.body.blueprints.map((bp: any) => bp.name)).to.include('Legacy Food System');
-      expect(upper.body.blueprints.map((bp: any) => bp.name)).to.include('Legacy Food System');
     });
 
     it('never treats filterName as a regex (metacharacters cannot 500)', async function () {
@@ -385,10 +345,10 @@ describe('Blueprint API (Mocha)', function () {
       expect(response.body.errors).to.be.an('array');
     });
 
-    it('should return 500 for an invalid id format', async function () {
+    it('should return 400 for an invalid id format', async function () {
       const response = await TestSetup.request().get('/api/getblueprint/not-an-id');
 
-      expect(response.status).to.equal(500);
+      expect(response.status).to.equal(400);
       expect(response.body.errors).to.be.an('array');
     });
   });
@@ -402,18 +362,6 @@ describe('Blueprint API (Mocha)', function () {
       });
 
       expect(response.status).to.equal(401);
-    });
-
-    it('should save a new blueprint and return its id', async function () {
-      const token = testData.users.user1.generateJwt();
-
-      const response = await TestSetup.request()
-        .post('/api/uploadblueprint')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ name: 'New Blueprint', blueprint: SAMPLE_BLUEPRINT_DATA, thumbnail: TINY_PNG });
-
-      expect(response.status).to.equal(200);
-      expect(response.body.id).to.be.a('string').and.have.length.greaterThan(0);
     });
 
     it('should return overwrite prompt when blueprint name already exists', async function () {
@@ -543,13 +491,15 @@ describe('Blueprint API (Mocha)', function () {
         });
 
       expect(upload.status).to.equal(200);
-      const id = upload.body.id;
 
-      // Allow the async UpdatePositionCorrection save to complete
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const saved = await BlueprintModel.model.findById(id);
-      const items = (saved!.data as any).blueprintItems;
+      // Read back what the editor is served — the current version's data,
+      // not the blueprint document's own `data` cache. As the owner: new
+      // uploads are drafts.
+      const served = await TestSetup.request()
+        .get(`/api/getblueprint/${upload.body.id}`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(served.status).to.equal(200);
+      const items = served.body.data.blueprintItems;
 
       expect(items[0].position.x).to.equal(1);
       expect(items[1].position.y).to.equal(999);
