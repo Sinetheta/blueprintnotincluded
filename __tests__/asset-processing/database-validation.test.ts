@@ -556,29 +556,47 @@ describe('Database Asset Validation', () => {
   // transit tube, whose all-connected state overhangs with corner fillets, as ~1.0.
   describe('Connection-sprite scale', () => {
     const tube = { canvas: { w: 240, h: 240 }, cell: { x: 70, y: 70, w: 100, h: 100 } };
+    const sixteen = (x: number, y: number) => Array.from({ length: 16 }, () => ({ x, y }));
 
     describe('connectionScaleFromCells', () => {
       it('should scale by canvas / cell on each axis', () => {
-        expect(connectionScaleFromCells(tube, { x: 240, y: 240 })).to.deep.equal({
+        expect(connectionScaleFromCells(tube, sixteen(240, 240))).to.deep.equal({
           scale: { x: 2.4, y: 2.4 },
         });
         const wide = { canvas: { w: 192, h: 108 }, cell: { x: 32, y: 4, w: 128, h: 100 } };
-        expect(connectionScaleFromCells(wide, null)).to.deep.equal({
+        expect(connectionScaleFromCells(wide, sixteen(192, 108))).to.deep.equal({
           scale: { x: 1.5, y: 1.08 },
         });
       });
 
       it('should refuse a cell that is not centred on its canvas', () => {
         const off = { ...tube, cell: { ...tube.cell, x: 71 } };
-        expect(connectionScaleFromCells(off, { x: 240, y: 240 }))
+        expect(connectionScaleFromCells(off, sixteen(240, 240)))
           .to.have.property('problem')
           .that.matches(/off-centre/);
       });
 
-      it('should refuse a canvas that is not the size of its PNGs', () => {
-        expect(connectionScaleFromCells(tube, { x: 200, y: 240 }))
+      it('should refuse a centred cell that reaches past its canvas', () => {
+        const oversized = { canvas: { w: 100, h: 100 }, cell: { x: -50, y: 0, w: 200, h: 100 } };
+        expect(connectionScaleFromCells(oversized, sixteen(100, 100)))
           .to.have.property('problem')
-          .that.matches(/15\.png is 200x240/);
+          .that.matches(/reaches past/);
+      });
+
+      it('should refuse a canvas that is not the size of every one of its PNGs', () => {
+        const sizes = sixteen(240, 240);
+        sizes[3] = { x: 200, y: 240 };
+        expect(connectionScaleFromCells(tube, sizes))
+          .to.have.property('problem')
+          .that.matches(/3\.png is 200x240/);
+      });
+
+      it('should refuse a state whose PNG size cannot be read', () => {
+        const sizes: ({ x: number; y: number } | null)[] = sixteen(240, 240);
+        sizes[15] = null;
+        expect(connectionScaleFromCells(tube, sizes))
+          .to.have.property('problem')
+          .that.matches(/unreadable PNG size: 15\.png/);
       });
 
       it('should refuse a malformed entry', () => {
@@ -587,7 +605,9 @@ describe('Database Asset Validation', () => {
           { ...tube, cell: { ...tube.cell, w: 0 } },
           { ...tube, canvas: { w: '240', h: 240 } },
         ])
-          expect(connectionScaleFromCells(bad as any, null)).to.have.property('problem');
+          expect(connectionScaleFromCells(bad as any, sixteen(240, 240))).to.have.property(
+            'problem'
+          );
       });
     });
 

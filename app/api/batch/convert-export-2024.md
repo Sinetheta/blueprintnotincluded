@@ -110,9 +110,10 @@ canvas-to-cell ratio the export declares (see below). What breaks rendering is c
      (top-left origin, `+y` down, real numbers): `canvas` is the PNGs' size, `cell` the
      building's one cell on it. Everything outside `cell` is overhang, in any state,
      `15.png` included (a wire's outline, the transit tube's corner fillets).
-   - The cell is **centred on the canvas**. The renderer anchors on the canvas centre, so
-     the import fails on an entry whose cell centre is more than 0.005 cells off, whose
-     canvas is not its `15.png`'s size, or that is malformed.
+   - The cell is **centred on the canvas** and lies within it. The renderer anchors on the
+     canvas centre, so the import fails on an entry whose cell centre is more than 0.005
+     cells off, whose cell reaches past the canvas, whose canvas is not the size of all 16
+     of its PNGs (or one of them is unreadable), or that is malformed.
 6. **Building fields we read** keep their names/shapes: `name`, `nameString`,
    `isFoundation`, `isKAnimTile`, `isUtility`, `widthInCells`, `heightInCells`,
    `sceneLayer`, `objectLayer`, `viewMode`, `permittedRotations`, `dragBuild`,
