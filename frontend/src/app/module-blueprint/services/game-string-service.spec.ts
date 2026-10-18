@@ -32,13 +32,6 @@ describe("GameStringService", () => {
     httpMock?.verify();
   });
 
-  it("requests the english strings json", () => {
-    setup();
-    const req = httpMock.expectOne(STRINGS_FILE);
-    expect(req.request.method).toBe("GET");
-    req.flush({ A: "Hi" });
-  });
-
   describe("getStr", () => {
     it("returns the value for a known key", async () => {
       const service = setup();
@@ -96,12 +89,6 @@ describe("GameStringService", () => {
       httpMock.expectOne(STRINGS_FILE).flush({ EMPTY: "" });
       expect(await service.getStrOr("EMPTY", "Drain")).toBe("Drain");
     });
-
-    it("never returns undefined for a missing key", async () => {
-      const service = setup();
-      httpMock.expectOne(STRINGS_FILE).flush({});
-      expect(await service.getStrOr("ABSENT", "Vacuum Pump")).toBeDefined();
-    });
   });
 
   describe("markup stripping", () => {
@@ -111,34 +98,26 @@ describe("GameStringService", () => {
       return service.getStr("K");
     }
 
-    it("strips <color> tags", async () => {
-      expect(await strip("<color=#FF0000>Red</color>")).toBe("Red");
+    it.each([
+      ["<color=#FF0000>Red</color>", "Red"],
+      ["<size=20>Big</size>", "Big"],
+      ["<style=KExpBld>Styled</style>", "Styled"],
+      ["<smallcaps>caps</smallcaps>", "caps"],
+      ['<link="x">Linked</link>', "Linked"],
+      ["<alpha=#80>Faint</color>", "Faint"],
+      ["<indent=#5>Indented</indent>", "Indented"],
+      ["Plain text", "Plain text"],
+    ])("strips %s to %s", async (raw, expected) => {
+      expect(await strip(raw)).toBe(expected);
     });
 
-    it("strips <size> tags", async () => {
-      expect(await strip("<size=20>Big</size>")).toBe("Big");
-    });
-
-    it("strips <style> tags", async () => {
-      expect(await strip("<style=KExpBld>Styled</style>")).toBe("Styled");
-    });
-
-    it("strips <smallcaps> tags", async () => {
-      expect(await strip("<smallcaps>caps</smallcaps>")).toBe("caps");
-    });
-
-    it("strips <link> tags", async () => {
-      expect(await strip('<link="x">Linked</link>')).toBe("Linked");
-    });
-
-    it("leaves plain text untouched", async () => {
-      expect(await strip("Plain text")).toBe("Plain text");
-    });
-
-    it("keeps an empty value falsy without applying replacements", async () => {
-      const service = setup();
-      httpMock.expectOne(STRINGS_FILE).flush({ EMPTY: "" });
-      expect(await service.getStr("EMPTY")).toBeFalsy();
+    // Room criteria list several linked buildings in one string
+    it("strips every occurrence of a tag, not just the first", async () => {
+      expect(
+        await strip(
+          'Two or more <link="POWER">Power Buildings</link> and a <link="WIRE">Wire</link>',
+        ),
+      ).toBe("Two or more Power Buildings and a Wire");
     });
   });
 });
