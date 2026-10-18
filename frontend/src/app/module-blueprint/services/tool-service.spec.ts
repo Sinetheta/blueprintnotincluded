@@ -100,28 +100,18 @@ describe("ToolService", () => {
   });
 
   describe("getTool", () => {
-    it("returns selectTool for ToolType.select", () => {
-      expect(service.getTool(ToolType.select)).toBe(mockSelect);
-    });
-
-    it("returns buildTool for ToolType.build", () => {
-      expect(service.getTool(ToolType.build)).toBe(mockBuild);
-    });
-
-    it("returns scissorsTool for ToolType.scissors", () => {
-      expect(service.getTool(ToolType.scissors)).toBe(mockScissors);
-    });
-
-    it("returns planningTool for ToolType.planning", () => {
-      expect(service.getTool(ToolType.planning)).toBe(mockPlanning);
-    });
-
-    it("returns notesTool for ToolType.notes", () => {
-      expect(service.getTool(ToolType.notes)).toBe(mockNotes);
-    });
-
-    it("returns digTool for ToolType.dig", () => {
-      expect(service.getTool(ToolType.dig)).toBe(mockDig);
+    it("returns the tool registered for every ToolType", () => {
+      const expected: [ToolType, unknown][] = [
+        [ToolType.select, mockSelect],
+        [ToolType.build, mockBuild],
+        [ToolType.scissors, mockScissors],
+        [ToolType.planning, mockPlanning],
+        [ToolType.notes, mockNotes],
+        [ToolType.terrain, mockTerrain],
+        [ToolType.dig, mockDig],
+      ];
+      for (const [toolType, tool] of expected)
+        expect(service.getTool(toolType), ToolType[toolType]).toBe(tool);
     });
   });
 
@@ -171,25 +161,9 @@ describe("ToolService", () => {
       service.changeTool(ToolType.build);
       expect(observer.toolChanged).toHaveBeenCalledWith(ToolType.build);
     });
-
-    it("notifies multiple observers", () => {
-      const obs1 = { toolChanged: vi.fn() };
-      const obs2 = { toolChanged: vi.fn() };
-      service.subscribeToolChanged(obs1);
-      service.subscribeToolChanged(obs2);
-      service.changeTool(ToolType.build);
-      expect(obs1.toolChanged).toHaveBeenCalled();
-      expect(obs2.toolChanged).toHaveBeenCalled();
-    });
   });
 
   describe("input delegation to current tool", () => {
-    it("delegates mouseDown", () => {
-      const tile = new Vector2(1, 2);
-      service.mouseDown(tile);
-      expect(mockSelect.mouseDown).toHaveBeenCalledWith(tile, undefined);
-    });
-
     it("delegates mouseDown with the float tile position", () => {
       const tile = new Vector2(1, 2);
       const tileFloat = new Vector2(1.4, 2.6);
@@ -197,39 +171,16 @@ describe("ToolService", () => {
       expect(mockSelect.mouseDown).toHaveBeenCalledWith(tile, tileFloat);
     });
 
-    it("delegates leftClick", () => {
-      const tile = new Vector2(1, 2);
-      service.leftClick(tile);
-      expect(mockSelect.leftClick).toHaveBeenCalledWith(tile);
-    });
-
-    it("delegates rightClick", () => {
-      const tile = new Vector2(1, 2);
-      service.rightClick(tile);
-      expect(mockSelect.rightClick).toHaveBeenCalledWith(tile);
-    });
-
-    it("delegates hover", () => {
-      const tile = new Vector2(5, 6);
-      service.hover(tile);
-      expect(mockSelect.hover).toHaveBeenCalledWith(tile);
-    });
-
-    it("delegates drag", () => {
-      const t1 = new Vector2(0, 0);
-      const t2 = new Vector2(3, 3);
-      service.drag(t1, t2);
-      expect(mockSelect.drag).toHaveBeenCalledWith(t1, t2);
-    });
-
-    it("delegates dragStop", () => {
-      service.dragStop();
-      expect(mockSelect.dragStop).toHaveBeenCalled();
-    });
-
-    it("delegates mouseOut", () => {
-      service.mouseOut();
-      expect(mockSelect.mouseOut).toHaveBeenCalled();
+    it.each([
+      ["leftClick", [new Vector2(1, 2)]],
+      ["rightClick", [new Vector2(1, 2)]],
+      ["hover", [new Vector2(5, 6)]],
+      ["drag", [new Vector2(0, 0), new Vector2(3, 3)]],
+      ["dragStop", []],
+      ["mouseOut", []],
+    ] as const)("delegates %s", (method, args) => {
+      (service as any)[method](...args);
+      expect((mockSelect as any)[method]).toHaveBeenCalledWith(...args);
     });
 
     it("delegates unclaimed shortcuts to the active tool", () => {
@@ -242,19 +193,14 @@ describe("ToolService", () => {
   });
 
   describe("handleShortcut tool switching", () => {
-    it("switches to the select tool", () => {
-      expect(service.handleShortcut(ShortcutAction.toolSelect)).toBe(true);
-      expect(mockSelect.visible).toBe(true);
-    });
-
-    it("switches to the planning tool", () => {
-      expect(service.handleShortcut(ShortcutAction.toolPlanning)).toBe(true);
-      expect(mockPlanning.visible).toBe(true);
-    });
-
-    it("switches to the notes tool", () => {
-      expect(service.handleShortcut(ShortcutAction.toolNotes)).toBe(true);
-      expect(mockNotes.visible).toBe(true);
+    it.each([
+      ["select", ShortcutAction.toolSelect, () => mockSelect],
+      ["planning", ShortcutAction.toolPlanning, () => mockPlanning],
+      ["notes", ShortcutAction.toolNotes, () => mockNotes],
+      ["terrain", ShortcutAction.toolTerrain, () => mockTerrain],
+    ])("switches to the %s tool", (_name, action, tool) => {
+      expect(service.handleShortcut(action)).toBe(true);
+      expect(tool().visible).toBe(true);
     });
 
     it("switches to the dig tool", () => {

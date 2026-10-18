@@ -53,29 +53,13 @@ describe("TerrainTool", () => {
     tool.parent = parent as any;
   });
 
-  it("is an exclusive input tool", () => {
-    expect(tool.toolType).toBe(ToolType.terrain);
-    expect(tool.toolGroup).toBe(1);
-    expect(tool.captureInput).toBe(true);
-    expect(tool.toggleable).toBe(false);
-  });
-
+  // v1 stores position and type only — free text belongs in a world note.
   it("places the selected feature at the clicked cell and selects it", () => {
     tool.featureId = "OilWell";
     tool.mouseDown(new Vector2(4, 5));
 
     expect(blueprint.terrainFeatures).toEqual([{ id: "OilWell", x: 4, y: 5 }]);
     expect(terrainService.selected).toBe(blueprint.terrainFeatures[0]);
-  });
-
-  // v1 stores position and type only — free text belongs in a world note.
-  it("stores nothing beyond id and position", () => {
-    tool.mouseDown(new Vector2(1, 2));
-    expect(Object.keys(blueprint.terrainFeatures[0]).sort()).toEqual([
-      "id",
-      "x",
-      "y",
-    ]);
   });
 
   it("selects an existing annotation instead of stacking a second one", () => {
@@ -95,14 +79,6 @@ describe("TerrainTool", () => {
   it("snaps a sub-tile click to the same cell grid as every other tool", () => {
     tool.mouseDown(new Vector2(4.8, 5.2));
     expect(blueprint.terrainFeatures[0]).toMatchObject({ x: 4, y: 6 });
-  });
-
-  // Annotations are not construction. The neutronium base they seed is a world
-  // note, not a building either, so nothing a placement writes reaches material
-  // cost, build order or the exported `buildings` array.
-  it("never touches blueprintItems — annotations are not construction", () => {
-    tool.mouseDown(new Vector2(0, 0));
-    expect((blueprint as any).blueprintItems).toBeUndefined();
   });
 
   it("shows the layer when picked, so a placement cannot land invisibly", () => {

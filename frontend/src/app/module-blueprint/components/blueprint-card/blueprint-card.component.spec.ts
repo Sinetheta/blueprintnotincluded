@@ -52,12 +52,6 @@ describe("BlueprintCardComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("creates", () => {
-    component.item = makeItem();
-    fixture.detectChanges();
-    expect(component).toBeTruthy();
-  });
-
   describe("viewer-resolved title", () => {
     it("shows the authored name when the response carries no resolution", () => {
       component.item = makeItem();
@@ -188,6 +182,10 @@ describe("BlueprintCardComponent", () => {
     component.item = makeItem({ modded: true });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain("Modded");
+
+    component.item = makeItem({ modded: false });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain("Modded");
   });
 
   it("links the category, DLC, and modded chips to filtered discover pages", () => {

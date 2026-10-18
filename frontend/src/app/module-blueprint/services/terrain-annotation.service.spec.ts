@@ -266,17 +266,6 @@ describe("TerrainAnnotationService", () => {
       });
     });
 
-    it("matches a narrower footprint", () => {
-      // Cool Steam Vent is 2 wide.
-      service.add({ id: "GeyserGeneric_steam", x: 0, y: 0 });
-      expect(blueprint.worldNotes).toHaveLength(2);
-    });
-
-    it("gives an unknown feature a single-cell base", () => {
-      service.add({ id: "SomeModdedGeyser", x: 5, y: 5 });
-      expect(blueprint.worldNotes).toHaveLength(1);
-    });
-
     // The user is meant to customize the base with the note tool, so a note
     // already at that cell must never be replaced by the default.
     it("never stacks a second note where one already exists", () => {

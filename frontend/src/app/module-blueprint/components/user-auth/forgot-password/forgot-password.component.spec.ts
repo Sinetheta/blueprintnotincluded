@@ -32,20 +32,11 @@ describe("ForgotPasswordComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("ngOnInit", () => {
     it("pre-fills email from query param", () => {
       mockRoute.snapshot.queryParams = { email: "pre@fill.com" };
       component.ngOnInit();
       expect(component.email).toBe("pre@fill.com");
-    });
-
-    it("leaves email empty when no query param", () => {
-      component.ngOnInit();
-      expect(component.email).toBe("");
     });
   });
 

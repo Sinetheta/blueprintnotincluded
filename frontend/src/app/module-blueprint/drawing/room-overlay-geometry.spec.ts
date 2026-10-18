@@ -149,11 +149,4 @@ describe("buildRoomOverlayGeometry", () => {
     expect(miscGeometry[0].label).toBeNull();
     expect(miscGeometry[0].alpha).toBeLessThan(roomGeometry[0].alpha);
   });
-
-  it("has a display label for every room type", () => {
-    for (const label of Object.values(ROOM_TYPE_LABELS)) {
-      expect(typeof label).toBe("string");
-      expect(label.length).toBeGreaterThan(0);
-    }
-  });
 });

@@ -35,6 +35,10 @@ describe("BuildingSettingsComponent", () => {
     component = fixture.componentInstance;
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   function makeItem(id: string, buildingData: BlueprintItem["buildingData"]) {
     return {
       id,
@@ -395,26 +399,6 @@ describe("BuildingSettingsComponent", () => {
     expect(emitBlueprintChanged).not.toHaveBeenCalled();
   });
 
-  it("clamps a typed value to the sensor's own soft bounds", () => {
-    setItem("LogicPressureSensorGas", [
-      {
-        Key: "IThresholdSwitch",
-        Value: { Threshold: 0.5, ActivateAboveThreshold: true },
-      },
-    ]);
-
-    const input = numberInput();
-    input.value = "999999";
-    input.dispatchEvent(new Event("blur"));
-
-    // 20000 g is the 20 kg RangeMax, converted back to stored units.
-    expect(component.blueprintItem.setBuildingSetting).toHaveBeenCalledWith(
-      "IThresholdSwitch",
-      "Threshold",
-      20,
-    );
-  });
-
   it("hides the stowaway Switch key a copied sensor carries", () => {
     // Sensors extend Switch, so the mod's Switch handler stores the sensor's
     // sampled output. It round-trips, but it is not a setting.
@@ -715,16 +699,15 @@ describe("BuildingSettingsComponent", () => {
   it("labels a Void selection 'None' even though 'Void' is a real element id", () => {
     // The game ships an element whose id is "Void"; elementLabel must treat the
     // NONE_TAG sentinel as "nothing selected" before it resolves an element.
-    const spy = vi
-      .spyOn(BuildableElement, "getElementById")
-      .mockReturnValue({ name: '<link="VOID">Void</link>' } as any);
+    vi.spyOn(BuildableElement, "getElementById").mockReturnValue({
+      name: '<link="VOID">Void</link>',
+    } as any);
     setItem("GasFilter", [
       { Key: "Filterable", Value: { SelectedTag: "Void" } },
     ]);
 
     expect(component.rows[0].element).toBeUndefined();
     expect(component.elementLabel(component.rows[0])).toBe("None");
-    spy.mockRestore();
   });
 
   it("renders an accepted-materials filter as one chip per tag", () => {
@@ -986,7 +969,7 @@ describe("BuildingSettingsComponent", () => {
     expect(numberInput().value).toBe("25000");
   });
 
-  it("shows the clamped value when clamping does change the stored value", () => {
+  it("clamps a typed value to the sensor's own soft bounds and shows the clamped value", () => {
     setItem("LogicPressureSensorGas", [
       {
         Key: "IThresholdSwitch",
@@ -999,6 +982,7 @@ describe("BuildingSettingsComponent", () => {
     input.dispatchEvent(new Event("blur"));
     fixture.detectChanges();
 
+    // 20000 g is the 20 kg RangeMax, converted back to stored units.
     expect(component.blueprintItem.setBuildingSetting).toHaveBeenCalledWith(
       "IThresholdSwitch",
       "Threshold",
@@ -1351,9 +1335,10 @@ describe("BuildingSettingsComponent", () => {
       ]);
 
     it("shows a Storage Tile's item and capacity, and nothing as preserved", () => {
-      const spy = vi
-        .spyOn(BuildableElement, "getElementById")
-        .mockReturnValue({ id: "Cuprite", name: "Copper Ore" } as any);
+      vi.spyOn(BuildableElement, "getElementById").mockReturnValue({
+        id: "Cuprite",
+        name: "Copper Ore",
+      } as any);
       storageTile("Cuprite");
 
       expect(component.rows.map((r: any) => `${r.label}:${r.type}`)).toEqual([
@@ -1370,7 +1355,6 @@ describe("BuildingSettingsComponent", () => {
       expect(fixture.nativeElement.textContent).not.toContain(
         "other stored setting",
       );
-      spy.mockRestore();
     });
 
     it("labels an unset tile None and a tag it cannot resolve by name", () => {

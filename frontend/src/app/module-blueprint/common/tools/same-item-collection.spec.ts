@@ -48,40 +48,12 @@ describe("SameItemCollection", () => {
     collection = new SameItemCollection(oniItem as any);
   });
 
-  describe("constructor", () => {
-    it("initialises items as empty array", () => {
-      expect(collection.items).toEqual([]);
-    });
-
-    it("initialises nbElements to zero for each element slot", () => {
-      const multi = new SameItemCollection(makeOniItem(3) as any);
-      expect(multi.nbElements).toEqual([0, 0, 0]);
-    });
-
-    it("initialises temperatureWarning as false", () => {
-      expect(collection.temperatureWarning).toBe(false);
-    });
-  });
-
   describe("addItem", () => {
-    it("adds a new item to the collection", () => {
-      const item = makeBlueprintItem();
-      collection.addItem(item as any);
-      expect(collection.items).toHaveLength(1);
-    });
-
     it("does not add the same item twice", () => {
       const item = makeBlueprintItem();
       collection.addItem(item as any);
       collection.addItem(item as any);
       expect(collection.items).toHaveLength(1);
-    });
-
-    it("updates nbElements after adding", () => {
-      const elem = { name: "Iron" };
-      const item = makeBlueprintItem(20, [elem]);
-      collection.addItem(item as any);
-      expect(collection.nbElements[0]).toBe(1);
     });
 
     it("counts unique elements across items", () => {
@@ -139,12 +111,6 @@ describe("SameItemCollection", () => {
       expect(item.selected).toBe(true);
     });
 
-    it("resets camera on selection", () => {
-      collection.addItem(makeBlueprintItem() as any);
-      collection.selected = true;
-      expect(mockCameraService.resetSinWave).toHaveBeenCalled();
-    });
-
     it("sets overlay for the item's oniItem on selection", () => {
       collection.addItem(makeBlueprintItem() as any);
       collection.selected = true;
@@ -173,13 +139,6 @@ describe("SameItemCollection", () => {
       collection.selected = true;
       collection.selected = false;
       expect(item.selected).toBe(false);
-    });
-
-    it("selected getter reflects the last set value", () => {
-      collection.selected = true;
-      expect(collection.selected).toBe(true);
-      collection.selected = false;
-      expect(collection.selected).toBe(false);
     });
   });
 

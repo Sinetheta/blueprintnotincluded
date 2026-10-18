@@ -56,10 +56,35 @@ describe("NoteEditPanelComponent", () => {
     expect(component.note).to.equal(null);
   });
 
-  it("toggles the world-note visibility layer", () => {
-    expect(worldNoteService.visible).toBe(true);
-    component.noteService.toggleVisible();
-    expect(worldNoteService.visible).toBe(false);
+  it("pickColor keeps the stored alpha byte and commits a placed note", () => {
+    const placed: BniWorldNote = {
+      x: 3,
+      y: 3,
+      type: 0,
+      title: "existing",
+      tinthex: "ff000080",
+    };
+    blueprint.worldNotes.push(placed);
+    worldNoteService.select(placed);
+
+    component.pickColor("00ff00");
+
+    expect(placed.tinthex).to.equal("00ff0080");
+    expect(blueprint.emitBlueprintChanged).toHaveBeenCalledTimes(1);
+  });
+
+  // The pending note is not in the blueprint: recolouring the creation
+  // template must not push an undo step.
+  it("pickColor on the creation template commits nothing", () => {
+    notesTool.visible = true;
+    notesTool.mode = "text";
+    const notes = blueprint.worldNotes;
+
+    component.pickColor("0000ff");
+
+    expect(notesTool.pendingTextNote.tinthex).to.equal("0000ffff");
+    expect(blueprint.worldNotes).to.equal(notes);
+    expect(blueprint.emitBlueprintChanged).not.toHaveBeenCalled();
   });
 
   it("close() from the draft template returns to the select tool", () => {

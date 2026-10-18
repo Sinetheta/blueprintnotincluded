@@ -5,6 +5,7 @@ import {
 } from "@angular/common/http/testing";
 import { provideHttpClient } from "@angular/common/http";
 import { ThemeService } from "./theme.service";
+import { CUSTOM_THEME_ID, THEME_IDS } from "../../../../../lib/index";
 
 describe("ThemeService", () => {
   let service: ThemeService;
@@ -104,10 +105,14 @@ describe("ThemeService", () => {
     expect(palette()).toEqual("film");
   });
 
-  it("exposes every theme id the CSS defines", () => {
+  // The picker offers every prefab the shared validator accepts; custom is
+  // rendered separately by the UI
+  it("offers every prefab theme id the validator accepts", () => {
     const ids = service.themes.map((t) => t.id).sort();
     expect(ids).toEqual(
-      ["concrete", "cyanotype", "film", "sample-board", "steam"].sort(),
+      THEME_IDS.filter((id) => id !== CUSTOM_THEME_ID)
+        .slice()
+        .sort(),
     );
   });
 

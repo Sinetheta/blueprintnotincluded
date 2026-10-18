@@ -57,12 +57,17 @@ describe("AuthInterceptor", () => {
     req.flush({});
   });
 
-  it("leaves a non-/api/ request untouched even when logged in", () => {
+  // A third-party URL can carry /api/ in its path too; only same-origin
+  // /api/ requests may get the token
+  it("leaves a request that is not same-origin /api/ untouched even when logged in", () => {
     authService.saveToken("token123");
     http.get("/other/thing").subscribe();
-    const req = httpMock.expectOne("/other/thing");
-    expect(req.request.headers.has("Authorization")).toBe(false);
-    req.flush({});
+    http.get("https://third-party.example/api/x").subscribe();
+    for (const url of ["/other/thing", "https://third-party.example/api/x"]) {
+      const req = httpMock.expectOne(url);
+      expect(req.request.headers.has("Authorization"), url).toBe(false);
+      req.flush({});
+    }
   });
 
   it("does not overwrite an Authorization header a caller already set", () => {

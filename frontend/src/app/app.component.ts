@@ -11,8 +11,6 @@ import { AuthenticationService } from "./module-blueprint/services/authentificat
   styleUrls: ["./app.component.css"],
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = "blueprintnotincluded";
-
   private sessionSubscription: Subscription | null = null;
 
   constructor(

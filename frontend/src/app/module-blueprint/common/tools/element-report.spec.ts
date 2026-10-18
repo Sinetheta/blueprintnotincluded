@@ -38,31 +38,21 @@ describe("ElementReport", () => {
     report = new ElementReport(mockBlueprintService as any);
   });
 
-  it("subscribes to blueprint changes on construction", () => {
-    expect(mockBlueprint.subscribeBlueprintChanged).toHaveBeenCalledWith(
-      report,
-    );
-  });
+  it("recomputes when the blueprint announces a change", () => {
+    const observer = mockBlueprint.subscribeBlueprintChanged.mock.calls[0][0];
+    const elem = makeBuildableElement("Steel");
+    mockBlueprint.blueprintItems = [
+      makeBlueprintItem(makeOniItem({ buildableElementsArray: [elem] }), [
+        elem,
+      ]),
+    ];
 
-  it("starts with empty data", () => {
-    expect(report.data).toEqual([]);
-  });
+    observer.blueprintChanged();
 
-  describe("blueprintChanged", () => {
-    it("triggers updateElementReport", () => {
-      const spy = vi.spyOn(report, "updateElementReport");
-      report.blueprintChanged();
-      expect(spy).toHaveBeenCalled();
-    });
+    expect(report.data.map((d) => d.buildableElement)).toEqual([elem]);
   });
 
   describe("updateElementReport", () => {
-    it("produces empty data when blueprint has no items", () => {
-      mockBlueprint.blueprintItems = [];
-      report.updateElementReport();
-      expect(report.data).toEqual([]);
-    });
-
     it("aggregates mass for a non-element building item", () => {
       const elem = makeBuildableElement("Steel");
       const item = makeBlueprintItem(
@@ -74,6 +64,43 @@ describe("ElementReport", () => {
       expect(report.data).toHaveLength(1);
       expect(report.data[0].totalMass).toBe(200);
       expect(report.data[0].buildableElement).toBe(elem);
+    });
+
+    it("counts an element cell's own mass, not a material cost", () => {
+      const water = makeBuildableElement("Water");
+      const cell = makeBlueprintItem(
+        makeOniItem({
+          isElement: true,
+          buildableElementsArray: [water],
+          materialMass: [999],
+        }),
+        [water],
+        { mass: 50 },
+      );
+      mockBlueprint.blueprintItems = [cell];
+      report.updateElementReport();
+      expect(report.data).toHaveLength(1);
+      expect(report.data[0].buildableElement).toBe(water);
+      expect(report.data[0].totalMass).toBe(50);
+    });
+
+    it("charges each material slot of a building to that slot's element", () => {
+      const copper = makeBuildableElement("Copper");
+      const glass = makeBuildableElement("Glass");
+      const oniItem = makeOniItem({
+        buildableElementsArray: [copper, glass],
+        materialMass: [100, 25],
+      });
+      mockBlueprint.blueprintItems = [
+        makeBlueprintItem(oniItem, [copper, glass]),
+      ];
+      report.updateElementReport();
+      expect(report.data.map((d) => [d.buildableElement, d.totalMass])).toEqual(
+        [
+          [copper, 100],
+          [glass, 25],
+        ],
+      );
     });
 
     it("sums mass for multiple items using the same element", () => {
@@ -159,16 +186,6 @@ describe("ElementReport", () => {
       mockBlueprint.blueprintItems = [];
       report.updateElementReport();
       expect(report.data).toEqual([]);
-    });
-  });
-
-  describe("itemDestroyed / itemAdded", () => {
-    it("itemDestroyed exists as a no-op", () => {
-      expect(() => report.itemDestroyed()).not.toThrow();
-    });
-
-    it("itemAdded exists as a no-op", () => {
-      expect(() => report.itemAdded({} as any)).not.toThrow();
     });
   });
 });

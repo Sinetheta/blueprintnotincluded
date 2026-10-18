@@ -88,13 +88,37 @@ const camera = {
 describe("DrawTerrainOverlay", () => {
   let overlay: DrawTerrainOverlay;
   let sprites: ReturnType<typeof makeSprite>[];
+  let drawPixi: DrawPixi;
 
   beforeEach(() => {
     TerrainFeature.init();
     TerrainFeature.load(CATALOGUE);
     const made = makeDrawPixi();
     sprites = made.sprites;
-    overlay = new DrawTerrainOverlay(made.drawPixi);
+    drawPixi = made.drawPixi;
+    overlay = new DrawTerrainOverlay(drawPixi);
+  });
+
+  // A geyser acts on one cell, not its footprint, and that cell sits inside
+  // the feature's own art — so the highlight has to be on the layer above it.
+  it("highlights only the selected feature's active cell, above the icons", () => {
+    const features: BniTerrainFeature[] = [
+      { id: "GeyserGeneric_big_volcano", x: 10, y: 20 },
+      { id: "OilWell", x: 0, y: 0 },
+    ];
+    const activeTileLayer = vi.mocked(drawPixi.getNewGraphics).mock.results[1]
+      .value;
+
+    overlay.draw(features, camera, null);
+    expect(activeTileLayer.drawRect).not.toHaveBeenCalled();
+
+    overlay.draw(features, camera, features[0]);
+    // The volcano erupts from (1, 1) of its 3x3: cell (11, 21).
+    expect(activeTileLayer.drawRect).toHaveBeenCalledOnce();
+    expect(activeTileLayer.drawRect).toHaveBeenCalledWith(110, -210, 10, 10);
+
+    const layer = vi.mocked(drawPixi.getNewContainer).mock.results[0].value;
+    expect(layer.addChild.mock.calls.at(-1)![0]).toBe(activeTileLayer);
   });
 
   it("creates one pooled sprite per annotation", () => {

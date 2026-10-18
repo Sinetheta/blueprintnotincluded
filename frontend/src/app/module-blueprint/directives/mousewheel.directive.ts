@@ -5,8 +5,6 @@ import { Directive, Output, HostListener, EventEmitter } from "@angular/core";
   standalone: false,
 })
 export class MouseWheelDirective {
-  @Output() mouseWheelUp = new EventEmitter();
-  @Output() mouseWheelDown = new EventEmitter();
   @Output() mouseWheel = new EventEmitter();
 
   @HostListener("mousewheel.out-zone", ["$event"]) onMouseWheelChrome(
@@ -32,11 +30,6 @@ export class MouseWheelDirective {
     const delta = Math.max(-1, Math.min(1, event.wheelDelta || -event.detail));
     event.delta = Math.max(-1, Math.min(1, event.wheelDelta || -event.detail));
     if (delta != 0) this.mouseWheel.emit(event);
-    if (delta > 0) {
-      this.mouseWheelUp.emit(event);
-    } else if (delta < 0) {
-      this.mouseWheelDown.emit(event);
-    }
     // for IE
     event.returnValue = false;
     // for Chrome and Firefox

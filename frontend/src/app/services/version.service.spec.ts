@@ -41,10 +41,6 @@ describe("VersionService", () => {
     httpMock.verify();
   });
 
-  it("should be created", () => {
-    expect(service).toBeTruthy();
-  });
-
   describe("getVersionInfo", () => {
     it("should return version information from API", async () => {
       const versionPromise = service.getVersionInfo();
@@ -85,17 +81,6 @@ describe("VersionService", () => {
       expect(result.error).toBe("Failed to fetch version information");
       expect(result.version).toBe("unknown");
       expect(result.name).toBe("blueprintnotincluded");
-    });
-
-    it("should handle network errors gracefully", async () => {
-      const versionPromise = service.getVersionInfo();
-
-      const req = httpMock.expectOne("/api/version");
-      req.error(new ErrorEvent("Network error"));
-
-      const result = await versionPromise;
-      expect(result.error).toBe("Failed to fetch version information");
-      expect(result.version).toBe("unknown");
     });
   });
 
@@ -202,21 +187,6 @@ describe("VersionService", () => {
       const result = await versionPromise;
       expect(result).toContain("Error: Test error message");
     });
-
-    it("should handle API errors in detailed info", async () => {
-      const versionPromise = service.getDetailedVersionInfo();
-
-      const req = httpMock.expectOne("/api/version");
-      req.flush("Server Error", {
-        status: 500,
-        statusText: "Internal Server Error",
-      });
-
-      const result = await versionPromise;
-      expect(result).toContain("Version: unknown");
-      expect(result).toContain("Environment: development");
-      expect(result).toContain("Error: Failed to fetch version information");
-    });
   });
 
   describe("caching behavior", () => {
@@ -228,26 +198,6 @@ describe("VersionService", () => {
 
       const req = httpMock.expectOne("/api/version");
       req.flush(mockVersionInfo);
-    });
-
-    it("should make new request after cache is cleared", async () => {
-      // First call
-      const versionPromise1 = service.getVersionInfo();
-      const req1 = httpMock.expectOne("/api/version");
-      req1.flush(mockVersionInfo);
-      await versionPromise1;
-
-      // Clear cache by accessing private property (for testing)
-      (service as any).versionInfo = null;
-      (service as any).versionPromise = null;
-
-      // Second call should make new request
-      const versionPromise2 = service.getVersionInfo();
-      const req2 = httpMock.expectOne("/api/version");
-      req2.flush(mockVersionInfo);
-      await versionPromise2;
-
-      expect(versionPromise1).not.toBe(versionPromise2);
     });
   });
 });

@@ -34,14 +34,6 @@ describe("DragAndDropDirective", () => {
     dir = new DragAndDropDirective(fakeElementRef());
   });
 
-  describe("initial state", () => {
-    it("starts with all buttons not pressed", () => {
-      expect(dir.isMouseDown[0]).toBe(false);
-      expect(dir.isMouseDown[1]).toBe(false);
-      expect(dir.isMouseDown[2]).toBe(false);
-    });
-  });
-
   describe("onPointerDown", () => {
     it("sets isMouseDown[button] to true", () => {
       dir.onPointerDown(pointerEvent(0, 10, 20));
@@ -358,32 +350,7 @@ describe("DragAndDropDirective", () => {
       expect(stopDragHandler).not.toHaveBeenCalled();
     });
 
-    it("emits myMultiTouchGesture with pan and zoom deltas as the two fingers move", () => {
-      const gestureHandler = vi.fn();
-      dir.myMultiTouchGesture.subscribe(gestureHandler);
-
-      dir.onPointerDown(
-        pointerEvent(0, 0, 0, { pointerId: 1, pointerType: "touch" }),
-      );
-      dir.onPointerDown(
-        pointerEvent(0, 100, 0, { pointerId: 2, pointerType: "touch" }),
-      );
-
-      // Fingers spread apart and both shift right -> pan right, zoom in.
-      dir.onPointerMove(
-        pointerEvent(0, 10, 0, { pointerId: 1, pointerType: "touch" }),
-      );
-      dir.onPointerMove(
-        pointerEvent(0, 130, 0, { pointerId: 2, pointerType: "touch" }),
-      );
-
-      expect(gestureHandler).toHaveBeenCalled();
-      const lastEvent = gestureHandler.mock.calls.at(-1)![0];
-      expect(lastEvent.panX).toBeGreaterThan(0);
-      expect(lastEvent.zoomScale).toBeGreaterThan(1);
-    });
-
-    it("emits the zoom as the ratio of finger separations, with the midpoint as center", () => {
+    it("emits the midpoint's movement as pan and the ratio of finger separations as zoom, centred on the midpoint", () => {
       const gestureHandler = vi.fn();
       dir.myMultiTouchGesture.subscribe(gestureHandler);
 
@@ -399,6 +366,9 @@ describe("DragAndDropDirective", () => {
       );
 
       const lastEvent = gestureHandler.mock.calls.at(-1)![0];
+      // The midpoint moved from 50 to 75.
+      expect(lastEvent.panX).toBe(25);
+      expect(lastEvent.panY).toBe(0);
       expect(lastEvent.zoomScale).toBeCloseTo(1.5);
       expect(lastEvent.centerClientX).toBe(75);
       expect(lastEvent.centerClientY).toBe(0);

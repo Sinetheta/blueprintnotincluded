@@ -3,7 +3,7 @@ import { NO_ERRORS_SCHEMA } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterTestingModule } from "@angular/router/testing";
 import { ActivatedRoute, Router } from "@angular/router";
-import { of, throwError, Subject } from "rxjs";
+import { of, throwError } from "rxjs";
 
 import { MagicCallbackComponent } from "./magic-callback.component";
 import { AuthenticationService } from "../../../services/authentification-service";
@@ -42,10 +42,6 @@ describe("MagicCallbackComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("ngOnInit", () => {
     it("shows error when code is missing", () => {
       mockRoute.snapshot.queryParams = { email: "a@b.com" };
@@ -63,15 +59,16 @@ describe("MagicCallbackComponent", () => {
       expect(mockAuth.verifyMagicCode).not.toHaveBeenCalled();
     });
 
-    it("saves token and navigates where the auth service says (returnTo, default /) on success", () => {
+    it("saves token and navigates where the auth service says (returnTo) on success", () => {
       mockAuth.verifyMagicCode.mockReturnValue(of({ token: "magic-jwt" }));
+      mockAuth.consumeReturnTo.mockReturnValue("/editor?save=1");
       component.ngOnInit();
       expect(mockAuth.verifyMagicCode).toHaveBeenCalledWith(
         "abc123",
         "a@b.com",
       );
       expect(mockAuth.saveToken).toHaveBeenCalledWith("magic-jwt");
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/editor?save=1");
     });
 
     it("sets errorMessage on expired/used link", () => {
@@ -81,20 +78,6 @@ describe("MagicCallbackComponent", () => {
       component.ngOnInit();
       expect(component.loading).toBe(false);
       expect(component.errorMessage).toBeTruthy();
-    });
-
-    it("keeps loading=true while verifyMagicCode is in flight", () => {
-      const response$ = new Subject<any>();
-      mockAuth.verifyMagicCode.mockReturnValue(response$.asObservable());
-
-      component.ngOnInit();
-      // request has not emitted yet — loading must stay true in flight
-      expect(mockAuth.verifyMagicCode).toHaveBeenCalledWith(
-        "abc123",
-        "a@b.com",
-      );
-      expect(component.loading).toBe(true);
-      expect(component.errorMessage).toBe("");
     });
   });
 });

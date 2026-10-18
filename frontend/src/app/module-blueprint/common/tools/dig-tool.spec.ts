@@ -37,12 +37,6 @@ describe("DigTool", () => {
     tool.parent = parent as unknown as ToolService;
   });
 
-  it("is an exclusive input tool", () => {
-    expect(tool.toolType).toBe(ToolType.dig);
-    expect(tool.toolGroup).toBe(1);
-    expect(tool.captureInput).toBe(true);
-  });
-
   it("paints the clicked cell and commits it when the pointer lifts", () => {
     tool.mouseDown(new Vector2(4, 5));
     expect(cells()).toEqual([[4, 5]]);

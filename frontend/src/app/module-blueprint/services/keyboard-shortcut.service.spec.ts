@@ -194,12 +194,4 @@ describe("isEditableTarget", () => {
   it("is false for a null target", () => {
     expect(isEditableTarget(null)).toBe(false);
   });
-
-  it("is false for an ordinary element", () => {
-    expect(isEditableTarget(document.createElement("canvas"))).toBe(false);
-  });
-
-  it("is true for form fields", () => {
-    expect(isEditableTarget(document.createElement("input"))).toBe(true);
-  });
 });

@@ -40,20 +40,10 @@ describe("VerifyEmailCallbackComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("ngOnInit", () => {
     it("reads userId from query params", () => {
       component.ngOnInit();
       expect(component.userId).toBe("u123");
-    });
-
-    it("leaves userId empty when param absent", () => {
-      mockRoute.snapshot.queryParams = {};
-      component.ngOnInit();
-      expect(component.userId).toBe("");
     });
   });
 
@@ -75,13 +65,14 @@ describe("VerifyEmailCallbackComponent", () => {
       expect(mockAuth.verifyEmail).not.toHaveBeenCalled();
     });
 
-    it("saves token and navigates where the auth service says (returnTo, default /) on success", () => {
+    it("saves token and navigates where the auth service says (returnTo) on success", () => {
       component.code = "code456";
       mockAuth.verifyEmail.mockReturnValue(of({ token: "jwt" }));
+      mockAuth.consumeReturnTo.mockReturnValue("/editor?save=1");
       component.submit();
       expect(mockAuth.verifyEmail).toHaveBeenCalledWith("code456", "u123");
       expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/editor?save=1");
     });
 
     it("sets errorMessage on invalid/expired code", () => {

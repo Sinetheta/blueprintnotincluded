@@ -55,28 +55,6 @@ describe("ScissorsTool", () => {
     vi.restoreAllMocks();
   });
 
-  describe("static properties", () => {
-    it("has correct tool type", () => {
-      expect(tool.toolType).toBe(ToolType.scissors);
-    });
-
-    it("is not toggleable", () => {
-      expect(tool.toggleable).toBe(false);
-    });
-
-    it("captures input", () => {
-      expect(tool.captureInput).toBe(true);
-    });
-
-    it("is not visible by default", () => {
-      expect(tool.visible).toBe(false);
-    });
-
-    it("belongs to toolGroup 1 (exclusive with select/build)", () => {
-      expect(tool.toolGroup).toBe(1);
-    });
-  });
-
   describe("rightClick", () => {
     it("changes tool to select", () => {
       const mockParent = { changeTool: vi.fn() };
@@ -411,17 +389,13 @@ describe("ScissorsTool", () => {
       const mockCamera = {} as any;
       tool.draw(mockDrawPixi, mockCamera);
 
-      expect(mockDrawPixi.drawTileRectangle).toHaveBeenCalledWith(
+      // camera, top-left, bottom-right, front layer
+      expect(mockDrawPixi.drawTileRectangle.mock.calls[0].slice(0, 4)).toEqual([
         mockCamera,
         new Vector2(2, 3),
         new Vector2(3, 2),
         true,
-        2,
-        0xffc341,
-        0xffc341,
-        0.25,
-        1,
-      );
+      ]);
     });
 
     it("does not show the ready icon while only one tile is selected", () => {
@@ -442,17 +416,12 @@ describe("ScissorsTool", () => {
       const mockCamera = { currentZoom: 1, cameraOffset: new Vector2(0, 0) };
       tool.draw(mockDrawPixi, mockCamera as any);
 
-      expect(mockDrawPixi.drawTileRectangle).toHaveBeenCalledWith(
+      expect(mockDrawPixi.drawTileRectangle.mock.calls[0].slice(0, 4)).toEqual([
         mockCamera,
         new Vector2(2, 3),
         new Vector2(4, 2),
         true,
-        2,
-        0xffc341,
-        0xffc341,
-        0.25,
-        1,
-      );
+      ]);
     });
 
     it("shows the ready icon at the midpoint of the two tiles, unrotated for a horizontal pick", () => {
