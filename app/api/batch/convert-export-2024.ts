@@ -122,23 +122,19 @@ function rectAspectMismatch(
 // the pin (upstream fixed it) or records the new size (still wrong). A pin never
 // silently outlives the defect it was written for.
 //
-//   FairGasWallPump (Wall Pumps mod, workshop 3113986230): the mod's current art has a
-//   stray fragment above and to the right of the pump. The exporter measures the opaque
-//   bounds, so the fragment stretches the render to 325x400 px and the rect to
-//   1.625x2.0 cells for a 1x1 building. Identical in both 2026-10-03 exports, so it is
-//   in the mod's art, not a one-off capture. The pinned copy is the clean 2026-07-30
-//   render (224x220, rect 1.12x1.1). Its three sibling Wall Pumps buildings are fine.
+// Empty since the 2026-10-18 export, which sizes icons from the anim's own frames and so
+// gets FairGasWallPump right (its pin, against the Wall Pumps mod's stray swoosh, is gone).
+// Keep a pin only for a limit the export itself lists, and name that limit beside it. Two
+// are known and unpinned because the site has never had better art for them:
+// SpecialCargoBayCluster renders only its window strip (art-only, partial art), and the
+// three Staterpillar buildings render a bare egg. Both need a pose override on the export
+// side; pin them here if a correct render turns up first.
 // ---------------------------------------------------------------------------
 interface PinnedIcon {
   rect: UiImageRect;
   exportSize: { x: number; y: number };
 }
-export const PINNED_ICONS: { [prefabId: string]: PinnedIcon } = {
-  FairGasWallPump: {
-    rect: { x: -0.075, y: -0.015, w: 1.12, h: 1.1 },
-    exportSize: { x: 325, y: 400 },
-  },
-};
+export const PINNED_ICONS: { [prefabId: string]: PinnedIcon } = {};
 
 function overlayFromViewMode(viewMode: string | null, unknown: Set<string>): Overlay {
   if (viewMode == null || viewMode === '') return Overlay.Base; // no special overlay
@@ -464,12 +460,64 @@ function readConnectablePrefabs(connectionDir: string): {
   return { prefabs, incomplete };
 }
 
-// Canvas-to-cell scale for a connectable's sprites. The all-connected state (15) is flush
-// on every side, so its alpha bounding box is exactly one cell; canvas/cell gives the factor
-// the renderer must apply (with a center anchor) so the cell maps to one tile and tiles join
-// flush. Tiles measure ~1.5, utilities ~1.05-1.15. (RocketEnvelopeWindowTile read 1.0 until
-// the 2026-10-11b export: its June sprites were drawn edge to edge because the exporter had
-// destroyed the texture it shared with GlassTile.)
+// Connection-sprite cell geometry: export-root connection_sprite_cells.json, one entry per
+// connection_sprites/<prefabId>/ dir, shared by all 16 of its PNGs. Pixels, top-left
+// origin, +y down: `canvas` is the PNG size, `cell` the building's one cell on it.
+// Everything outside `cell` is overhang into the neighbours, in every state.
+export interface ConnectionSpriteCells {
+  canvas: { w: number; h: number };
+  cell: { x: number; y: number; w: number; h: number };
+}
+
+// How far a cell's centre may sit from its canvas's centre, in cells, before the import
+// fails. The renderer anchors connection sprites on the canvas centre, so an off-centre
+// cell would draw every segment shifted by that much. 0.005 cells is half a pixel at the
+// utilities' 100 px per cell.
+const CONNECTION_CELL_CENTRE_TOLERANCE = 0.005;
+
+// Canvas-to-cell scale for a connectable's sprites, from its declared cell: the factor the
+// renderer must apply (with a centre anchor) so the cell maps to one tile and neighbours join
+// flush. Tiles are 1.5, wires ~1.06, pipes 1.08, the transit tube 2.4 (its all-connected
+// state's corner fillets overhang, which is why measuring 15.png read it as ~1.0). Returns
+// a problem instead when the entry cannot be drawn from as-is: malformed, not the size of
+// the PNGs it describes, or off-centre.
+export function connectionScaleFromCells(
+  entry: ConnectionSpriteCells,
+  pngSize: { x: number; y: number } | null
+): { scale: { x: number; y: number } } | { problem: string } {
+  const { canvas, cell } = entry ?? ({} as ConnectionSpriteCells);
+  const finite = (...v: unknown[]) => v.every((n) => typeof n === 'number' && Number.isFinite(n));
+  if (
+    !canvas ||
+    !cell ||
+    !finite(canvas.w, canvas.h, cell.x, cell.y, cell.w, cell.h) ||
+    canvas.w <= 0 ||
+    canvas.h <= 0 ||
+    cell.w <= 0 ||
+    cell.h <= 0
+  )
+    return { problem: `malformed ${JSON.stringify(entry)}` };
+  if (pngSize != null && (pngSize.x !== canvas.w || pngSize.y !== canvas.h))
+    return {
+      problem: `canvas ${canvas.w}x${canvas.h} but 15.png is ${pngSize.x}x${pngSize.y}`,
+    };
+  const offX = (canvas.w / 2 - (cell.x + cell.w / 2)) / cell.w;
+  const offY = (canvas.h / 2 - (cell.y + cell.h / 2)) / cell.h;
+  if (
+    Math.abs(offX) > CONNECTION_CELL_CENTRE_TOLERANCE ||
+    Math.abs(offY) > CONNECTION_CELL_CENTRE_TOLERANCE
+  )
+    return { problem: `cell off-centre by (${offX.toFixed(3)}, ${offY.toFixed(3)}) cells` };
+  return { scale: { x: canvas.w / cell.w, y: canvas.h / cell.h } };
+}
+
+// Fallback for an export without connection_sprite_cells.json, or a connectable it has no
+// entry for: measure canvas / the alpha bounding box of the all-connected state (15).
+// Right only while 15.png is exactly one cell, which the transit tube's fillets break (it
+// measures ~1.0 for a true 2.4). Remove once every export imported carries the sidecar.
+// (RocketEnvelopeWindowTile read 1.0 until the 2026-10-11b export: its June sprites were
+// drawn edge to edge because the exporter had destroyed the texture it shared with
+// GlassTile.)
 function measureConnectionScale(
   connectionDir: string,
   prefab: string
@@ -644,6 +692,35 @@ export function convertExport2024(opts: ConvertOptions): void {
   const { prefabs: connectablePrefabs, incomplete: incompleteConnectionDirs } =
     readConnectablePrefabs(connectionDir);
 
+  // Connection-sprite cell geometry (see connectionScaleFromCells). Optional while older
+  // exports are still imported: a connectable it does not cover falls back to measuring
+  // its 15.png, and the report names each one.
+  const cellsFile = path.join(opts.exportDir, 'connection_sprite_cells.json');
+  const hasConnectionCells = fs.existsSync(cellsFile);
+  const connectionCells: Record<string, ConnectionSpriteCells> = hasConnectionCells
+    ? readJson<Record<string, ConnectionSpriteCells>>(cellsFile)
+    : {};
+  const connectionScaleFallbacks: string[] = [];
+  const connectionCellProblems: string[] = [];
+  const connectionScaleFor = (prefab: string): { x: number; y: number } => {
+    const entry = Object.prototype.hasOwnProperty.call(connectionCells, prefab)
+      ? connectionCells[prefab]
+      : undefined;
+    if (entry === undefined) {
+      connectionScaleFallbacks.push(prefab);
+      return measureConnectionScale(connectionDir, prefab);
+    }
+    const result = connectionScaleFromCells(
+      entry,
+      readPngSize(path.join(connectionDir, prefab, '15.png'))
+    );
+    if ('problem' in result) {
+      connectionCellProblems.push(`${prefab}: ${result.problem}`);
+      return { x: 1, y: 1 };
+    }
+    return result.scale;
+  };
+
   // --- Validation accumulators ---
   const unknownViewModes = new Set<string>();
   const unknownConnectionTypes = new Set<string>();
@@ -671,9 +748,7 @@ export function convertExport2024(opts: ConvertOptions): void {
     if (!uiSpriteInfos[iconKey]) missingUiSpriteInfo.push(b.name);
 
     const connectable = connectablePrefabs.has(b.name);
-    const connectionScale = connectable
-      ? measureConnectionScale(connectionDir, b.name)
-      : { x: 1, y: 1 };
+    const connectionScale = connectable ? connectionScaleFor(b.name) : { x: 1, y: 1 };
     if (connectable) {
       connectablePrefabsSeen.add(b.name);
       // The editor instantiates connectables as BlueprintItemWire (isUtility) or
@@ -1200,6 +1275,21 @@ export function convertExport2024(opts: ConvertOptions): void {
       ')'
       : ''
   );
+  console.log(
+    '  connection_sprite_cells.json present:',
+    hasConnectionCells,
+    hasConnectionCells ? `(${Object.keys(connectionCells).length} entries)` : ''
+  );
+  console.log(
+    '  connection scale measured from 15.png:',
+    connectionScaleFallbacks.length,
+    connectionScaleFallbacks.length ? '(' + connectionScaleFallbacks.join(', ') + ')' : ''
+  );
+  console.log(
+    '  connection cells unusable          :',
+    connectionCellProblems.length,
+    connectionCellProblems.length ? '(' + connectionCellProblems.join('; ') + ')' : ''
+  );
 
   // Signal incomplete imports with a non-zero exit so a re-import can be trusted
   // (assets are still written below so you can inspect them).
@@ -1210,6 +1300,7 @@ export function convertExport2024(opts: ConvertOptions): void {
     missingCategories.length +
     connectablesNotTileOrUtility.length +
     incompleteConnectionDirs.length +
+    connectionCellProblems.length +
     connectableDirsNoBuilding.length +
     unknownViewModes.size +
     unknownConnectionTypes.size +

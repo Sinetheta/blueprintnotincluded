@@ -5,6 +5,7 @@ import {
   PINNED_ICONS,
   ROCKET_MODULE_SUBCATEGORY,
   UNCATEGORIZED_SUBCATEGORY,
+  connectionScaleFromCells,
   convertBuildMenuItems,
 } from '../../app/api/batch/convert-export-2024';
 import {
@@ -549,6 +550,65 @@ describe('Database Asset Validation', () => {
     });
   });
 
+  // Connectables draw each of their 16 sprites centre-anchored at 100 px x connectionScale,
+  // so the scale is what makes a segment fill its cell and neighbours join flush. The export
+  // declares the cell (connection_sprite_cells.json); measuring 15.png instead read the
+  // transit tube, whose all-connected state overhangs with corner fillets, as ~1.0.
+  describe('Connection-sprite scale', () => {
+    const tube = { canvas: { w: 240, h: 240 }, cell: { x: 70, y: 70, w: 100, h: 100 } };
+
+    describe('connectionScaleFromCells', () => {
+      it('should scale by canvas / cell on each axis', () => {
+        expect(connectionScaleFromCells(tube, { x: 240, y: 240 })).to.deep.equal({
+          scale: { x: 2.4, y: 2.4 },
+        });
+        const wide = { canvas: { w: 192, h: 108 }, cell: { x: 32, y: 4, w: 128, h: 100 } };
+        expect(connectionScaleFromCells(wide, null)).to.deep.equal({
+          scale: { x: 1.5, y: 1.08 },
+        });
+      });
+
+      it('should refuse a cell that is not centred on its canvas', () => {
+        const off = { ...tube, cell: { ...tube.cell, x: 71 } };
+        expect(connectionScaleFromCells(off, { x: 240, y: 240 }))
+          .to.have.property('problem')
+          .that.matches(/off-centre/);
+      });
+
+      it('should refuse a canvas that is not the size of its PNGs', () => {
+        expect(connectionScaleFromCells(tube, { x: 200, y: 240 }))
+          .to.have.property('problem')
+          .that.matches(/15\.png is 200x240/);
+      });
+
+      it('should refuse a malformed entry', () => {
+        for (const bad of [
+          { canvas: { w: 240, h: 240 } },
+          { ...tube, cell: { ...tube.cell, w: 0 } },
+          { ...tube, canvas: { w: '240', h: 240 } },
+        ])
+          expect(connectionScaleFromCells(bad as any, null)).to.have.property('problem');
+      });
+    });
+
+    it('should draw the transit tube at its full overhanging size', () => {
+      const database = readDatabase();
+      const travelTube = database.buildings.find((b: any) => b.prefabId === 'TravelTube');
+      expect(travelTube.connectionSprites, 'TravelTube connectable').to.be.true;
+      expect(travelTube.connectionScale.x, 'TravelTube connectionScale.x').to.be.closeTo(2.4, 0.01);
+      expect(travelTube.connectionScale.y, 'TravelTube connectionScale.y').to.be.closeTo(2.4, 0.01);
+    });
+
+    it('should never draw a connectable smaller than its cell', () => {
+      const database = readDatabase();
+      const shrunk = database.buildings
+        .filter((b: any) => b.connectionSprites)
+        .filter((b: any) => !(b.connectionScale.x >= 1 && b.connectionScale.y >= 1))
+        .map((b: any) => `${b.prefabId} ${JSON.stringify(b.connectionScale)}`);
+      expect(shrunk, `connectables drawn below one cell: ${shrunk.join(', ')}`).to.be.empty;
+    });
+  });
+
   describe('uiImageRect placement', () => {
     // A rect says where a PNG sits over the footprint, and the renderer maps the
     // PNG linearly onto it — so w:h must equal the PNG's pixel aspect. When the two
@@ -627,7 +687,6 @@ describe('Database Asset Validation', () => {
       const database = readDatabase();
       const pinnedDir = path.join(__dirname, '../../assets/manual/ui_image');
       const frontendUiImagePath = path.join(__dirname, '../../frontend/src/assets/ui_image');
-      expect(Object.keys(PINNED_ICONS), 'pinned icons').to.include('FairGasWallPump');
 
       for (const [prefabId, pin] of Object.entries(PINNED_ICONS)) {
         const pinned = fs.readFileSync(path.join(pinnedDir, `${prefabId}.png`));

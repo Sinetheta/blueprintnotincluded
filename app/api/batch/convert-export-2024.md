@@ -4,7 +4,7 @@ Reference for `convert-export-2024.ts` (`npm run import:2024`). Covers what a ga
 export must provide, what the converter produces, and the contract the export side
 must honour so re-exports don't silently break rendering.
 
-Game version baseline: **U59-744825-SCRPAN** (all DLC), export dated 2026-10-03.
+Game version baseline: **U59-744825-SCRPAN** (all DLC), export dated 2026-10-18.
 
 ## Pipeline
 
@@ -22,8 +22,9 @@ Steps:
    artifact (readable diffs). The backend reads it directly at startup; the frontend
    zips it into the gitignored `database-2024.zip` it fetches, via its `prebuild`/
    `prestart` (`frontend/scripts/build-database-zip.js`). The converter emits no `.zip`.
-3. Detect connectables (a `connection_sprites/<prefabId>/` dir exists) and **measure**
-   each one's render scale from its `15.png`.
+3. Detect connectables (a `connection_sprites/<prefabId>/` dir exists) and take each
+   one's render scale from the cell the export declares for it in
+   `connection_sprite_cells.json` (canvas ÷ cell, see "Connection-sprite scale" below).
 4. Mirror `ui_image/` and `connection_sprites/` into both asset roots **content-aware**:
    a file is rewritten only when it actually changed, only removed files are pruned, so
    unchanged icons keep their mtime (no churn). The export is **not byte-deterministic**
@@ -58,6 +59,8 @@ unchanged pixels stay byte-identical and git shows only genuine changes.
 | `ui_image_rects.json` (export **root**) | flat-icon placement rects by prefab id — the only delivery path for terrain features' rects (see below) |
 | `ui_image/<prefabId>.png` | the single flat icon per building (1,361 files) |
 | `connection_sprites/<prefabId>/<0..15>.png` | the 16 tiling states for connectables |
+| `connection_sprite_cells.json` (export **root**) | where the cell sits on each connectable's sprites — the source of `connectionScale` (see below) |
+| `building_image_report.json` (export **root**) | nothing: diagnostic only, never imported. Per icon, the `anim`, `frame`, `render` (`spawned`/`artOnly`) and `candidates` (states weighed, with sizes) the exporter used; diff it between two exports to see why an icon changed |
 | `ui_image_facade/` | nothing today (not copied) |
 
 Current output (480 buildings, U59-744825): 212 elements, 404 build-menu items (395
@@ -84,8 +87,8 @@ still uses the single canonical icon; only placed-item rendering uses the 16 sta
 ## Contract — don't break these (everything else, incl. resolution, can change freely)
 
 The pipeline is **resolution-independent**: ship bigger/sharper images and nothing needs
-to change. Icons downscale to the footprint; connection sprites are rendered at a measured
-ratio (see below). What breaks rendering is changing **framing**, not pixel count.
+to change. Icons downscale to the footprint; connection sprites are rendered at the
+canvas-to-cell ratio the export declares (see below). What breaks rendering is changing **framing**, not pixel count.
 
 1. **Icon naming:** `ui_image/<prefabId>.png`, filename == `building.json` `name` (the
    prefab tag, e.g. `FabricatedWood.png` — **not** the display name). The import fails if any
@@ -99,12 +102,17 @@ ratio (see below). What breaks rendering is changing **framing**, not pixel coun
 3. **Connection sprites:** all 16 of `0–15` present, bitmask `left=1/right=2/up=4/down=8`.
 4. **Connectable signal:** the `connection_sprites/<prefabId>/` directory exists
    (`building.json` carries no `tileableLeftRight/tileableTopBottom`).
-5. **Connection-sprite geometry** (so the measured scale stays correct):
+5. **Connection-sprite geometry** is declared, not inferred:
    - All 16 states share **one canvas size** and **one cell registration** (same centre,
      same pixels-per-cell). Scale them up together.
-   - In `15.png` the opaque pixels equal **exactly one cell, centred**. Overhang/caps on
-     *disconnected* sides in other states is fine and expected. `15.png` is our measuring
-     stick; if it gains overhang or goes off-centre our scale goes wrong.
+   - `connection_sprite_cells.json` at the export root carries one entry per
+     `connection_sprites/<prefabId>/` dir, `{canvas:{w,h}, cell:{x,y,w,h}}` in pixels
+     (top-left origin, `+y` down, real numbers): `canvas` is the PNGs' size, `cell` the
+     building's one cell on it. Everything outside `cell` is overhang, in any state,
+     `15.png` included (a wire's outline, the transit tube's corner fillets).
+   - The cell is **centred on the canvas**. The renderer anchors on the canvas centre, so
+     the import fails on an entry whose cell centre is more than 0.005 cells off, whose
+     canvas is not its `15.png`'s size, or that is malformed.
 6. **Building fields we read** keep their names/shapes: `name`, `nameString`,
    `isFoundation`, `isKAnimTile`, `isUtility`, `widthInCells`, `heightInCells`,
    `sceneLayer`, `objectLayer`, `viewMode`, `permittedRotations`, `dragBuild`,
@@ -198,9 +206,14 @@ of whatever the export ships. It is a manual override in the same family as
 derive its way out of, so the correction is recorded in the converter and re-applied on every
 import instead of being hand-reverted afterwards.
 
-| Prefab | Why | Pinned | Export ships |
-|---|---|---|---|
-| `FairGasWallPump` (Wall Pumps mod, workshop 3113986230) | The mod's current art has a stray fragment above and right of the pump; the exporter measures opaque bounds, so the fragment stretches both the render and the rect. Identical in both 2026-10-03 exports. | 224×220 px, rect 1.12×1.1 cells (the 2026-07-30 render) | 325×400 px, rect 1.625×2.0 cells |
+**No icon is pinned today.** The only pin, `FairGasWallPump` (the Wall Pumps mod's kanim
+has no frame bounds, so a swoosh effect stretched its render to 1.625×2.0 cells), was
+deleted with the 2026-10-18 export, which measures the frames itself and ships the clean
+224×220 px render at rect 1.12×1.1. Keep a pin only for a limit the export lists in its
+own validator, and name the limit beside the pin. Two such limits are known and unpinned,
+because the site has never had better art for them: `SpecialCargoBayCluster` renders only
+its window strip, and the three Staterpillar buildings render a bare egg. Both need a pose
+override on the export side.
 
 How a pin works:
 
@@ -229,15 +242,32 @@ fallback is a visible regression for them rather than a graceful default: the ar
 roughly half a cell low and ~15% small, with the plume overhang cropped away. Every
 catalogue entry therefore carries `uiImageRect`, and a test fails if one does not.
 
-## Connection-sprite scale (measured, not assumed)
+## Connection-sprite scale (declared, not measured)
 
-Connection PNGs frame one cell plus optional cap/overhang, so a PNG's canvas is not
-necessarily one cell, and the factor varies per building **and** per export framing (an
-early export measured tiles at ~1.5×, a later one tightened to ~1.0×). The converter
-therefore measures scale per building from the `15.png` alpha bbox (`canvas px ÷ cell px`)
-and stores `connectionScale {x,y}` in the DB; the renderer draws connection parts
-centre-anchored at `100 × connectionScale`. Re-measured every import, so it auto-adapts to
-new framing/resolution. No mod/export change needed.
+Connection PNGs frame one cell plus overhang into the neighbours, so a PNG's canvas is not
+one cell, and the factor varies per building **and** per export framing. The converter reads
+the cell from `connection_sprite_cells.json` and stores
+`connectionScale {x,y} = {canvas.w ÷ cell.w, canvas.h ÷ cell.h}` in the DB; the renderer
+draws each connection part centre-anchored at `100 × connectionScale`, so the cell maps to
+one tile and neighbours join flush. The cell must be centred on the canvas (checked; see
+contract clause 5), which is what makes the centre anchor right.
+
+| Connectables | `connectionScale` |
+|---|---|
+| All 16 tiles | 1.5 |
+| `Wire`, `WireRefined`, `WireRubber`, the two high-wattage wires, `LogicRibbon`, `SolidConduit` | 1.06 |
+| `LogicWire` | 1.04 |
+| The 6 gas and liquid conduits | 1.08 |
+| `TravelTube` | 2.4 |
+
+Before the 2026-10-18 export the converter *measured* the scale as canvas ÷ the alpha
+bounding box of `15.png`, which holds only while the all-connected state is exactly one
+cell. It is not: wires and pipes keep a 2–4 px outline (they measured 1.02–1.04, so drew
+2–5% small), and the transit tube's corner fillets make its all-connected state 2.4 cells
+wide, so it measured ~1.0 and drew at about 40% of its size. That measurement survives only
+as a **fallback** for an export without the file, or a connectable the file has no entry
+for; the import log names each one (`connection scale measured from 15.png: N (...)`).
+Remove it once no export without the sidecar will be imported again.
 
 ## Utility connection ports (plumbing / power / automation / shipping indicators)
 
@@ -478,7 +508,8 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
 - **Connectables** (31 prefabs): render `connection_sprites/{prefabId}/{bitmask}.png` per
   4-bit neighbour mask (left=1, right=2, up=4, down=8). `OniItem.connectionSprites` is
   derived from dir presence; `BlueprintItem` builds 16 tagged flat-icon draw-parts;
-  per-building `connectionScale` is measured from `15.png` at import time. The build/select
+  per-building `connectionScale` is the canvas ÷ cell ratio from the export's
+  `connection_sprite_cells.json`, fixed at import time. The build/select
   menu keeps the single canonical icon (`iconUrl`).
 - **Utility ports** (316/480 buildings): `BBuildingDef2024.utilities[]` carries each
   input/output port as `{offset, type, isSecondary}`. The U59 export emits `type` as the
@@ -512,7 +543,19 @@ own. The `RocketEnvelopeWindowTile` connection sprites, stuck at their June date
 exporter destroyed a texture that tile shared with `GlassTile`, are rewritten every run
 again. And the indicator set is declared (`utilityIndicators`, above) rather than assumed.
 
+Resolved by the 2026-10-18 export (OniExtract2024 #24): connection-sprite geometry is
+declared (`connection_sprite_cells.json`), so the converter no longer infers the scale from
+`15.png` and the transit tube draws at full size; icons are posed in the most active state
+whose art stays near the footprint, so effects (steam, sparks, light cones) no longer set an
+icon's size; art-only renders of even-width buildings are no longer half a cell left; meter
+placeholders are hidden on art-only renders; the render canvas is sized from the art, so no
+icon is cut off; and the Wall Pumps mod's kanims are measured from their frames, which
+retired the `FairGasWallPump` pin.
+
 Still open:
+
+- **Pose overrides:** `SpecialCargoBayCluster` renders only its window strip and the three
+  Staterpillar buildings a bare egg (listed by the export's own validator).
 
 - **Overlay tint (`backColor`):** emit the building's overlay/outline tint so
   `BACK_COLOR_BY_PREFAB` (see above) can be retired in favour of real per-import data instead
