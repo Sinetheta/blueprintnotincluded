@@ -8,6 +8,7 @@ import {
   terrainIconUrl,
   TerrainFeature,
 } from '../../lib';
+import { loadGameDatabase } from '../helpers/roomFixtures';
 
 // lib/src/drawing/terrain-markers.ts — lifted out of the frontend's
 // draw-terrain-overlay.ts so the server preview worker (B1) can draw the same
@@ -51,6 +52,8 @@ describe('terrain icon/name resolution', function () {
     TerrainFeature.init();
     TerrainFeature.load(CATALOGUE);
   });
+  // The catalogue is global: put the shipped one back for whatever runs next.
+  after(() => loadGameDatabase());
 
   it('resolves a known feature to its catalogue icon and name', () => {
     const feature: BniTerrainFeature = { id: 'OilWell', x: 0, y: 0 };
@@ -74,6 +77,7 @@ describe('activeTileOf', function () {
     TerrainFeature.init();
     TerrainFeature.load(CATALOGUE);
   });
+  after(() => loadGameDatabase());
 
   it("puts a geyser's cell on the left column, one row up", () => {
     expect(activeTileOf({ id: 'GeyserGeneric_steam', x: 10, y: 20 })).to.deep.equal({

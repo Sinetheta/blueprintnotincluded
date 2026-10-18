@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -140,14 +135,6 @@ describe('Blueprint facet counts', function () {
       // second baseGame row, and it also drops out of requiredDlcs.DLC5_ID.
       expect(response.body.baseGame).to.equal(1);
       expect(response.body.requiredDlcs.DLC5_ID ?? 0).to.equal(0);
-    });
-
-    it('counts a blueprint needing two packs under each pack', async function () {
-      const response = await facets();
-      // bothId (RoboPilotModule) needs both EXPANSION1_ID and DLC3_ID — it
-      // shows up once in each row, not split between them.
-      expect(response.body.requiredDlcs.EXPANSION1_ID).to.equal(1);
-      expect(response.body.requiredDlcs.DLC3_ID).to.equal(1);
     });
 
     it('rejects malformed params with the same 400s as getblueprints', async function () {

@@ -17,12 +17,25 @@ import {
   TerrainFeature,
 } from '../../lib';
 
-let databaseLoaded = false;
+// The registries as this helper last loaded them. Every init() swaps in a new
+// array/map, so a spec that re-inits one with a fixture of its own (e.g.
+// TerrainFeature with a three-entry catalogue) shows up here as a changed
+// identity, and the next caller gets the shipped database back rather than
+// silently inheriting the fixture.
+let loadedRegistries: unknown[] | null = null;
+const currentRegistries = (): unknown[] => [
+  OniItem.oniItemsMap,
+  BuildableElement.elements,
+  BuildMenuCategory.buildMenuCategories,
+  BuildMenuItem.buildMenuItems,
+  TerrainFeature.features,
+];
 
 // Same bootstrap as the backend (app/app.ts): OniItem.load needs the static
 // element/sprite/menu tables populated first. Idempotent across test files.
 export function loadGameDatabase(): void {
-  if (databaseLoaded && OniItem.oniItemsMap != null) return;
+  if (loadedRegistries != null && currentRegistries().every((r, i) => r === loadedRegistries![i]))
+    return;
   const databaseJsonPath = path.join(__dirname, '../../assets/database/database-2024.json');
   const database = JSON.parse(fs.readFileSync(databaseJsonPath, 'utf8'));
   ImageSource.init();
@@ -40,7 +53,7 @@ export function loadGameDatabase(): void {
   OniItem.load(database.buildings);
   TerrainFeature.init();
   TerrainFeature.load(database.terrainFeatures);
-  databaseLoaded = true;
+  loadedRegistries = currentRegistries();
 }
 
 export interface Placement {

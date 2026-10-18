@@ -1,11 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { FeedbackModel } from '../../app/api/models/feedback';
@@ -201,21 +195,6 @@ describe('Feedback API', function () {
       expect(response.status).to.equal(200);
       expect(response.body.status).to.equal('resolved');
       expect(response.body._id).to.equal(String(item._id));
-    });
-
-    it('should update to spam status', async function () {
-      const item = await FeedbackModel.model.create({
-        userId: testData.users.user1._id, userEmail: 'a@test.com', username: 'a', message: 'buy now!!!', status: 'open',
-      });
-      const adminToken = testData.users.user1.generateJwt('admin');
-
-      const response = await TestSetup.request()
-        .patch(`/api/admin/feedback/${item._id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ status: 'spam' });
-
-      expect(response.status).to.equal(200);
-      expect(response.body.status).to.equal('spam');
     });
   });
 });

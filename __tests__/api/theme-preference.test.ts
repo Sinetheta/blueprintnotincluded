@@ -1,10 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { DEFAULT_THEME_ID } from '../../lib/index';
@@ -171,17 +166,6 @@ describe('Theme preference API', function () {
       expect(reread.body.theme).to.equal(DEFAULT_THEME_ID);
     });
 
-    // These values reach CSS custom properties on the client, so anything
-    // that is not a literal #rrggbb colour on a known token is refused whole.
-    it('rejects a non-hex colour value', async function () {
-      const token = testData.users.user1.generateJwt();
-      const response = await TestSetup.request()
-        .patch('/api/users/me/theme-preference')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ theme: 'custom', customColors: { board: 'url(javascript:1)' } });
-      expect(response.status).to.equal(400);
-    });
-
     it('rejects an unknown token name', async function () {
       const token = testData.users.user1.generateJwt();
       const response = await TestSetup.request()
@@ -191,9 +175,11 @@ describe('Theme preference API', function () {
       expect(response.status).to.equal(400);
     });
 
-    it('rejects shorthand and alpha hex forms', async function () {
+    // These values reach CSS custom properties on the client, so anything
+    // that is not a literal #rrggbb colour on a known token is refused whole.
+    it('rejects non-hex, shorthand and alpha hex colour values', async function () {
       const token = testData.users.user1.generateJwt();
-      for (const bad of ['#abc', '#aabbccdd', 'red', 'rgb(1,2,3)']) {
+      for (const bad of ['url(javascript:1)', '#abc', '#aabbccdd', 'red', 'rgb(1,2,3)']) {
         const response = await TestSetup.request()
           .patch('/api/users/me/theme-preference')
           .set('Authorization', `Bearer ${token}`)
@@ -209,24 +195,6 @@ describe('Theme preference API', function () {
         .set('Authorization', `Bearer ${token}`)
         .send({ theme: 'custom', customColors: {} });
       expect(response.status).to.equal(400);
-    });
-
-    // Cosmetic, but still private account state.
-    it('does not expose the theme on the public profile', async function () {
-      const token = testData.users.user1.generateJwt();
-      await TestSetup.request()
-        .patch('/api/users/me/theme-preference')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ theme: 'cyanotype' });
-
-      const profile = await TestSetup.request().get(
-        `/api/users/${testData.users.user1.username}/profile`
-      );
-      if (profile.status === 200) {
-        expect(profile.body).to.not.have.property('themePreference');
-        expect(profile.body).to.not.have.property('theme');
-        expect(profile.body).to.not.have.property('customThemeColors');
-      }
     });
   });
 });

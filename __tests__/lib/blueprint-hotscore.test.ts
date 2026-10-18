@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { HotScoreInputs, HOT_SCORE, bayesianRating, computeHotScore } from '../../lib';
 
 // A day in ms, to build createdAt values relative to a fixed "now".
@@ -79,6 +80,13 @@ describe('computeHotScore (trending "new but also good")', () => {
 
   it('is deterministic and independent of the current clock (static per document)', () => {
     const input = bp({ ratingCount: 7, ratingAverage: 4.2, downloadCount: 50, ageDays: 5 });
-    expect(computeHotScore(input)).to.equal(computeHotScore(input));
+    const clock = sinon.useFakeTimers(NOW);
+    try {
+      const scoredAtNow = computeHotScore(input);
+      clock.setSystemTime(NOW + 365 * DAY);
+      expect(computeHotScore(input)).to.equal(scoredAtNow);
+    } finally {
+      clock.restore();
+    }
   });
 });

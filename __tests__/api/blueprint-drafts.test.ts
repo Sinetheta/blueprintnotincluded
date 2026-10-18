@@ -1,15 +1,10 @@
-import { describe, it, beforeEach, afterEach, before } from 'mocha';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup, TestDbHelper } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
 import { BlueprintEventModel } from '../../app/api/models/blueprint-event';
+import { drainBackgroundTasks } from '../../app/api/services/background-tasks';
 
 const SAMPLE_BLUEPRINT_DATA = {
   version: '1.0',
@@ -27,11 +22,6 @@ describe('Blueprint drafts (Mocha)', function () {
   let adminToken: string;
   let draft: any;
   let published: any;
-
-  before(async function () {
-    this.timeout(10000);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  });
 
   beforeEach(async function () {
     this.timeout(5000);
@@ -51,10 +41,11 @@ describe('Blueprint drafts (Mocha)', function () {
     await TestSetup.afterEach();
   });
 
-  // Event logging is fire-and-forget after res.json — give the insert a beat
-  // to land before asserting on it
+  // Event logging is fire-and-forget, but every log() call is made before the
+  // response reaches the client — so by the time a request resolves, its
+  // inserts are tracked background tasks and can be awaited.
   async function events(blueprintId: any, type?: string) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await drainBackgroundTasks();
     const filter: any = { blueprintId };
     if (type) filter.type = type;
     return BlueprintEventModel.model.find(filter).lean();

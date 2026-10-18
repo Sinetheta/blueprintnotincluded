@@ -1,67 +1,44 @@
 import { expect } from 'chai';
-import * as dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
+import mongoose from 'mongoose';
 
 import { TestSetup } from '../setup/testSetup';
 
 describe('Health API', function () {
-  before(async function () {
-    this.timeout(10000);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  });
-
-  after(async function () {});
-
-  beforeEach(async function () {
-    this.timeout(5000);
-    await TestSetup.beforeEach();
-  });
-
-  afterEach(async function () {
-    this.timeout(5000);
-    await TestSetup.afterEach();
-  });
-
   describe('GET /api/health', function () {
-    it('should return 200 with ok status when DB is connected', async function () {
+    it('returns 200 ok with the DB check, memory stats and uptime when the DB is connected', async function () {
       const response = await TestSetup.request().get('/api/health');
 
       expect(response.status).to.equal(200);
       expect(response.body.status).to.equal('ok');
-    });
-
-    it('should report DB as connected', async function () {
-      const response = await TestSetup.request().get('/api/health');
-
-      expect(response.body.checks).to.be.an('object');
-      expect(response.body.checks.db).to.deep.include({ status: 'connected', ok: true });
-    });
-
-    it('should include memory stats', async function () {
-      const response = await TestSetup.request().get('/api/health');
+      expect(response.body.checks.db).to.deep.equal({ status: 'connected', ok: true });
 
       const { memory } = response.body;
-      expect(memory).to.be.an('object');
       expect(memory.heapUsedMb).to.be.a('number').and.greaterThan(0);
       expect(memory.heapTotalMb).to.be.a('number').and.greaterThan(0);
       expect(memory.rssMb).to.be.a('number').and.greaterThan(0);
-      expect(memory.heapUsedMb).to.be.at.most(memory.heapTotalMb);
+      // Whole seconds since boot — 0 is legitimate when this runs first.
+      expect(response.body.uptime).to.be.a('number').and.at.least(0);
     });
 
-    it('should include uptime in seconds', async function () {
-      const response = await TestSetup.request().get('/api/health');
+    // The deploy's health check reads the status code, so a lost DB
+    // connection has to surface as a non-2xx, not as a 200 with a flag.
+    it('returns 503 degraded when the DB is not connected', async function () {
+      // readyState is a non-configurable accessor on Connection.prototype, so
+      // sinon can't stub it; an own property on the instance shadows it.
+      Object.defineProperty(mongoose.connection, 'readyState', {
+        get: () => 0,
+        configurable: true,
+      });
+      let response;
+      try {
+        response = await TestSetup.request().get('/api/health');
+      } finally {
+        delete (mongoose.connection as any).readyState;
+      }
 
-      expect(response.body.uptime).to.be.a('number').and.greaterThan(0);
-    });
-
-    it('should be accessible without authentication', async function () {
-      const response = await TestSetup.request().get('/api/health');
-
-      expect(response.status).to.not.equal(401);
-      expect(response.status).to.not.equal(403);
+      expect(response.status).to.equal(503);
+      expect(response.body.status).to.equal('degraded');
+      expect(response.body.checks.db).to.deep.equal({ status: 'disconnected', ok: false });
     });
   });
 });

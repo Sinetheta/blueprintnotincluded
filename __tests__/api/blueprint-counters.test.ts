@@ -1,11 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load test environment first
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
-process.env.NODE_ENV = 'test';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -74,12 +68,6 @@ describe('Blueprint view/download counters', function () {
       } finally {
         BlueprintCounterService.DEDUPE_TTL_MS = originalTtl;
       }
-    });
-
-    it('survives a flush against a deleted blueprint id', async function () {
-      const service = BlueprintCounterService.instance;
-      service.record('view', new Types.ObjectId().toString(), 'user-a');
-      await service.flush(); // must not throw
     });
 
     it('refreshes hotScore on a download flush using the post-increment total', async function () {

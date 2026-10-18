@@ -3,20 +3,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   BlueprintItem,
-  BuildableElement,
   BuildLocationRule,
-  BuildMenuCategory,
-  BuildMenuItem,
   CameraService,
   ConnectionType,
   DLC_LABELS,
-  SpriteInfo,
-  SpriteModifier,
-  ImageSource,
   OniItem,
   Overlay,
   ZIndex,
 } from '../../lib';
+import { loadGameDatabase } from '../helpers/roomFixtures';
 
 const elementIds = (item: OniItem, slot: number) =>
   item.buildableElementsArray[slot].map((e) => e.id);
@@ -87,22 +82,7 @@ describe('Game structure contract (representative buildings)', () => {
     const databaseJsonPath = path.join(__dirname, '../../assets/database/database-2024.json');
     database = JSON.parse(fs.readFileSync(databaseJsonPath, 'utf8'));
     buildingsById = new Map(database.buildings.map((b: any) => [b.prefabId, b]));
-
-    // Same bootstrap as the backend (app/app.ts): OniItem.load needs the static
-    // element/sprite registries populated.
-    ImageSource.init();
-    BuildableElement.init();
-    BuildableElement.load(database.elements);
-    BuildMenuCategory.init();
-    BuildMenuCategory.load(database.buildMenuCategories);
-    BuildMenuItem.init();
-    BuildMenuItem.load(database.buildMenuItems);
-    SpriteInfo.init();
-    SpriteInfo.load(database.uiSprites);
-    SpriteModifier.init();
-    SpriteModifier.load(database.spriteModifiers);
-    OniItem.init();
-    OniItem.load(database.buildings);
+    loadGameDatabase();
   });
 
   describe('raw export facts', () => {
