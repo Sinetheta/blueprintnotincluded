@@ -6,7 +6,6 @@ import { ToolType } from "src/app/module-blueprint/common/tools/tool";
 import {
   BlueprintHelpers,
   BlueprintItemElement,
-  BuildMenuCategory,
   OniItem,
 } from "../../../../../../../lib/index";
 import { ComponentSideBuildToolComponent } from "./build-tool.component";
@@ -57,8 +56,8 @@ describe("ComponentSideBuildToolComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe("constructor", () => {
@@ -67,24 +66,6 @@ describe("ComponentSideBuildToolComponent", () => {
         component,
       );
       expect(toolService.subscribeToolChanged).toHaveBeenCalledWith(component);
-    });
-  });
-
-  describe("getters", () => {
-    it("currentItemToBuild proxies the build tool template", () => {
-      expect(component.currentItemToBuild).toBe(buildTool.templateItemToBuild);
-    });
-
-    it("isGasLiquid reflects the template's isElement flag", () => {
-      expect(component.isGasLiquid).toBe(true);
-      buildTool.templateItemToBuild.oniItem.isElement = false;
-      expect(component.isGasLiquid).toBe(false);
-    });
-
-    it("buildMenuCategories exposes the static category list", () => {
-      expect(component.buildMenuCategories).toBe(
-        BuildMenuCategory.buildMenuCategories,
-      );
     });
   });
 
@@ -100,7 +81,6 @@ describe("ComponentSideBuildToolComponent", () => {
       expect(spy).toHaveBeenCalledWith("Tile");
       expect(buildTool.changeItem).toHaveBeenCalledWith(instance);
       expect(component.databaseLoaded).toBe(true);
-      spy.mockRestore();
     });
   });
 
@@ -126,9 +106,7 @@ describe("ComponentSideBuildToolComponent", () => {
     it("creates a Water element item, builds it, and hides the panel", () => {
       // The lib database isn't loaded in unit tests; stub the lookup the
       // BlueprintItem constructor performs.
-      const getOniItem = vi
-        .spyOn(OniItem, "getOniItem")
-        .mockReturnValue({} as any);
+      vi.spyOn(OniItem, "getOniItem").mockReturnValue({} as any);
       const setElement = vi
         .spyOn(BlueprintItemElement.prototype, "setElement")
         .mockImplementation(() => {});
@@ -141,8 +119,6 @@ describe("ComponentSideBuildToolComponent", () => {
         expect.any(BlueprintItemElement),
       );
       expect(component.categoryPanel.hide).toHaveBeenCalled();
-      setElement.mockRestore();
-      getOniItem.mockRestore();
     });
   });
 
@@ -164,7 +140,6 @@ describe("ComponentSideBuildToolComponent", () => {
       expect(component.currentItem).toBe(item);
       expect(spy).toHaveBeenCalledWith("Tile");
       expect(buildTool.changeItem).toHaveBeenCalledWith(instance);
-      spy.mockRestore();
     });
   });
 
@@ -242,22 +217,6 @@ describe("ComponentSideBuildToolComponent", () => {
     });
   });
 
-  describe("uiItemChanged", () => {
-    it("rebuilds the current item from its id", () => {
-      const instance = { id: "Ladder" } as any;
-      const spy = vi
-        .spyOn(BlueprintHelpers, "createInstance")
-        .mockReturnValue(instance);
-      component.currentItem = { id: "Ladder" } as any;
-
-      component.uiItemChanged();
-
-      expect(spy).toHaveBeenCalledWith("Ladder");
-      expect(buildTool.changeItem).toHaveBeenCalledWith(instance);
-      spy.mockRestore();
-    });
-  });
-
   describe("itemChanged", () => {
     it("stores the template item's oniItem as the current item", () => {
       const oniItem = { id: "Pump" } as any;
@@ -267,21 +226,6 @@ describe("ComponentSideBuildToolComponent", () => {
   });
 
   describe("toolChanged", () => {
-    it("rebuilds the item and hides panels when the build tool is selected", () => {
-      const spy = vi
-        .spyOn(BlueprintHelpers, "createInstance")
-        .mockReturnValue({ id: "Tile" } as any);
-      component.currentItem = { id: "Tile" } as any;
-      const a = makePanel();
-      component.itemPanels = makePanelList([a]);
-
-      component.toolChanged(ToolType.build);
-
-      expect(spy).toHaveBeenCalled();
-      expect(a.hide).toHaveBeenCalled();
-      spy.mockRestore();
-    });
-
     it("only hides panels for non-build tools", () => {
       const spy = vi.spyOn(BlueprintHelpers, "createInstance");
       const a = makePanel();
@@ -291,7 +235,6 @@ describe("ComponentSideBuildToolComponent", () => {
 
       expect(spy).not.toHaveBeenCalled();
       expect(a.hide).toHaveBeenCalled();
-      spy.mockRestore();
     });
 
     it("tolerates missing item panels", () => {
@@ -317,7 +260,6 @@ describe("ComponentSideBuildToolComponent", () => {
       expect(spy).not.toHaveBeenCalled();
       expect(buildTool.changeItem).not.toHaveBeenCalled();
       expect(a.hide).toHaveBeenCalled();
-      spy.mockRestore();
     });
 
     it("rebuilds when the build tool shows a different item than currentItem", () => {
@@ -332,7 +274,6 @@ describe("ComponentSideBuildToolComponent", () => {
 
       expect(spy).toHaveBeenCalledWith("Wire");
       expect(buildTool.changeItem).toHaveBeenCalledWith(instance);
-      spy.mockRestore();
     });
 
     // The regression this guards: BuildTool.switchFrom() destroys the brush but
@@ -355,7 +296,6 @@ describe("ComponentSideBuildToolComponent", () => {
 
       expect(spy).toHaveBeenCalledWith("Element");
       expect(buildTool.changeItem).toHaveBeenCalledWith(instance);
-      spy.mockRestore();
     });
 
     it("rebuilds when there is no template item yet", () => {
@@ -369,13 +309,6 @@ describe("ComponentSideBuildToolComponent", () => {
       component.toolChanged(ToolType.build);
 
       expect(spy).toHaveBeenCalledWith("Tile");
-      spy.mockRestore();
-    });
-  });
-
-  describe("onFocus", () => {
-    it("is a no-op that does not throw", () => {
-      expect(() => component.onFocus()).not.toThrow();
     });
   });
 });

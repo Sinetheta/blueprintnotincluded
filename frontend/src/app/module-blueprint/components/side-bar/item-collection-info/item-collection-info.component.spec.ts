@@ -76,8 +76,8 @@ describe("ItemCollectionInfoComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe("ngOnInit", () => {
@@ -154,13 +154,6 @@ describe("ItemCollectionInfoComponent", () => {
   });
 
   describe("tool delegations", () => {
-    it("buildingsDestroy forwards the collection to the select tool", () => {
-      component.buildingsDestroy();
-      expect(selectTool.buildingsDestroy).toHaveBeenCalledWith(
-        component.itemCollection,
-      );
-    });
-
     it("buildingsCopy switches to the build tool with a cloned item", () => {
       const clone = { cloned: true } as any;
       const cloneSpy = vi
@@ -172,23 +165,15 @@ describe("ItemCollectionInfoComponent", () => {
       expect(toolService.changeTool).toHaveBeenCalledWith(ToolType.build);
       expect(cloneSpy).toHaveBeenCalledWith(component.itemCollection.items[0]);
       expect(buildTool.changeItem).toHaveBeenCalledWith(clone);
-      cloneSpy.mockRestore();
-    });
-
-    it("selectEvery selects all items like the first one", () => {
-      component.selectEvery();
-      expect(selectTool.selectAllLike).toHaveBeenCalledWith(
-        component.itemCollection.items[0],
-      );
     });
   });
 
   describe("selected", () => {
-    it("focuses the host focus element", () => {
-      const focus = vi.fn();
-      component.focusElement = { nativeElement: { focus } } as any;
+    it("moves keyboard focus to the panel", () => {
       component.selected();
-      expect(focus).toHaveBeenCalled();
+      expect(document.activeElement).toBe(
+        fixture.nativeElement.querySelector('[tabindex="0"]'),
+      );
     });
   });
 

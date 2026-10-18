@@ -28,13 +28,6 @@ describe("NotesTool", () => {
     tool.parent = parent as any;
   });
 
-  it("is an exclusive input tool", () => {
-    expect(tool.toolType).toBe(ToolType.notes);
-    expect(tool.toolGroup).toBe(1);
-    expect(tool.captureInput).toBe(true);
-    expect(tool.toggleable).toBe(false);
-  });
-
   it("places a text note built from the pending template, leaving it unselected", () => {
     tool.mode = "text";
     tool.pendingTextNote.tinthex = "ff0000ff";

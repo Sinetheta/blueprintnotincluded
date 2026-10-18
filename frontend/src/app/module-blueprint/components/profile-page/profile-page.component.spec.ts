@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NO_ERRORS_SCHEMA } from "@angular/core";
 import { By } from "@angular/platform-browser";
 import { DatePipe } from "@angular/common";
-import { ActivatedRoute, convertToParamMap } from "@angular/router";
-import { of, throwError } from "rxjs";
+import { ActivatedRoute, ParamMap, convertToParamMap } from "@angular/router";
+import { of, Subject, throwError } from "rxjs";
 
 import { ProfilePageComponent } from "./profile-page.component";
 import { UserService } from "../../services/user-service";
@@ -103,10 +103,6 @@ describe("ProfilePageComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("creates", () => {
-    expect(component).toBeTruthy();
-  });
-
   it("loads the profile for the routed username", () => {
     fixture.detectChanges();
     expect(userService.getProfile).toHaveBeenCalledWith("alice");
@@ -119,6 +115,35 @@ describe("ProfilePageComponent", () => {
     expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
       null,
       "owner-1",
+      null,
+    );
+  });
+
+  // The follow lists link profile to profile, so the same instance is reused
+  // and must not carry the last user's tab, panels or drafts over.
+  it("starts over when the route moves to another user's profile", () => {
+    const paramMap$ = new Subject<ParamMap>();
+    (TestBed.inject(ActivatedRoute) as any).paramMap = paramMap$;
+    authService.getUserDetails.mockReturnValue({ username: "alice" });
+    fixture.detectChanges();
+    paramMap$.next(convertToParamMap({ username: "alice" }));
+    component.toggleAvatarPanel();
+    component.setTab("rated");
+    component.startEditingBio();
+
+    userService.getProfile.mockReturnValue(
+      of(makeProfile({ id: "owner-2", username: "bob" })),
+    );
+    blueprintService.getBlueprints.mockClear();
+    paramMap$.next(convertToParamMap({ username: "bob" }));
+
+    expect(userService.getProfile).toHaveBeenLastCalledWith("bob");
+    expect(component.activeTab).toBe("blueprints");
+    expect(component.avatarPanelOpen).toBe(false);
+    expect(component.editingBio).toBe(false);
+    expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
+      null,
+      "owner-2",
       null,
     );
   });

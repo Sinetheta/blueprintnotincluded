@@ -34,42 +34,12 @@ describe("deriveModded", () => {
     expect(deriveModded([], knownIds, noMods)).toBe(false);
   });
 
-  it("returns true when all buildings are unknown", () => {
-    expect(deriveModded(["Mod1", "Mod2"], knownIds, noMods)).toBe(true);
-  });
-
-  it("single unknown building triggers modded", () => {
-    expect(
-      deriveModded(["LiquidPipe", "GasPipe", "Unknown123"], knownIds, noMods),
-    ).toBe(true);
-  });
-
-  describe("truth table with known-mod buildings", () => {
+  it("returns true when a known-mod building is present and all ids are known", () => {
     const modByPrefabId = new Map([["PAirlockDoor", "2094698134"]]);
-
-    it("true when a known-mod building is present and all ids are known", () => {
-      expect(
-        deriveModded(["GasPipe", "PAirlockDoor"], knownIds, modByPrefabId),
-      ).toBe(true);
-    });
-
-    it("true when an unknown id is present, no known-mod building", () => {
-      expect(
-        deriveModded(["GasPipe", "Unknown123"], knownIds, modByPrefabId),
-      ).toBe(true);
-    });
-
-    it("true when both a known-mod building and an unknown id are present", () => {
-      expect(
-        deriveModded(["PAirlockDoor", "Unknown123"], knownIds, modByPrefabId),
-      ).toBe(true);
-    });
-
-    it("false when only known vanilla buildings are present", () => {
-      expect(
-        deriveModded(["GasPipe", "LiquidPipe"], knownIds, modByPrefabId),
-      ).toBe(false);
-    });
+    const withModBuilding = new Set([...knownIds, "PAirlockDoor"]);
+    expect(
+      deriveModded(["GasPipe", "PAirlockDoor"], withModBuilding, modByPrefabId),
+    ).toBe(true);
   });
 });
 

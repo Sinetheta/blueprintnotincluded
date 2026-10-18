@@ -305,6 +305,8 @@ describe("DrawNotesOverlay overlay-aware alpha", () => {
     overlay.draw(notes, cameraWithOverlay(Overlay.Base), null);
     overlay.clear();
 
-    expect((overlay as any).container.visible).toBe(false);
+    const layer = vi.mocked(made.drawPixi.getNewContainer).mock.results[0]
+      .value;
+    expect(layer.visible).toBe(false);
   });
 });

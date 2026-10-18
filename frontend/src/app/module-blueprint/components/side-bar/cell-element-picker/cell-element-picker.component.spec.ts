@@ -7,30 +7,6 @@ import { BuildableElement, ElementState } from "../../../../../../../lib/index";
 import { ElementIconComponent } from "../element-icon/element-icon.component";
 import { CellElementPickerComponent } from "./cell-element-picker.component";
 
-describe("CellElementPickerComponent", () => {
-  let component: CellElementPickerComponent;
-  let fixture: ComponentFixture<CellElementPickerComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [CellElementPickerComponent, ElementIconComponent],
-      imports: [FormsModule, CheckboxModule, InputTextModule],
-    }).compileComponents();
-  });
-
-  beforeEach(() => {
-    BuildableElement.init();
-    BuildableElement.load([]);
-    fixture = TestBed.createComponent(CellElementPickerComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-});
-
 // The oreTags checkbox path (build-tool element cells). Solid is opt-in: this
 // list exists for gas/liquid annotations, but ticking Solid reaches the natural
 // terrain materials — Neutronium above all, the row every geyser sits on.
@@ -153,12 +129,7 @@ describe("CellElementPickerComponent state filter", () => {
     fixture.detectChanges();
   });
 
-  it("excludes None and Vacuum, keeping only elements in the states pool", () => {
-    const ids = component.elements.map((e) => e.id);
-    expect(ids).to.deep.equal(["Granite", "Oxygen", "Water"]);
-  });
-
-  it("sorts the state-filtered pool by name (database order is unscannable)", () => {
+  it("excludes None and Vacuum and sorts the states pool by name (database order is unscannable)", () => {
     // Fixture order is Granite, Water, Oxygen.
     expect(component.elements.map((e) => e.id)).to.deep.equal([
       "Granite",

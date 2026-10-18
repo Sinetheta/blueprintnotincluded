@@ -5,6 +5,7 @@ import { RouterTestingModule } from "@angular/router/testing";
 import { Router, ActivatedRoute } from "@angular/router";
 import { of, throwError, Subject } from "rxjs";
 import { MessageService } from "primeng/api";
+import { PasswordModule } from "primeng/password";
 
 import { LoginPageComponent } from "./login-page.component";
 import { AuthenticationService } from "../../../services/authentification-service";
@@ -27,13 +28,25 @@ describe("LoginPageComponent", () => {
         .fn()
         .mockReturnValue(of({ mode: "workos", devUsers: [] })),
     };
-    mockRouter = { navigate: vi.fn(), navigateByUrl: vi.fn() };
+    mockRouter = {
+      navigate: vi.fn(),
+      navigateByUrl: vi.fn(),
+      // What the template's routerLinks need once it renders
+      createUrlTree: vi.fn(),
+      serializeUrl: vi.fn(() => ""),
+      events: new Subject(),
+    };
     mockRoute = { snapshot: { queryParams: {} } };
     mockMessageService = { add: vi.fn() };
 
     await TestBed.configureTestingModule({
       declarations: [LoginPageComponent],
-      imports: [FormsModule, RouterTestingModule.withRoutes([])],
+      // PasswordModule: <p-password> is the password field's value accessor
+      imports: [
+        FormsModule,
+        PasswordModule,
+        RouterTestingModule.withRoutes([]),
+      ],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: AuthenticationService, useValue: mockAuth },
@@ -47,8 +60,27 @@ describe("LoginPageComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
+  it("logs in with what was typed into the form", async () => {
+    mockAuth.loginWithPassword.mockReturnValue(
+      of({ kind: "success", token: "jwt" }),
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const type = (selector: string, value: string) => {
+      const input = el.querySelector<HTMLInputElement>(selector)!;
+      input.value = value;
+      input.dispatchEvent(new Event("input"));
+    };
+    type("#email", "a@b.com");
+    type("#password", "hunter2");
+    el.querySelector("form")!.dispatchEvent(new Event("submit"));
+
+    expect(mockAuth.loginWithPassword).toHaveBeenCalledWith(
+      "a@b.com",
+      "hunter2",
+    );
   });
 
   describe("ngOnInit", () => {
@@ -173,10 +205,22 @@ describe("LoginPageComponent", () => {
   });
 
   describe("local auth mode", () => {
-    it("stays in workos mode with no dev users by default", () => {
+    // Advisory only: the ordinary form must keep working without it
+    it("stays in workos mode and keeps the form working when the mode request fails", () => {
+      mockAuth.getAuthMode.mockReturnValue(
+        throwError(() => new Error("network")),
+      );
       component.ngOnInit();
       expect(component.authMode).toBe("workos");
       expect(component.devUsers).toEqual([]);
+
+      mockAuth.loginWithPassword.mockReturnValue(
+        of({ kind: "success", token: "jwt" }),
+      );
+      component.email = "a@b.com";
+      component.password = "pass";
+      component.submit();
+      expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
     });
 
     it("picks up the dev user roster when the mode response says local", () => {
@@ -218,6 +262,7 @@ describe("LoginPageComponent", () => {
       mockAuth.loginWithPassword.mockReturnValue(
         of({ kind: "success", token: "jwt" }),
       );
+      mockAuth.consumeReturnTo.mockReturnValue("/editor?save=1");
 
       component.loginAsDevUser({
         username: "dev_you",
@@ -230,7 +275,7 @@ describe("LoginPageComponent", () => {
         "dev_password",
       );
       expect(mockAuth.saveToken).toHaveBeenCalledWith("jwt");
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/");
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith("/editor?save=1");
     });
 
     it("shows an error when the dev user login is rejected", () => {

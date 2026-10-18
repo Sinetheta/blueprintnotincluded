@@ -42,21 +42,64 @@ describe("TabInkDirective", () => {
     expect(ink.classList.contains("bni-tab-ink--ready")).toBe(false);
   });
 
-  it("does not loop when active-class mutations settle", async () => {
-    // flip the active tab, let the MutationObserver microtasks drain; the
-    // guarded writes must reach a fixed point instead of refiring forever
-    fixture.componentInstance.active = 1;
-    fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    const inks = container.querySelectorAll(".bni-tab-ink");
-    expect(inks.length).toBe(1);
-  });
+  describe("once the tabs have layout", () => {
+    let ink: HTMLElement;
+    let buttons: HTMLButtonElement[];
+    // MutationObserver callbacks are microtasks.
+    const settle = () => Promise.resolve();
 
-  it("disconnects observers on destroy", () => {
-    const directive =
-      fixture.debugElement.children[0].injector.get(TabInkDirective);
-    expect(() => fixture.destroy()).not.toThrow();
-    // repositioning after destroy must be inert (observers disconnected)
-    expect(directive).toBeTruthy();
+    beforeEach(() => {
+      ink = container.querySelector(".bni-tab-ink")!;
+      buttons = Array.from(container.querySelectorAll("button"));
+      // jsdom has no layout: give the two tabs side-by-side boxes.
+      buttons.forEach((button, i) =>
+        Object.defineProperties(button, {
+          offsetWidth: { get: () => 40 + i * 10 },
+          offsetHeight: { get: () => 20 },
+          offsetLeft: { get: () => i * 60 },
+          offsetTop: { get: () => 0 },
+        }),
+      );
+    });
+
+    it("slides the bar under the newly active tab", async () => {
+      fixture.componentInstance.active = 1;
+      fixture.detectChanges();
+      await settle();
+
+      expect(ink.style.width).toBe("50px");
+      expect(ink.style.transform).toBe("translate(60px, 18px)");
+      expect(ink.classList.contains("bni-tab-ink--ready")).toBe(true);
+    });
+
+    it("writes nothing once the bar is in place", async () => {
+      // Unconditional writes re-set attributes even when the value is
+      // unchanged, which refires the observers in a loop.
+      fixture.componentInstance.active = 1;
+      fixture.detectChanges();
+      await settle();
+
+      const writes: MutationRecord[] = [];
+      const watcher = new MutationObserver((records) =>
+        writes.push(...records),
+      );
+      watcher.observe(ink, { attributes: true });
+      buttons[0].classList.add("hovered");
+      await settle();
+      await settle();
+      watcher.disconnect();
+
+      expect(writes).toEqual([]);
+    });
+
+    it("stops following the tabs once destroyed", async () => {
+      fixture.destroy();
+      buttons[0].classList.remove("active");
+      buttons[1].classList.add("active");
+      await settle();
+
+      expect(ink.classList.contains("bni-tab-ink--ready")).toBe(false);
+      expect(ink.style.width).toBe("");
+    });
   });
 });

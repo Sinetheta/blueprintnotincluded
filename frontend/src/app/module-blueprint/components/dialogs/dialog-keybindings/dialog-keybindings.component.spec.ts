@@ -41,10 +41,6 @@ describe("DialogKeybindingsComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("rendered rows", () => {
     it("lists every action, grouped by category", () => {
       const rows = component.categories.flatMap(

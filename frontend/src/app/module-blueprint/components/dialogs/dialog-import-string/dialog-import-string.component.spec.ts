@@ -38,10 +38,6 @@ describe("DialogImportStringComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   it("showDialog clears previous text and opens", () => {
     component.blueprintText = "stale";
     component.showDialog();

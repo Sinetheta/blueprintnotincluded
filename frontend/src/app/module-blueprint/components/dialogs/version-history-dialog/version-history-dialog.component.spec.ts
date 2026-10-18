@@ -49,8 +49,8 @@ describe("VersionHistoryDialogComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("loads versions when shown", () => {

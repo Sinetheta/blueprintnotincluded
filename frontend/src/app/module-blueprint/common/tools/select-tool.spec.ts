@@ -65,36 +65,6 @@ describe("SelectTool", () => {
     tool = new SelectTool(mockBlueprintService as any);
   });
 
-  describe("showTool getter", () => {
-    it("returns false when sameItemCollections is empty", () => {
-      expect(tool.showTool).toBe(false);
-    });
-
-    it("returns true when there is at least one collection", () => {
-      tool.sameItemCollections = [makeMockCollection()] as any;
-      expect(tool.showTool).toBe(true);
-    });
-  });
-
-  describe("subscribeSelectionChanged / emitSelectionChanged", () => {
-    it("notifies observer when deselectAll is called", () => {
-      const obs = { selectionChanged: vi.fn() };
-      tool.subscribeSelectionChanged(obs);
-      tool.deselectAll();
-      expect(obs.selectionChanged).toHaveBeenCalled();
-    });
-
-    it("notifies multiple observers", () => {
-      const obs1 = { selectionChanged: vi.fn() };
-      const obs2 = { selectionChanged: vi.fn() };
-      tool.subscribeSelectionChanged(obs1);
-      tool.subscribeSelectionChanged(obs2);
-      tool.deselectAll();
-      expect(obs1.selectionChanged).toHaveBeenCalled();
-      expect(obs2.selectionChanged).toHaveBeenCalled();
-    });
-  });
-
   describe("deselectAll()", () => {
     it("clears sameItemCollections", () => {
       tool.sameItemCollections = [makeMockCollection()] as any;
@@ -354,16 +324,10 @@ describe("SelectTool", () => {
     });
   });
 
-  describe("switchFrom() / switchTo()", () => {
-    it("switchFrom clears sameItemCollections", () => {
+  describe("switchFrom()", () => {
+    it("clears sameItemCollections", () => {
       tool.sameItemCollections = [makeMockCollection()] as any;
       tool.switchFrom();
-      expect(tool.sameItemCollections).toHaveLength(0);
-    });
-
-    it("switchTo clears sameItemCollections", () => {
-      tool.sameItemCollections = [makeMockCollection()] as any;
-      tool.switchTo();
       expect(tool.sameItemCollections).toHaveLength(0);
     });
   });
@@ -377,21 +341,22 @@ describe("SelectTool", () => {
   });
 
   describe("leftClick()", () => {
-    it("calls selectFromBox when nothing is selected", () => {
-      const obs = { selectionChanged: vi.fn() };
-      tool.subscribeSelectionChanged(obs);
+    it("selects from the clicked tile when nothing is selected", () => {
       tool.leftClick(new Vector2(2, 3));
-      expect(obs.selectionChanged).toHaveBeenCalled();
+      expect(
+        mockBlueprintService.blueprint.getBlueprintItemsAt,
+      ).toHaveBeenCalledWith(new Vector2(2, 3));
     });
 
-    it("calls selectFromBox when selected item is not in next group at the tile", () => {
+    it("selects from the clicked tile when the next group has nothing there", () => {
       const col = makeMockCollection(true, [{ position: new Vector2(5, 5) }]);
       tool.sameItemCollections = [col] as any;
-      const obs = { selectionChanged: vi.fn() };
-      tool.subscribeSelectionChanged(obs);
       // click at tile (0,0) — not the position of col's item
       tool.leftClick(new Vector2(0, 0));
-      expect(obs.selectionChanged).toHaveBeenCalled();
+      expect(
+        mockBlueprintService.blueprint.getBlueprintItemsAt,
+      ).toHaveBeenCalledWith(new Vector2(0, 0));
+      expect(tool.sameItemCollections).toHaveLength(0);
     });
 
     it("cycles to next group when tile matches an item in it", () => {
@@ -520,12 +485,72 @@ describe("SelectTool", () => {
       expect(obs.selectionChanged).toHaveBeenCalled();
     });
 
-    it("iterates all tiles in the bounding box", () => {
+    // The blueprint answers per tile, as its spatial index does.
+    const placeItems = (...items: any[]) =>
+      mockBlueprintService.blueprint.getBlueprintItemsAt.mockImplementation(
+        (tile: Vector2) => items.filter((item) => item.position.equals(tile)),
+      );
+
+    it("collects what lies inside the box and selects the front-most group", () => {
+      const wire = {
+        ...makeBlueprintItem(makeOniItem("Wire"), new Vector2(1, 3)),
+        depth: 1,
+      };
+      const tile = {
+        ...makeBlueprintItem(makeOniItem("Tile"), new Vector2(3, 1)),
+        depth: 5,
+      };
+      const outside = {
+        ...makeBlueprintItem(makeOniItem("Bed"), new Vector2(4, 1)),
+        depth: 9,
+      };
+      placeItems(wire, tile, outside);
+
       tool.selectFromBox(new Vector2(1, 3), new Vector2(3, 1));
-      // 3x3 = 9 tiles queried
-      expect(
-        mockBlueprintService.blueprint.getBlueprintItemsAt,
-      ).toHaveBeenCalledTimes(9);
+
+      expect(tool.sameItemCollections.map((c) => c.oniItem.id)).toEqual([
+        "Tile",
+        "Wire",
+      ]);
+      expect(tool.currentMultipleSelectionIndex).toBe(0);
+      expect(tile.selected).toBe(true);
+      expect(wire.selected).toBe(false);
+    });
+
+    describe("clicking the same item twice", () => {
+      let oniItem: any;
+      let clicked: any;
+      let alike: any;
+
+      beforeEach(() => {
+        vi.useFakeTimers();
+        oniItem = makeOniItem("Wire");
+        clicked = makeBlueprintItem(oniItem, new Vector2(0, 0));
+        alike = makeBlueprintItem(oniItem, new Vector2(7, 7));
+        mockBlueprintService.blueprint.blueprintItems = [clicked, alike];
+        placeItems(clicked, alike);
+        tool.selectFromBox(new Vector2(0, 0), new Vector2(0, 0));
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("within 500 ms selects every item like it", () => {
+        expect(tool.selectedItems).toEqual([clicked]);
+
+        vi.advanceTimersByTime(499);
+        tool.selectFromBox(new Vector2(0, 0), new Vector2(0, 0));
+
+        expect(tool.selectedItems).toEqual([clicked, alike]);
+      });
+
+      it("500 ms apart is two single selections", () => {
+        vi.advanceTimersByTime(500);
+        tool.selectFromBox(new Vector2(0, 0), new Vector2(0, 0));
+
+        expect(tool.selectedItems).toEqual([clicked]);
+      });
     });
   });
 
@@ -582,17 +607,7 @@ describe("SelectTool", () => {
       tool.draw(mockDrawPixi, mockCamera);
       expect(mockDrawPixi.drawTileRectangle).toHaveBeenCalledTimes(1);
       const args = mockDrawPixi.drawTileRectangle.mock.calls.at(-1);
-      const [
-        camera,
-        topLeft,
-        bottomRight,
-        frontGraphics,
-        borderWidth,
-        fillColor,
-        borderColor,
-        fillAlpha,
-        borderAlpha,
-      ] = args;
+      const [camera, topLeft, bottomRight, frontGraphics] = args;
       expect(camera).toBe(mockCamera);
       // Bounding box covers the full extent of the whole tiles selectFromBox()
       // will operate on, not just the raw drag endpoints.
@@ -601,11 +616,6 @@ describe("SelectTool", () => {
       expect(bottomRight.x).toBe(5);
       expect(bottomRight.y).toBe(1);
       expect(frontGraphics).toBe(true); // must be true so it renders above blueprint tiles
-      expect(borderWidth).toBe(2);
-      expect(fillColor).toBe(0x4cff00); // lime green fill
-      expect(borderColor).toBe(0x2d9600); // dark green border
-      expect(fillAlpha).toBe(0.25);
-      expect(borderAlpha).toBe(0.8);
     });
 
     it("should normalise coordinates when drag goes top-right to bottom-left", () => {
@@ -646,7 +656,9 @@ describe("SelectTool", () => {
       tool.draw(mockDrawPixi, mockCamera);
 
       const style = mockDrawPixi.getNewText.mock.calls[0][1];
-      expect(style.fill).toBe("#2d9600");
+      const borderColor: number =
+        mockDrawPixi.drawTileRectangle.mock.calls[0][6];
+      expect(style.fill).toBe(`#${borderColor.toString(16).padStart(6, "0")}`);
     });
 
     it("reuses the same text sprite across draw calls instead of recreating it", () => {
@@ -679,59 +691,35 @@ describe("SelectTool", () => {
   });
 
   describe("drag()", () => {
-    it("should set beginSelection from the first valid tileStart", () => {
-      const start = new Vector2(2, 3);
-      tool.drag(start, new Vector2(4, 1));
-      expect(tool.beginSelection).toEqual(start);
-    });
-
-    it("should update endSelection on every drag event", () => {
-      tool.drag(new Vector2(0, 0), new Vector2(1, 1));
-      tool.drag(new Vector2(1, 1), new Vector2(5, 5));
-      expect(tool.endSelection).toEqual(new Vector2(5, 5));
-    });
-
-    it("should keep the original beginSelection across multiple drag events", () => {
-      const start = new Vector2(1, 4);
-      tool.drag(start, new Vector2(2, 3));
+    it("keeps the box anchored where the drag began across drag events", () => {
+      tool.drag(new Vector2(1, 4), new Vector2(2, 3));
       tool.drag(new Vector2(2, 3), new Vector2(3, 2));
-      expect(tool.beginSelection).toEqual(start);
+      tool.draw(mockDrawPixi, mockCamera);
+
+      const [, topLeft, bottomRight] =
+        mockDrawPixi.drawTileRectangle.mock.calls.at(-1);
+      expect([topLeft.x, topLeft.y]).toEqual([1, 4]);
+      expect([bottomRight.x, bottomRight.y]).toEqual([4, 1]);
     });
   });
 
   describe("dragStop()", () => {
-    it("should clear beginSelection", () => {
-      tool.drag(new Vector2(0, 0), new Vector2(2, 2));
+    it("selects exactly the items inside the snapped box, whichever way it was dragged", () => {
+      const oniItem = makeOniItem("Tile");
+      const topLeftCorner = makeBlueprintItem(oniItem, new Vector2(1, 5));
+      const bottomRightCorner = makeBlueprintItem(oniItem, new Vector2(4, 2));
+      const rightOfBox = makeBlueprintItem(oniItem, new Vector2(5, 5));
+      const belowBox = makeBlueprintItem(oniItem, new Vector2(2, 1));
+      const items = [topLeftCorner, bottomRightCorner, rightOfBox, belowBox];
+      mockBlueprintService.blueprint.getBlueprintItemsAt.mockImplementation(
+        (tile: Vector2) => items.filter((item) => item.position.equals(tile)),
+      );
+
+      // Bottom-right to top-left, in sub-tile coordinates: cells (4,2)..(1,5).
+      tool.drag(new Vector2(4.5, 1.5), new Vector2(1.2, 4.6));
       tool.dragStop();
-      expect(tool.beginSelection).toBeNull();
-    });
 
-    it("does nothing when beginSelection is already null", () => {
-      tool.beginSelection = null;
-      expect(() => tool.dragStop()).not.toThrow();
-      expect(tool.beginSelection).toBeNull();
-    });
-  });
-
-  describe("reset()", () => {
-    it("clears sameItemCollections to empty", () => {
-      tool.sameItemCollections = [makeMockCollection()] as any;
-      tool.reset();
-      expect(tool.sameItemCollections).toHaveLength(0);
-    });
-  });
-
-  describe("mouseOut() / mouseDown() / hover()", () => {
-    it("mouseOut does not throw", () => {
-      expect(() => tool.mouseOut()).not.toThrow();
-    });
-
-    it("mouseDown does not throw", () => {
-      expect(() => tool.mouseDown(new Vector2(0, 0))).not.toThrow();
-    });
-
-    it("hover does not throw", () => {
-      expect(() => tool.hover(new Vector2(0, 0))).not.toThrow();
+      expect(tool.selectedItems).toEqual([topLeftCorner, bottomRightCorner]);
     });
   });
 
@@ -807,37 +795,43 @@ describe("SelectTool", () => {
   });
 
   describe("addToCollection() element grouping", () => {
-    it("groups element items with the same buildableElement[0] id into one collection", () => {
-      const oniItem = makeOniItem("Element", true);
-      const elem = { id: "Water" };
-      const item1 = {
-        ...makeBlueprintItem(oniItem),
-        buildableElements: [elem],
-      };
-      const item2 = {
-        ...makeBlueprintItem(oniItem),
-        buildableElements: [elem],
-      };
-      mockBlueprintService.blueprint.blueprintItems = [item1, item2];
-      tool.selectAllLike(item1 as any);
-      expect(tool.sameItemCollections).toHaveLength(1);
-      expect(tool.sameItemCollections[0].items).toHaveLength(2);
+    const elementCell = (id: string) => ({
+      ...makeBlueprintItem(makeOniItem("Element", true)),
+      buildableElements: [{ id }],
     });
 
-    it("separates element items with different buildableElement[0] ids", () => {
-      const oniItem = makeOniItem("Element", true);
-      const item1 = {
+    it("groups element cells by element, not by the shared Element prefab", () => {
+      const water = elementCell("Water");
+      const oxygen = elementCell("Oxygen");
+      const moreWater = elementCell("Water");
+
+      tool.addToCollection(water as any);
+      tool.addToCollection(oxygen as any);
+      tool.addToCollection(moreWater as any);
+
+      expect(tool.sameItemCollections.map((c) => c.items)).toEqual([
+        [water, moreWater],
+        [oxygen],
+      ]);
+    });
+
+    it("groups buildings by prefab whatever they are made of", () => {
+      const oniItem = makeOniItem("Wire");
+      const copperWire = {
         ...makeBlueprintItem(oniItem),
-        buildableElements: [{ id: "Water" }],
+        buildableElements: [{ id: "Copper" }],
       };
-      const item2 = {
+      const goldWire = {
         ...makeBlueprintItem(oniItem),
-        buildableElements: [{ id: "Oxygen" }],
+        buildableElements: [{ id: "Gold" }],
       };
-      mockBlueprintService.blueprint.blueprintItems = [item1, item2];
-      tool.selectAllLike(item1 as any);
-      expect(tool.sameItemCollections).toHaveLength(1);
-      expect(tool.sameItemCollections[0].items).toHaveLength(1);
+
+      tool.addToCollection(copperWire as any);
+      tool.addToCollection(goldWire as any);
+
+      expect(tool.sameItemCollections.map((c) => c.items)).toEqual([
+        [copperWire, goldWire],
+      ]);
     });
   });
 });

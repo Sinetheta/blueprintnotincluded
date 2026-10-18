@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { By } from "@angular/platform-browser";
-import { of, throwError } from "rxjs";
+import { of, Subject, throwError } from "rxjs";
 
 import { RatingWidgetComponent } from "./rating-widget.component";
 import { BlueprintService } from "../../services/blueprint-service";
@@ -86,6 +86,25 @@ describe("RatingWidgetComponent", () => {
     component.rate(5);
 
     expect(component.myRating).toBe(2);
+  });
+
+  it("ignores further clicks until the server answers", () => {
+    const response$ = new Subject<any>();
+    blueprintService.rateBlueprint.mockReturnValue(response$);
+    const emitted: any[] = [];
+    component.rated.subscribe((r) => emitted.push(r));
+    fixture.detectChanges();
+
+    component.rate(3);
+    component.rate(4);
+    expect(blueprintService.rateBlueprint).toHaveBeenCalledTimes(1);
+    expect(component.myRating).toBe(3);
+
+    response$.next({ nbRatings: 1, rating: 3, myRating: 3 });
+    expect(emitted).toEqual([{ nbRatings: 1, rating: 3, myRating: 3 }]);
+
+    component.rate(4);
+    expect(blueprintService.rateBlueprint).toHaveBeenCalledTimes(2);
   });
 
   it("fills stars up to the hovered value for preview", () => {

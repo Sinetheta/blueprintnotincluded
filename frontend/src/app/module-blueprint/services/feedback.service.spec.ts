@@ -35,10 +35,6 @@ describe("FeedbackService", () => {
     httpMock.verify();
   });
 
-  it("should be created", () => {
-    expect(service).toBeTruthy();
-  });
-
   describe("submit", () => {
     it("posts to /api/feedback with message and metadata", () => {
       let result: any;
@@ -62,10 +58,22 @@ describe("FeedbackService", () => {
       req.flush({ message: "ok" });
     });
 
-    it("calls auth.getToken to build the header", () => {
-      service.submit("hello").subscribe();
-      httpMock.expectOne("/api/feedback").flush({ message: "ok" });
-      expect(mockAuth.getToken).toHaveBeenCalled();
+    // The report carries what went wrong before the user wrote it: the last
+    // 20 uncaught errors and console errors, oldest dropped first
+    it("attaches the most recent errors", () => {
+      for (let i = 1; i <= 24; i++)
+        window.dispatchEvent(
+          new ErrorEvent("error", { error: { stack: `boom ${i}` } }),
+        );
+      console.error("boom 25");
+
+      service.submit("broken").subscribe();
+      const req = httpMock.expectOne("/api/feedback");
+      const consoleErrors: string[] = req.request.body.consoleErrors;
+      expect(consoleErrors).toHaveLength(20);
+      expect(consoleErrors[0]).toBe("boom 6");
+      expect(consoleErrors[19]).toBe("boom 25");
+      req.flush({ message: "ok" });
     });
   });
 });

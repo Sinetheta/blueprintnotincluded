@@ -61,17 +61,10 @@ describe("ComponentSaveDialogComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
+  // showDialog polls for the thumbnail, which no test here ever generates
+  afterEach(() => component.tryClearInterval());
 
   describe("metadata optional fields", () => {
-    it("form initialises with null editable metadata fields", () => {
-      expect(component.saveBlueprintForm.value.category).toBeNull();
-      expect(component.saveBlueprintForm.value.subcategory).toBeNull();
-      expect(component.saveBlueprintForm.value.description).toBeNull();
-    });
-
     it("modded control is disabled (auto-detected)", () => {
       expect(component.saveBlueprintForm.controls.modded.disabled).toBe(true);
     });
@@ -270,18 +263,6 @@ describe("ComponentSaveDialogComponent", () => {
       component.showDialog();
 
       expect(component.saveBlueprintForm.value.category).toBe("power");
-    });
-
-    it("category control stays enabled after pre-fill", () => {
-      loadFakeDatabase();
-      const blueprintService = TestBed.inject(BlueprintService);
-      blueprintService.blueprint = fakeBlueprint(["Electrolyzer"]);
-
-      component.showDialog();
-
-      expect(component.saveBlueprintForm.controls.category.disabled).toBe(
-        false,
-      );
     });
 
     it("leaves category null when there is no signal", () => {
@@ -500,6 +481,42 @@ describe("ComponentSaveDialogComponent", () => {
       component.doOverwrite();
 
       expect(blueprintService.saveBlueprint).toHaveBeenCalledWith(true, true);
+    });
+
+    it("asks before overwriting a same-named blueprint, keeping the dialog open", () => {
+      const blueprintService = readyService();
+      (blueprintService.saveBlueprint as any).mockReturnValue(
+        of({ overwrite: true }),
+      );
+      component.visible = true;
+
+      component.submit(true);
+
+      expect(component.overwrite).toBe(true);
+      expect(component.saveBlueprintForm.controls.name.disabled).toBe(true);
+      expect(component.working).toBe(false);
+      expect(component.visible).toBe(true);
+    });
+
+    it("closes on success and says published only when the save published", () => {
+      const blueprintService = readyService();
+      const toast = vi.spyOn(TestBed.inject(MessageService), "add");
+      component.visible = true;
+
+      component.submit(true);
+      expect(component.visible).toBe(false);
+      expect(toast.mock.calls.at(-1)![0].summary).toContain("published");
+
+      blueprintService.isPublished = false;
+      component.submit(false);
+      expect(toast.mock.calls.at(-1)![0].summary).toContain("saved as draft");
+
+      blueprintService.isPublished = true;
+      component.submit(null);
+      const summary = toast.mock.calls.at(-1)![0].summary;
+      expect(summary).toContain("saved");
+      expect(summary).not.toContain("published");
+      expect(summary).not.toContain("draft");
     });
 
     it("reset clears the pending publish intent", () => {

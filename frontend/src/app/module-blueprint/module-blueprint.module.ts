@@ -42,7 +42,6 @@ import { ToggleButtonModule } from "primeng/togglebutton";
 import { DrawerModule } from "primeng/drawer";
 import { RadioButtonModule } from "primeng/radiobutton";
 import { Textarea } from "primeng/textarea";
-import { UsernameValidationDirective } from "./directives/username-validation.directive";
 import { ComponentSideSelectionToolComponent } from "./components/side-bar/selection-tool/selection-tool.component";
 import { KeyboardDirective } from "./directives/keyboard.directive";
 import { AuthenticationService } from "./services/authentification-service";
@@ -120,7 +119,6 @@ import { DigToolComponent } from "./components/side-bar/dig-tool/dig-tool.compon
 
 @NgModule({
   declarations: [
-    UsernameValidationDirective,
     BlueprintNameValidationDirective,
     ComponentCanvasComponent,
     MouseWheelDirective,

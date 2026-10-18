@@ -57,15 +57,52 @@ describe("ComponentMenuComponent", () => {
     fixture.detectChanges();
   });
 
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
   it("offers the Rooms overlay in the overlay switcher", () => {
     const roomsItem = component.overlayMenuItems.find(
       (item) => item.id == Overlay.Room.toString(),
     );
     expect(roomsItem).toBeTruthy();
     expect(roomsItem!.label).toBe("Rooms");
+  });
+
+  // The checkmark follows the open blueprint, wherever its interior was set:
+  // the save dialog announces it on rocketInteriorChanged$, opening a
+  // blueprint on blueprintChanged.
+  it("checks the rocket interior the open blueprint carries", () => {
+    const blueprintService = TestBed.inject(BlueprintService) as any;
+    const checked = () =>
+      component.rocketInteriorMenuItems
+        .filter((item) => item.icon == "pi pi-fw pi-check")
+        .map((item) => item.id);
+    expect(checked()).toEqual(["rocket-interior:none"]);
+
+    blueprintService.metadata = { rocketInterior: "medium" };
+    blueprintService.rocketInteriorChanged$.next(null);
+    expect(checked()).toEqual(["rocket-interior:medium"]);
+
+    blueprintService.metadata = {};
+    component.blueprintChanged({} as any);
+    expect(checked()).toEqual(["rocket-interior:none"]);
+  });
+
+  it("links every other language from the current locale's root", () => {
+    expect(component.languagesMenuItems.map((item) => item.url)).toEqual([
+      "/zh-Hans",
+      "/ru",
+      "/ko",
+    ]);
+
+    const russian = new ComponentMenuComponent(
+      TestBed.inject(AuthenticationService),
+      TestBed.inject(ToolService),
+      TestBed.inject(BlueprintService),
+      "ru",
+    );
+    russian.ngOnInit();
+    expect(russian.languagesMenuItems.map((item) => item.url)).toEqual([
+      "/../en-US",
+      "/../zh-Hans",
+      "/../ko",
+    ]);
   });
 });

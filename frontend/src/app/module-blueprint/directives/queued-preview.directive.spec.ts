@@ -65,9 +65,38 @@ describe("QueuedPreviewDirective", () => {
 
   it("does not loop when the fallback itself errors", () => {
     img("a").dispatchEvent(new Event("error"));
+    // A changed fallback makes a second write visible: re-applying it on the
+    // fallback's own error would refetch it, error again, and loop.
+    fixture.componentInstance.fallbackA = "data:image/png;base64,bbb";
+    fixture.detectChanges();
     img("a").dispatchEvent(new Event("error"));
 
     expect(img("a").getAttribute("src")).toBe("data:image/png;base64,aaa");
+  });
+
+  describe("with a preview that never answers", () => {
+    beforeEach(() => {
+      // The safety timer is armed when a slot is granted, so the fake clock
+      // has to be in place before the images are created.
+      fixture.destroy();
+      vi.useFakeTimers();
+      fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("frees the slot after 30 s, so one stalled request cannot wedge the queue", () => {
+      vi.advanceTimersByTime(29_999);
+      expect(img("b").getAttribute("src")).toBeNull();
+
+      vi.advanceTimersByTime(1);
+      expect(img("b").getAttribute("src")).toBe(
+        "/api/blueprints/b/preview/card.webp?v=1",
+      );
+    });
   });
 
   it("frees the slot when the active image is destroyed", () => {
