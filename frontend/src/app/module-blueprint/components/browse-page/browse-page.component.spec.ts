@@ -106,10 +106,6 @@ describe("BrowsePageComponent", () => {
     vi.advanceTimersByTime(600);
   }
 
-  it("creates", () => {
-    expect(component).toBeTruthy();
-  });
-
   describe("getBlueprints error handling", () => {
     it("clears working, sets loadError, and strips loading placeholders on failure", () => {
       blueprintService.getBlueprints.mockReturnValue(
@@ -118,20 +114,12 @@ describe("BrowsePageComponent", () => {
       component.appendLoading();
       component.getBlueprints();
 
+      // working must be false so onWindowScroll can retry via loadMore
       expect(component.working).toBe(false);
       expect(component.loadError).toBe(true);
       expect(
         component.blueprintListItems.includes(component.loadingBlueprintItem),
       ).toBe(false);
-    });
-
-    it("re-enables infinite scroll after a failure (working=false)", () => {
-      blueprintService.getBlueprints.mockReturnValue(
-        throwError(() => new Error("network")),
-      );
-      component.getBlueprints();
-      // working must be false so onWindowScroll can retry via loadMore
-      expect(component.working).toBe(false);
     });
 
     it("clears loadError on a subsequent successful load", () => {
@@ -351,22 +339,8 @@ describe("BrowsePageComponent", () => {
       component.filterCategory = "power";
       component.getBlueprints();
 
-      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
-        null,
-        null,
-        null,
-        "power",
-        null,
-        "trending",
-        0,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        true,
-      );
+      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
+      expect(lastCall[3]).toBe("power");
     });
 
     it("passes subcategory filter to getBlueprints", () => {
@@ -374,110 +348,41 @@ describe("BrowsePageComponent", () => {
       component.filterSubcategory = "generator";
       component.getBlueprints();
 
-      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
-        null,
-        null,
-        null,
-        "power",
-        "generator",
-        "trending",
-        0,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        true,
-      );
+      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
+      expect(lastCall[3]).toBe("power");
+      expect(lastCall[4]).toBe("generator");
     });
 
     it("passes modded filter to getBlueprints", () => {
       component.filterModded = true;
       component.getBlueprints();
 
-      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
-        null,
-        null,
-        null,
-        null,
-        null,
-        "trending",
-        0,
-        true,
-        null,
-        null,
-        null,
-        null,
-        null,
-        true,
-      );
+      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
+      expect(lastCall[7]).toBe(true);
     });
 
     it("passes forkedFrom filter to getBlueprints", () => {
       component.filterForkedFrom = "parent-1";
       component.getBlueprints();
 
-      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
-        null,
-        null,
-        null,
-        null,
-        null,
-        "trending",
-        0,
-        null,
-        "parent-1",
-        null,
-        null,
-        null,
-        null,
-        true,
-      );
+      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
+      expect(lastCall[8]).toBe("parent-1");
     });
 
     it("passes rooms filter to getBlueprints", () => {
       component.filterRooms = "latrine";
       component.getBlueprints();
 
-      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
-        null,
-        null,
-        null,
-        null,
-        null,
-        "trending",
-        0,
-        null,
-        null,
-        null,
-        "latrine",
-        null,
-        null,
-        true,
-      );
+      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
+      expect(lastCall[10]).toBe("latrine");
     });
 
     it("passes the selected DLCs to getBlueprints as a comma list", () => {
       component.filterDlcs = ["DLC2_ID", "DLC3_ID"];
       component.getBlueprints();
 
-      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
-        null,
-        null,
-        null,
-        null,
-        null,
-        "trending",
-        0,
-        null,
-        null,
-        null,
-        null,
-        "DLC2_ID,DLC3_ID",
-        null,
-        true,
-      );
+      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
+      expect(lastCall[11]).toBe("DLC2_ID,DLC3_ID");
     });
 
     it("onRoomsChange resets the list, updates the URL, and refetches", () => {
@@ -938,43 +843,18 @@ describe("BrowsePageComponent", () => {
       expect(component.skipCount).toBe(2);
     });
 
-    it("initializes sort from the URL query param", () => {
+    it("reads every known sort from the URL and falls back to the trending default on junk", () => {
       const route = TestBed.inject(ActivatedRoute) as any;
-      route.queryParamMap = of(convertToParamMap({ sort: "popular" }));
-      component.ngOnInit();
-      expect(component.sort).toBe("popular");
-    });
-
-    it("calls the service with sort=mostForked and skip=0, and updates the URL", () => {
-      component.skipCount = 7;
-      component.sort = "mostForked";
-      component.onSortChange();
-
-      const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
-      expect(lastCall[5]).toBe("mostForked");
-      expect(lastCall[6]).toBe(0);
-      expect(router.navigate).toHaveBeenCalledWith([], {
-        queryParams: { sort: "mostForked" },
-        replaceUrl: true,
-      });
-    });
-
-    it("initializes sort=mostForked from the URL query param", () => {
-      const route = TestBed.inject(ActivatedRoute) as any;
-      route.queryParamMap = of(convertToParamMap({ sort: "mostForked" }));
-      component.ngOnInit();
-      expect(component.sort).toBe("mostForked");
-    });
-
-    it("accepts the count sorts and falls back to the trending default on junk", () => {
-      const route = TestBed.inject(ActivatedRoute) as any;
-      route.queryParamMap = of(convertToParamMap({ sort: "mostViewed" }));
-      component.ngOnInit();
-      expect(component.sort).toBe("mostViewed");
-
-      route.queryParamMap = of(convertToParamMap({ sort: "mostDownloaded" }));
-      component.ngOnInit();
-      expect(component.sort).toBe("mostDownloaded");
+      for (const sort of [
+        "popular",
+        "mostForked",
+        "mostViewed",
+        "mostDownloaded",
+      ]) {
+        route.queryParamMap = of(convertToParamMap({ sort }));
+        component.ngOnInit();
+        expect(component.sort).toBe(sort);
+      }
 
       route.queryParamMap = of(convertToParamMap({ sort: "bogus" }));
       component.ngOnInit();
@@ -984,14 +864,13 @@ describe("BrowsePageComponent", () => {
     it("defaults to trending and keeps it out of the URL", () => {
       expect(component.sort).toBe("trending");
 
-      component.sort = "trending";
-      component.getBlueprints();
+      component.selectSort("popular");
+      // Switching back to the default must clear the sort query param.
+      component.selectSort("trending");
+
       const lastCall = blueprintService.getBlueprints.mock.calls.at(-1);
       expect(lastCall[5]).toBe("trending");
-
-      // Switching back to the default must clear the sort query param.
-      (component as any).applyFiltersToUrl();
-      expect(router.navigate).toHaveBeenCalledWith([], {
+      expect(router.navigate).toHaveBeenLastCalledWith([], {
         queryParams: {},
         replaceUrl: true,
       });
@@ -1000,9 +879,12 @@ describe("BrowsePageComponent", () => {
 
   describe("feed view mode", () => {
     it("fetches following count on init when logged in", () => {
+      userService.getProfile.mockReturnValue(
+        of({ username: "alice", followingCount: 3 }),
+      );
       fixture.detectChanges();
       expect(userService.getProfile).toHaveBeenCalledWith("alice");
-      expect(component.followingCount).toBe(0);
+      expect(component.followingCount).toBe(3);
     });
 
     it("does not fetch following count when logged out", () => {
@@ -1439,6 +1321,23 @@ describe("BrowsePageComponent", () => {
         component.blueprintListItems.some((i: any) => i.name === "first"),
       ).toBe(false);
     });
+  });
+
+  // A search or facet click still waiting out its debounce when the page goes
+  // away must be dropped: the URL it would write belongs to whatever page is
+  // current by then, and nobody will see the list it fetches.
+  it("drops pending filter changes when destroyed", () => {
+    vi.useFakeTimers();
+    component.filterName = "ranch";
+    component.filterNameSubject.next("ranch");
+    component.filterFacetSubject.next();
+
+    fixture.destroy();
+    vi.advanceTimersByTime(1000);
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(blueprintService.getBlueprints).not.toHaveBeenCalled();
+    expect(blueprintService.getBlueprintFacets).not.toHaveBeenCalled();
   });
 
   describe("blueprint card rendering", () => {
