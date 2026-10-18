@@ -10,8 +10,11 @@ describe('Version API (Mocha)', function () {
       expect(response.status).to.equal(200);
       expect(response.body.version).to.match(/^\d+\.\d+\.\d+$/); // Semantic version format
       expect(response.body.name).to.equal('blueprintnotincluded-backend');
-      // ENV_NAME from .env.test
-      expect(response.body.environment).to.equal('development');
+      // The deployment's ENV_NAME, not NODE_ENV (which the suite pins to
+      // 'test'). Read from the environment rather than hard-coded: the
+      // controller captured it when hooks.ts imported the app, and an
+      // inherited value beats .env.test's.
+      expect(response.body.environment).to.equal(process.env.ENV_NAME || 'development');
     });
 
     it('should return a valid ISO build time and the Node.js version', async function () {

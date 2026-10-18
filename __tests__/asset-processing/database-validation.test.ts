@@ -199,12 +199,12 @@ describe('Database Asset Validation', () => {
     });
 
     // Building names keep Klei's rich-text link markup; GameStringService strips
-    // it with /<link=".+?">(.*?)<\/link>/ at load time, so a malformed tag would
-    // reach the build menu as raw markup.
+    // every /<link=".+?">(.*?)<\/link>/ at load time, so whatever markup is left
+    // after that reaches the build menu raw.
     it('should keep building-name link markup in the form the string service strips', () => {
       const malformed = (database.buildings as BBuilding[])
-        .filter(b => typeof b.name === 'string' && b.name.includes('<link='))
-        .filter(b => !/<link="[^"]+">.*<\/link>/.test(b.name))
+        .filter(b => typeof b.name === 'string')
+        .filter(b => /<\/?link/.test(b.name.replace(/<link=".+?">(.*?)<\/link>/gi, '$1')))
         .map(b => `${b.prefabId}: ${b.name}`);
       expect(malformed, `malformed link markup: ${malformed.join('; ')}`).to.be.empty;
     });
@@ -373,6 +373,7 @@ describe('Database Asset Validation', () => {
       const frontendUiImagePath = path.join(__dirname, '../../frontend/src/assets/ui_image');
       const backendFiles = fs.readdirSync(uiImagePath).sort();
       const frontendFiles = fs.readdirSync(frontendUiImagePath).sort();
+      expect(backendFiles, 'backend ui_image').to.not.be.empty;
       expect(frontendFiles, 'frontend ui_image file names').to.deep.equal(backendFiles);
 
       const differing = backendFiles.filter(
