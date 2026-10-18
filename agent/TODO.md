@@ -6,7 +6,7 @@
   locale fully shipped AND activated in prod (2026-08-27) — status doc `spec/language-plan.md`
 - **Date**: 2026-08-28
 - **Stack**: Node 20.19.4 · TypeScript 5.9.3 strict · Mongoose 8.24 · Express 5.2 · Canvas 3.2.3 · Angular 20 · PrimeNG 20
-- **Tests**: 1072 backend (Mocha + Chai) · 1226 frontend (Vitest, 2 skipped) — all green
+- **Tests**: 1319 backend (Mocha + Chai, ~18 s) · 1455 frontend (Vitest, none skipped) — all green
 - **Enforcement**: zero-warning flags enabled backend, lib, and frontend (`strict` + `strictTemplates`); CI improvements all complete (mongo:8.0.23 + mongosh health check)
 
 ## Search / translation — what's left
