@@ -1,21 +1,11 @@
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { TestBed } from "@angular/core/testing";
 import { NO_ERRORS_SCHEMA } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
-} from "@angular/common/http";
-import { RouterTestingModule } from "@angular/router/testing";
-import { Observable, of, throwError } from "rxjs";
+import { NEVER, Observable, of, throwError } from "rxjs";
 
-import { DatePipe } from "@angular/common";
 import { AuthenticationService } from "src/app/module-blueprint/services/authentification-service";
-import { BuildTool } from "src/app/module-blueprint/common/tools/build-tool";
 import { ComponentBlueprintParentComponent } from "./component-blueprint-parent.component";
 import { BlueprintService } from "src/app/module-blueprint/services/blueprint-service";
-import { ElementReport } from "src/app/module-blueprint/common/tools/element-report";
-import { SelectTool } from "src/app/module-blueprint/common/tools/select-tool";
-import { ScissorsTool } from "src/app/module-blueprint/common/tools/scissors-tool";
 import { MessageService } from "primeng/api";
 import { HttpClient } from "@angular/common/http";
 import { ToolService } from "src/app/module-blueprint/services/tool-service";
@@ -24,54 +14,45 @@ import { KeyboardShortcutService } from "src/app/module-blueprint/services/keybo
 import { UserService } from "src/app/module-blueprint/services/user-service";
 import { UnsavedWorkService } from "src/app/module-blueprint/services/unsaved-work.service";
 
-// TODO: spec is incomplete — missing providers for MessageService, BlueprintService,
-// ToolService, and GameStringService. Add stubs for these before re-enabling.
-describe.skip("ComponentBlueprintParentComponent", () => {
-  let component: ComponentBlueprintParentComponent;
-  let fixture: ComponentFixture<ComponentBlueprintParentComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ComponentBlueprintParentComponent],
-      imports: [RouterTestingModule.withRoutes([])],
-      schemas: [NO_ERRORS_SCHEMA],
-      providers: [
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            params: of([{ width: 200, height: 100 }]),
-          },
+// An empty stub for every collaborator; each block replaces the ones it uses.
+async function createParent(
+  messageService: unknown,
+  stubs: { provide: unknown; useValue: unknown }[],
+) {
+  await TestBed.configureTestingModule({
+    declarations: [ComponentBlueprintParentComponent],
+    schemas: [NO_ERRORS_SCHEMA],
+    providers: [
+      {
+        provide: ActivatedRoute,
+        useValue: {
+          params: of({}),
+          url: of([]),
+          snapshot: { queryParams: {} },
         },
-        AuthenticationService,
-        BuildTool,
-        DatePipe,
-        ElementReport,
-        SelectTool,
-        ScissorsTool,
-        provideHttpClient(withInterceptorsFromDi()),
-      ],
-    }).compileComponents();
-  });
+      },
+      { provide: AuthenticationService, useValue: {} },
+      { provide: BlueprintService, useValue: {} },
+      { provide: ToolService, useValue: {} },
+      { provide: HttpClient, useValue: {} },
+      { provide: GameStringService, useValue: {} },
+      { provide: KeyboardShortcutService, useValue: {} },
+      { provide: UserService, useValue: {} },
+      { provide: UnsavedWorkService, useValue: {} },
+      { provide: Router, useValue: {} },
+      ...stubs,
+    ],
+  })
+    // The component declares its own MessageService; swap that one out
+    .overrideComponent(ComponentBlueprintParentComponent, {
+      set: {
+        providers: [{ provide: MessageService, useValue: messageService }],
+      },
+    })
+    .compileComponents();
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(ComponentBlueprintParentComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
-  it("should unsubscribe from blueprintService on destroy", () => {
-    const blueprintService = TestBed.inject(BlueprintService);
-    const observersBefore = blueprintService.observersBlueprintChanged.length;
-    fixture.destroy();
-    expect(blueprintService.observersBlueprintChanged.length).toBe(
-      observersBefore - 1,
-    );
-  });
-});
+  return TestBed.createComponent(ComponentBlueprintParentComponent);
+}
 
 // The hidden-pack notice (#14 option c) is testable on its own: every
 // collaborator is a stub and the component is never initialised (no
@@ -104,32 +85,12 @@ describe("ComponentBlueprintParentComponent.noticeHiddenDlcs", () => {
       unsubscribeImportError: vi.fn(),
     };
 
-    await TestBed.configureTestingModule({
-      declarations: [ComponentBlueprintParentComponent],
-      schemas: [NO_ERRORS_SCHEMA],
-      providers: [
-        { provide: ActivatedRoute, useValue: { params: of({}), url: of([]) } },
+    component = (
+      await createParent(messageService, [
         { provide: AuthenticationService, useValue: authService },
         { provide: BlueprintService, useValue: blueprintService },
-        { provide: ToolService, useValue: {} },
-        { provide: HttpClient, useValue: {} },
-        { provide: GameStringService, useValue: {} },
-        { provide: KeyboardShortcutService, useValue: {} },
         { provide: UserService, useValue: userService },
-        { provide: UnsavedWorkService, useValue: {} },
-        { provide: Router, useValue: {} },
-      ],
-    })
-      // The component declares its own MessageService; swap that one out
-      .overrideComponent(ComponentBlueprintParentComponent, {
-        set: {
-          providers: [{ provide: MessageService, useValue: messageService }],
-        },
-      })
-      .compileComponents();
-
-    component = TestBed.createComponent(
-      ComponentBlueprintParentComponent,
+      ])
     ).componentInstance;
   });
 
@@ -230,32 +191,14 @@ describe("ComponentBlueprintParentComponent.noticeRocketStacks", () => {
       unsubscribeImportError: vi.fn(),
     };
 
-    await TestBed.configureTestingModule({
-      declarations: [ComponentBlueprintParentComponent],
-      schemas: [NO_ERRORS_SCHEMA],
-      providers: [
-        { provide: ActivatedRoute, useValue: { params: of({}), url: of([]) } },
+    component = (
+      await createParent(messageService, [
         {
           provide: AuthenticationService,
           useValue: { isLoggedIn: vi.fn().mockReturnValue(false) },
         },
         { provide: BlueprintService, useValue: blueprintService },
-        { provide: ToolService, useValue: {} },
-        { provide: HttpClient, useValue: {} },
-        { provide: GameStringService, useValue: {} },
-        { provide: KeyboardShortcutService, useValue: {} },
-        { provide: UserService, useValue: {} },
-      ],
-    })
-      .overrideComponent(ComponentBlueprintParentComponent, {
-        set: {
-          providers: [{ provide: MessageService, useValue: messageService }],
-        },
-      })
-      .compileComponents();
-
-    component = TestBed.createComponent(
-      ComponentBlueprintParentComponent,
+      ])
     ).componentInstance;
   });
 
@@ -388,41 +331,17 @@ describe("ComponentBlueprintParentComponent unsaved work", () => {
     };
     router = { navigate: vi.fn() };
 
-    await TestBed.configureTestingModule({
-      declarations: [ComponentBlueprintParentComponent],
-      schemas: [NO_ERRORS_SCHEMA],
-      providers: [
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            params: of({}),
-            url: of([]),
-            snapshot: { queryParams: {} },
-          },
-        },
+    component = (
+      await createParent(messageService, [
         { provide: AuthenticationService, useValue: authService },
         { provide: BlueprintService, useValue: blueprintService },
-        { provide: ToolService, useValue: {} },
-        { provide: HttpClient, useValue: {} },
-        { provide: GameStringService, useValue: {} },
-        { provide: KeyboardShortcutService, useValue: {} },
         {
           provide: UserService,
           useValue: { getDlcPreferences: vi.fn(() => of({})) },
         },
         { provide: UnsavedWorkService, useValue: unsavedWork },
         { provide: Router, useValue: router },
-      ],
-    })
-      .overrideComponent(ComponentBlueprintParentComponent, {
-        set: {
-          providers: [{ provide: MessageService, useValue: messageService }],
-        },
-      })
-      .compileComponents();
-
-    component = TestBed.createComponent(
-      ComponentBlueprintParentComponent,
+      ])
     ).componentInstance;
   });
 
@@ -533,5 +452,48 @@ describe("ComponentBlueprintParentComponent unsaved work", () => {
         queryParams: { returnTo: "/editor?save=1" },
       });
     });
+  });
+});
+
+// The service singletons and the window outlive the editor; whatever it hooks
+// into them on init must come off when it is destroyed, or a dead editor keeps
+// reacting to blueprint loads and resizes. Same stubs as above, with ngOnInit
+// called directly: the database fetch never lands.
+describe("ComponentBlueprintParentComponent lifecycle", () => {
+  it("releases everything it registered when destroyed", async () => {
+    const unregisterShortcut = vi.fn();
+    const blueprintService = {
+      subscribeBlueprintChanged: vi.fn(),
+      unsubscribeBlueprintChanged: vi.fn(),
+      subscribeImportError: vi.fn(),
+      unsubscribeImportError: vi.fn(),
+    };
+    const fixture = await createParent({ add: vi.fn() }, [
+      { provide: BlueprintService, useValue: blueprintService },
+      { provide: HttpClient, useValue: { get: () => NEVER } },
+      {
+        provide: KeyboardShortcutService,
+        useValue: { register: vi.fn(() => unregisterShortcut) },
+      },
+    ]);
+    const component = fixture.componentInstance;
+    const resizeTools = vi
+      .spyOn(component, "resizeTools")
+      .mockImplementation(() => {});
+    component.ngOnInit();
+
+    fixture.destroy();
+
+    expect(blueprintService.unsubscribeBlueprintChanged).toHaveBeenCalledWith(
+      component,
+    );
+    // The same function that was subscribed, or the unsubscribe is a no-op
+    expect(blueprintService.unsubscribeImportError).toHaveBeenCalledWith(
+      blueprintService.subscribeImportError.mock.calls[0][0],
+    );
+    expect(unregisterShortcut).toHaveBeenCalledTimes(5);
+    window.dispatchEvent(new Event("resize"));
+    window.dispatchEvent(new Event("load"));
+    expect(resizeTools).not.toHaveBeenCalled();
   });
 });
