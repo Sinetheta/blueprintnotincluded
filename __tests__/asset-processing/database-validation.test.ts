@@ -1,7 +1,12 @@
 import { expect } from 'chai';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PINNED_ICONS } from '../../app/api/batch/convert-export-2024';
+import {
+  PINNED_ICONS,
+  ROCKET_MODULE_SUBCATEGORY,
+  UNCATEGORIZED_SUBCATEGORY,
+  convertBuildMenuItems,
+} from '../../app/api/batch/convert-export-2024';
 import {
   BuildableElement,
   BSpriteInfo,
@@ -61,6 +66,151 @@ describe('Database Asset Validation', () => {
         if ('deprecated' in b) expect(b.deprecated, b.prefabId).to.be.a('boolean');
         if ('debugOnly' in b) expect(b.debugOnly, b.prefabId).to.be.a('boolean');
       }
+    });
+  });
+
+  // The build menu groups each category's buildings under the game's subcategory
+  // headers ("Ladders", "Tiles and Drywall", ...). The export has carried them all along
+  // in buildingAndSubcategoryDataPairs[].Value; the converter now keeps them.
+  describe('Build menu subcategories', () => {
+    describe('convertBuildMenuItems', () => {
+      const run = (
+        overrides: Partial<Parameters<typeof convertBuildMenuItems>[0]> = {}
+      ) => {
+        const missingCategories: string[] = [];
+        const missingMenuBuildings: string[] = [];
+        const result = convertBuildMenuItems({
+          pairsByCategory: {
+            base: [
+              { Key: 'Ladder', Value: 'ladders' },
+              { Key: 'Tile', Value: 'tiles' },
+              { Key: 'OldTile', Value: 'tiles' },
+            ],
+            plumbing: [{ Key: 'LiquidConduit', Value: 'pipes' }],
+            hvac: [{ Key: 'GasConduit', Value: 'pipes' }],
+            rocketry: [{ Key: 'Gantry', Value: 'fittings' }],
+          },
+          categoryNameToId: new Map([
+            ['base', 1],
+            ['plumbing', 2],
+            ['hvac', 3],
+            ['rocketry', 4],
+          ]),
+          buildingPrefabs: new Set([
+            'Ladder',
+            'Tile',
+            'OldTile',
+            'LiquidConduit',
+            'GasConduit',
+            'Gantry',
+            'SteamEngineCluster',
+            'HabitatModuleSmall',
+          ]),
+          hiddenPrefabs: new Set(['OldTile']),
+          rocketModuleMenu: ['SteamEngineCluster', 'HabitatModuleSmall'],
+          rocketModulePrefabs: new Set(['SteamEngineCluster', 'HabitatModuleSmall']),
+          missingCategories,
+          missingMenuBuildings,
+          ...overrides,
+        });
+        return { ...result, missingCategories, missingMenuBuildings };
+      };
+
+      it('carries each pair\'s subcategory through, in plan order', () => {
+        const { items } = run();
+        expect(items.slice(0, 4)).to.deep.equal([
+          { category: 1, buildingId: 'Ladder', subcategory: 'ladders' },
+          { category: 1, buildingId: 'Tile', subcategory: 'tiles' },
+          { category: 2, buildingId: 'LiquidConduit', subcategory: 'pipes' },
+          { category: 3, buildingId: 'GasConduit', subcategory: 'pipes' },
+        ]);
+      });
+
+      it('files the rocket modules under the site\'s own subcategory, after the plan entries', () => {
+        const { items } = run();
+        expect(items.slice(4)).to.deep.equal([
+          { category: 4, buildingId: 'Gantry', subcategory: 'fittings' },
+          { category: 4, buildingId: 'SteamEngineCluster', subcategory: ROCKET_MODULE_SUBCATEGORY },
+          { category: 4, buildingId: 'HabitatModuleSmall', subcategory: ROCKET_MODULE_SUBCATEGORY },
+        ]);
+      });
+
+      it('still leaves deprecated and debug-only buildings out', () => {
+        const { items, hidden } = run();
+        expect(items.map((i) => i.buildingId)).not.to.include('OldTile');
+        expect(hidden).to.deep.equal(['OldTile']);
+      });
+
+      it('files an entry with no subcategory as uncategorized, and reports it', () => {
+        const { items, unsubcategorized } = run({
+          pairsByCategory: { base: [{ Key: 'Ladder', Value: '' }] },
+        });
+        expect(items).to.deep.equal([
+          { category: 1, buildingId: 'Ladder', subcategory: UNCATEGORIZED_SUBCATEGORY },
+          { category: 4, buildingId: 'SteamEngineCluster', subcategory: ROCKET_MODULE_SUBCATEGORY },
+          { category: 4, buildingId: 'HabitatModuleSmall', subcategory: ROCKET_MODULE_SUBCATEGORY },
+        ]);
+        expect(unsubcategorized).to.deep.equal(['Ladder']);
+      });
+
+      it('reports unknown categories and menu prefabs with no building', () => {
+        const { missingCategories, missingMenuBuildings } = run({
+          pairsByCategory: {
+            nonsense: [{ Key: 'Ladder', Value: 'ladders' }],
+            base: [{ Key: 'Ghost', Value: 'ladders' }],
+          },
+        });
+        expect(missingCategories).to.deep.equal(['nonsense']);
+        expect(missingMenuBuildings).to.deep.equal(['Ghost']);
+      });
+    });
+
+    describe('database-2024.json', () => {
+      let database: any;
+      before(() => {
+        database = readDatabase();
+      });
+
+      it('gives every build menu entry a subcategory', () => {
+        const without = (database.buildMenuItems as any[])
+          .filter((m) => typeof m.subcategory !== 'string' || m.subcategory.length === 0)
+          .map((m) => m.buildingId);
+        expect(without.length, `build menu entries with no subcategory: ${without.slice(0, 20).join(', ')}`)
+          .to.equal(0);
+      });
+
+      it('files exactly the rocket modules under the rocket-module subcategory', () => {
+        const modules = new Set(
+          (database.buildings as any[]).filter((b) => b.rocketModule != null).map((b) => b.prefabId)
+        );
+        for (const m of database.buildMenuItems as any[])
+          expect(m.subcategory === ROCKET_MODULE_SUBCATEGORY, m.buildingId).to.equal(
+            modules.has(m.buildingId)
+          );
+      });
+
+      // The header text comes from the game's strings, so a subcategory the strings
+      // don't name would render as a raw id. Modded buildings may bring their own.
+      it('names every base-game subcategory in the game strings', () => {
+        const strings = JSON.parse(
+          fs.readFileSync(
+            path.join(__dirname, '../../frontend/src/assets/strings/strings.json'),
+            'utf8'
+          )
+        );
+        const modded = new Set(
+          (database.buildings as any[]).filter((b) => b.mod != null).map((b) => b.prefabId)
+        );
+        const unnamed = new Set<string>();
+        for (const m of database.buildMenuItems as any[]) {
+          if (modded.has(m.buildingId)) continue;
+          if (m.subcategory === ROCKET_MODULE_SUBCATEGORY) continue;
+          if (m.subcategory === UNCATEGORIZED_SUBCATEGORY) continue;
+          const key = `STRINGS.UI.NEWBUILDCATEGORIES.${String(m.subcategory).toUpperCase()}.BUILDMENUTITLE`;
+          if (!strings[key]) unnamed.add(m.subcategory);
+        }
+        expect([...unnamed], 'subcategories with no BUILDMENUTITLE').to.be.empty;
+      });
     });
   });
 

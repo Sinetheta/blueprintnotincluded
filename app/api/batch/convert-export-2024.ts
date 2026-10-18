@@ -41,6 +41,7 @@ import {
   BElementsFile2024,
   BUiSpriteInfoFile2024,
   BBuildingDef2024,
+  BBuildingSubcategoryPair2024,
   BPoStringFile2024,
   BGeyserFile2024,
   BEntitiesFile2024,
@@ -770,8 +771,6 @@ export function convertExport2024(opts: ConvertOptions): void {
   const categoryNameToId = new Map<string, number>();
   for (const c of buildMenuCategories) categoryNameToId.set(c.categoryName.toLowerCase(), c.category);
 
-  // --- Build menu items: dict-of-pairs -> flat array ---
-  const buildMenuItems: { category: number; buildingId: string }[] = [];
   // Both halves of the game's own menu gate:
   //   !Deprecated && (!DebugOnly || Game.Instance.DebugOnlyBuildingsAllowed)
   // Deprecated content is unreachable in every mode; DebugOnly content is reachable only
@@ -780,29 +779,6 @@ export function convertExport2024(opts: ConvertOptions): void {
   const hiddenPrefabs = new Set(
     buildings.filter(b => b.deprecated || b.debugOnly).map(b => b.prefabId)
   );
-  const hiddenMenuBuildings: string[] = [];
-  for (const [categoryName, pairs] of Object.entries(
-    buildingFile.buildingAndSubcategoryDataPairs
-  )) {
-    const categoryId = categoryNameToId.get(categoryName.toLowerCase());
-    if (categoryId === undefined) {
-      missingCategories.push(categoryName);
-      continue;
-    }
-    for (const pair of pairs) {
-      if (!buildingPrefabs.has(pair.Key)) missingMenuBuildings.push(pair.Key);
-      // Deprecated buildings stay in `buildings` -- a blueprint that already contains one
-      // must still load, render and be deletable -- but they must not be offered here.
-      // buildingAndSubcategoryDataPairs is plan order, and plan order is not menu
-      // reachability: the game filters separately on BuildingDef.Deprecated, so several of
-      // these hold a PLANORDER position they can never be built from.
-      if (hiddenPrefabs.has(pair.Key)) {
-        hiddenMenuBuildings.push(pair.Key);
-        continue;
-      }
-      buildMenuItems.push({ category: categoryId, buildingId: pair.Key });
-    }
-  }
 
   // --- Rocket modules: the roster and the flag must agree. ---
   // `rocketModuleMenu` is the game's module-screen order and `isRocketModule` is the
@@ -828,24 +804,21 @@ export function convertExport2024(opts: ConvertOptions): void {
     })
     .map((b) => b.name);
 
-  // The modules' build menu. PLANORDER never lists them (the game offers them on the
-  // rocket-platform screen instead), so without this a module can be imported but
-  // never placed. They go under the game's own rocketry tab, after its PLANORDER
-  // entries, in the module screen's order: engines, crew, nosecones, then tanks and
-  // cargo. Deliberately NOT filtered on showInBuildMenu -- every module has it false,
-  // because that flag is about the plan menu this list exists to supplement.
-  const rocketryCategoryId = categoryNameToId.get(ROCKETRY_CATEGORY_NAME);
-  if (rocketModuleMenu.length > 0 && rocketryCategoryId === undefined)
-    missingCategories.push(ROCKETRY_CATEGORY_NAME);
-  if (rocketryCategoryId !== undefined)
-    for (const id of rocketModuleMenu) {
-      if (!rocketModulePrefabs.has(id)) continue; // reported above
-      if (hiddenPrefabs.has(id)) {
-        hiddenMenuBuildings.push(id);
-        continue;
-      }
-      buildMenuItems.push({ category: rocketryCategoryId, buildingId: id });
-    }
+  // --- Build menu items: dict-of-pairs -> flat array ---
+  const {
+    items: buildMenuItems,
+    hidden: hiddenMenuBuildings,
+    unsubcategorized: menuItemsWithoutSubcategory,
+  } = convertBuildMenuItems({
+    pairsByCategory: buildingFile.buildingAndSubcategoryDataPairs,
+    categoryNameToId,
+    buildingPrefabs,
+    hiddenPrefabs,
+    rocketModuleMenu,
+    rocketModulePrefabs,
+    missingCategories,
+    missingMenuBuildings,
+  });
 
   // Overlay sprites: element tiles + info indicators. These are not from the game export —
   // they are handcrafted additions that `OniItem.load()` requires for the element-tile and
@@ -1053,6 +1026,15 @@ export function convertExport2024(opts: ConvertOptions): void {
     '  build-menu categories unmapped     :',
     missingCategories.length,
     missingCategories.length ? '(' + missingCategories.join(', ') + ')' : ''
+  );
+  // Informational, not a failure: the game files a plan entry with no subcategory
+  // under "uncategorized" too, which is what the converter does with it.
+  console.log(
+    '  build-menu entries, no subcategory :',
+    menuItemsWithoutSubcategory.length,
+    menuItemsWithoutSubcategory.length
+      ? '(' + menuItemsWithoutSubcategory.slice(0, 30).join(', ') + ', filed as uncategorized)'
+      : ''
   );
   console.log(
     '  unknown viewMode names             :',
@@ -1653,6 +1635,94 @@ const ROCKET_MODULE_PERMITTED_ROTATIONS = PermittedRotations.FlipH;
 
 // buildMenuCategories.categoryName of the tab the rocket modules are listed under.
 const ROCKETRY_CATEGORY_NAME = 'rocketry';
+
+// The build-menu subcategory the rocket modules are filed under. The game has none for
+// them -- they live on the rocket-platform screen, not in PLANORDER -- so this one is the
+// site's own, and the frontend gives it a localized title.
+export const ROCKET_MODULE_SUBCATEGORY = 'rocketmodules';
+
+// The game's subcategory for a plan entry that names none (its
+// PlanScreen.DEFAULT_SUBCATEGORY). Its BUILDMENUTITLE string is empty.
+export const UNCATEGORIZED_SUBCATEGORY = 'uncategorized';
+
+export interface BuildMenuItemRecord {
+  category: number;
+  buildingId: string;
+  // The game's subcategory id, e.g. "ladders", "tiles", "pumps". Not unique across
+  // categories ("pipes" is under plumbing and ventilation), so a consumer grouping by it
+  // keys on category *and* subcategory. Entries stay in plan order, which is also how
+  // the game orders a category's subcategories: by where each first appears.
+  subcategory: string;
+}
+
+// The flat build menu from the export's dict of plan-order pairs, then the rocket
+// modules. Missing categories and menu prefabs with no building are pushed onto the
+// caller's report arrays, which feed the import's problem count.
+export function convertBuildMenuItems(input: {
+  pairsByCategory: { [categoryName: string]: BBuildingSubcategoryPair2024[] };
+  categoryNameToId: Map<string, number>;
+  buildingPrefabs: Set<string>;
+  hiddenPrefabs: Set<string>;
+  rocketModuleMenu: string[];
+  rocketModulePrefabs: Set<string>;
+  missingCategories: string[];
+  missingMenuBuildings: string[];
+}): { items: BuildMenuItemRecord[]; hidden: string[]; unsubcategorized: string[] } {
+  const items: BuildMenuItemRecord[] = [];
+  const hidden: string[] = [];
+  const unsubcategorized: string[] = [];
+
+  for (const [categoryName, pairs] of Object.entries(input.pairsByCategory)) {
+    const categoryId = input.categoryNameToId.get(categoryName.toLowerCase());
+    if (categoryId === undefined) {
+      input.missingCategories.push(categoryName);
+      continue;
+    }
+    for (const pair of pairs) {
+      if (!input.buildingPrefabs.has(pair.Key)) input.missingMenuBuildings.push(pair.Key);
+      // Deprecated buildings stay in `buildings` -- a blueprint that already contains one
+      // must still load, render and be deletable -- but they must not be offered here.
+      // buildingAndSubcategoryDataPairs is plan order, and plan order is not menu
+      // reachability: the game filters separately on BuildingDef.Deprecated, so several of
+      // these hold a PLANORDER position they can never be built from.
+      if (input.hiddenPrefabs.has(pair.Key)) {
+        hidden.push(pair.Key);
+        continue;
+      }
+      let subcategory = (pair.Value ?? '').trim();
+      if (subcategory === '') {
+        unsubcategorized.push(pair.Key);
+        subcategory = UNCATEGORIZED_SUBCATEGORY;
+      }
+      items.push({ category: categoryId, buildingId: pair.Key, subcategory });
+    }
+  }
+
+  // The modules' build menu. PLANORDER never lists them (the game offers them on the
+  // rocket-platform screen instead), so without this a module can be imported but
+  // never placed. They go under the game's own rocketry tab, after its PLANORDER
+  // entries, in the module screen's order: engines, crew, nosecones, then tanks and
+  // cargo. Deliberately NOT filtered on showInBuildMenu -- every module has it false,
+  // because that flag is about the plan menu this list exists to supplement.
+  const rocketryCategoryId = input.categoryNameToId.get(ROCKETRY_CATEGORY_NAME);
+  if (input.rocketModuleMenu.length > 0 && rocketryCategoryId === undefined)
+    input.missingCategories.push(ROCKETRY_CATEGORY_NAME);
+  if (rocketryCategoryId !== undefined)
+    for (const id of input.rocketModuleMenu) {
+      if (!input.rocketModulePrefabs.has(id)) continue; // reported by the caller
+      if (input.hiddenPrefabs.has(id)) {
+        hidden.push(id);
+        continue;
+      }
+      items.push({
+        category: rocketryCategoryId,
+        buildingId: id,
+        subcategory: ROCKET_MODULE_SUBCATEGORY,
+      });
+    }
+
+  return { items, hidden, unsubcategorized };
+}
 
 // The attachment model, as the site stores it: which hardpoint tag a building sits on,
 // which hardpoints it offers, and -- for rocket modules -- the numbers a stack is

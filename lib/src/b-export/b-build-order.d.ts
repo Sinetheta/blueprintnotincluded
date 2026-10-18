@@ -14,6 +14,7 @@ export declare class BuildMenuCategory {
 export declare class BuildMenuItem {
     category: number;
     buildingId: string;
+    subcategory: string;
     importFrom(original: BuildMenuItem): void;
     static buildMenuItems: BuildMenuItem[];
     static init(): void;

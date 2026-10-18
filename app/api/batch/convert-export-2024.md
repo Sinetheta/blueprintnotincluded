@@ -109,8 +109,8 @@ ratio (see below). What breaks rendering is changing **framing**, not pixel coun
    `isFoundation`, `isKAnimTile`, `isUtility`, `widthInCells`, `heightInCells`,
    `sceneLayer`, `objectLayer`, `viewMode`, `permittedRotations`, `dragBuild`,
    `buildLocationRule`, `materialCategory`, `materialMass`, `utilities`; plus top-level
-   `bBuildingDefList`, `buildMenuCategories`, `buildingAndSubcategoryDataPairs`. Adding
-   fields is safe.
+   `bBuildingDefList`, `buildMenuCategories`, `buildingAndSubcategoryDataPairs` (both
+   halves of each pair: `Key` the prefab, `Value` its subcategory). Adding fields is safe.
 7. **`utilities[].type`** values stay the `ConnectionType` enum *member name* (string,
    e.g. `"GasInput"`, `"LogicReset"`) and `utilities[].offset` stays in the game's
    CellOffset convention; see "Utility connection ports" below.
@@ -339,6 +339,16 @@ that tab's plan-order entries and in the module screen's own order (engines, cre
 nosecones, then tanks and cargo). They are deliberately not filtered on
 `showInBuildMenu: false`: every module has it, because that flag describes the plan menu this
 list supplements. The deprecated/debug-only filter still applies.
+
+Every `buildMenuItems` entry carries the game's **subcategory** (`ladders`, `tiles`,
+`pumps`, …), the `Value` half of its plan-order pair. The editor's build menu groups a
+category under subcategory headers in the order each first appears in that category's
+entries, which is the game's own order, and titles them from
+`STRINGS.UI.NEWBUILDCATEGORIES.<SUBCATEGORY>.BUILDMENUTITLE`. An id is only unique within
+its category (`pipes` is under plumbing and ventilation), so consumers key groups by both.
+Modules have no game subcategory; they get the site's own `rocketmodules`. A pair with an
+empty `Value` is filed as `uncategorized`, as the game does, and counted in the report
+without failing the import.
 
 The import checks that the two halves of the export agree and fails otherwise:
 `rocketModuleMenu` (root, the game's module-screen order) lists exactly the `isRocketModule`

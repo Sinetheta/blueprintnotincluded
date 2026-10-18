@@ -111,7 +111,9 @@ run the single repeatable step:
   export art is wrong (today: `FairGasWallPump`); the import fails when the export's art for a
   pinned prefab changes, so the pin is re-judged. Rocket modules get `permittedRotations`
   overridden to `FlipH` and are appended to the rocketry build-menu tab from the export's
-  `rocketModuleMenu`. Details: `app/api/batch/convert-export-2024.md`.
+  `rocketModuleMenu`, under the site's own `rocketmodules` subcategory; every other entry keeps
+  the game's subcategory from `buildingAndSubcategoryDataPairs`. Details:
+  `app/api/batch/convert-export-2024.md`.
 - `ui_image_facade/` is intentionally skipped (unused by the app); one-line flip in
   `app/api/batch/convert-export-2024.ts` to enable.
 - After import: restart `npm run dev` (backend reads `database-2024.json` at startup) and

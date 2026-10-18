@@ -329,8 +329,8 @@ no "this is a stack" marker — the Blueprints mod recomputes stacking from the 
   and every module is odd-width around its origin, so a flip changes nothing in practice).
 - **Flip only** — the converter overrides `permittedRotations` to `FlipH` for modules; the
   game exports `Unrotatable`, the mod lets them mirror.
-- **Build menu** — the converter appends the export's `rocketModuleMenu` to the rocketry tab.
-  `PLANORDER` never lists a module.
+- **Build menu** — the converter appends the export's `rocketModuleMenu` to the rocketry tab,
+  under the site's own `rocketmodules` subcategory. `PLANORDER` never lists a module.
 - **Snapping** — `snapRocketModulePosition`, used by `BuildTool.placeAt` for hover, click and
   mouse-down alike so a click builds where the ghost was. A module is pulled onto a *free*
   hardpoint when the cursor is inside the footprint it would occupy there, give or take one
