@@ -158,10 +158,13 @@ export class BuildMenuService {
     this.categoryByPrefab.clear();
 
     for (const menuItem of BuildMenuItem.buildMenuItems ?? []) {
-      const item = OniItem.getOniItem(menuItem.buildingId);
-      if (item == null) continue;
+      // Both lookups throw on an unknown id. The import refuses a menu entry
+      // with no building or category, but one bad entry must still cost only
+      // itself, not the whole menu.
+      let item: OniItem;
       let category: BuildMenuCategory;
       try {
+        item = OniItem.getOniItem(menuItem.buildingId);
         category = BuildMenuCategory.getCategory(menuItem.category);
       } catch {
         continue;
