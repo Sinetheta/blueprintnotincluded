@@ -183,6 +183,16 @@ describe("ToolService", () => {
       expect((mockSelect as any)[method]).toHaveBeenCalledWith(...args);
     });
 
+    it("reports a right-click with the tool that took it", () => {
+      const seen: ToolType[] = [];
+      const subscription = service.rightClicked.subscribe((toolType) =>
+        seen.push(toolType),
+      );
+      service.rightClick(new Vector2(1, 2));
+      subscription.unsubscribe();
+      expect(seen).toEqual([ToolType.select]);
+    });
+
     it("delegates unclaimed shortcuts to the active tool", () => {
       mockSelect.handleShortcut.mockReturnValue(true);
       expect(service.handleShortcut(ShortcutAction.editDelete)).toBe(true);

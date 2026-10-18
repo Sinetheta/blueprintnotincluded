@@ -86,6 +86,9 @@ export class OniItem {
   buildableElementsArray: BuildableElement[][] = [];
   defaultElement: BuildableElement[] = [];
   materialMass: number[] = [0];
+  // The construction-material tags, one per materialMass slot ("Metal",
+  // "RefinedMetal", "BuildableRaw&Metal"): what the build menu's tooltip names.
+  materialCategory: string[] = [];
   secondaryMaterialCosts: { element: BuildableElement; mass: number; category?: string }[] = [];
   uiScreens: BUiScreen[] = [];
   spriteGroup: SpriteModifierGroup = new SpriteModifierGroup();
@@ -285,6 +288,7 @@ export class OniItem {
 
     this.materialMass = [];
     for (let mass of original.materialMass) this.materialMass.push(mass);
+    this.materialCategory = [...(original.materialCategory ?? [])];
 
     this.uiScreens = [];
     for (let uiScreen of original.uiScreens) this.uiScreens.push(BUiScreen.clone(uiScreen));
@@ -344,6 +348,7 @@ export class OniItem {
     if (this.buildableElementsArray == null || this.buildableElementsArray.length == 0)
       this.buildableElementsArray = [[BuildableElement.getElement('Vacuum')]];
     if (this.materialMass == null) this.materialMass = [0];
+    if (this.materialCategory == null) this.materialCategory = [];
     if (this.secondaryMaterialCosts == null) this.secondaryMaterialCosts = [];
     if (this.uiScreens == null) this.uiScreens = [];
     if (this.spriteGroup == null) this.spriteGroup = new SpriteModifierGroup();

@@ -39,6 +39,7 @@ import {
   IObsBlueprintChanged,
 } from "../../services/blueprint-service";
 import { GameStringService } from "../../services/game-string-service";
+import { BuildMenuService } from "../../services/build-menu.service";
 import { KeyboardShortcutService } from "../../services/keyboard-shortcut.service";
 import {
   ShortcutAction,
@@ -147,6 +148,7 @@ export class ComponentBlueprintParentComponent
     private userService: UserService,
     private unsavedWork: UnsavedWorkService,
     private router: Router,
+    public buildMenuService: BuildMenuService,
   ) {}
 
   // Undone on destroy: shortcut registrations and window listeners
@@ -193,6 +195,9 @@ export class ComponentBlueprintParentComponent
     this.fetchDatabase().then(() => {
       if (!this.forceSize) {
         this.buildTool.oniItemsLoaded();
+        this.buildMenuService.load();
+        // "load" has long fired when the editor is reached in-app.
+        this.resizeTools();
       }
 
       this.route.url.subscribe((url: UrlSegment[]) => {
@@ -250,6 +255,7 @@ export class ComponentBlueprintParentComponent
       const sidePanelPosition: number =
         this.sidePanelLeft.nativeElement.getBoundingClientRect().y;
       this.selectionTool.setMaxHeight(sidePanelPosition);
+      this.buildMenuService.navBottom = sidePanelPosition;
     }
   }
 

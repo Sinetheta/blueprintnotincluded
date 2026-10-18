@@ -1,21 +1,18 @@
-import { Component, ViewChild, ViewChildren, QueryList } from "@angular/core";
+import { Component } from "@angular/core";
 import { ToolType } from "../../../common/tools/tool";
 import {
-  BlueprintItemElement,
   BlueprintHelpers,
   BlueprintItem,
   OniItem,
-  BuildMenuCategory,
-  BuildMenuItem,
-  dlcLabel,
 } from "../../../../../../../lib/index";
 import {
   ToolService,
   IObsToolChanged,
 } from "src/app/module-blueprint/services/tool-service";
 import { IObsBuildItemChanged } from "src/app/module-blueprint/common/tools/build-tool";
-import { Popover } from "primeng/popover";
+import { BuildMenuService } from "src/app/module-blueprint/services/build-menu.service";
 import { ElementChangeInfo } from "../buildable-element-picker/buildable-element-picker.component";
+import { buildingDlcLabels } from "../../build-menu/building-labels";
 
 @Component({
   selector: "app-build-tool",
@@ -26,13 +23,6 @@ import { ElementChangeInfo } from "../buildable-element-picker/buildable-element
 export class ComponentSideBuildToolComponent
   implements IObsBuildItemChanged, IObsToolChanged
 {
-  items: OniItem[][][];
-
-  get buildMenuCategories() {
-    return BuildMenuCategory.buildMenuCategories;
-  }
-
-  currentCategory!: BuildMenuCategory;
   currentItem!: OniItem;
 
   get currentItemToBuild() {
@@ -42,16 +32,13 @@ export class ComponentSideBuildToolComponent
     return this.currentItemToBuild.oniItem.isElement;
   }
 
-  @ViewChild("categoryPanel") categoryPanel!: Popover;
-  @ViewChildren(Popover) itemPanels!: QueryList<Popover>;
-
-  constructor(public toolService: ToolService) {
-    this.items = [];
+  constructor(
+    public toolService: ToolService,
+    private buildMenuService: BuildMenuService,
+  ) {
     this.toolService.buildTool.subscribeBuildItemChanged(this);
     this.toolService.subscribeToolChanged(this);
   }
-
-  // TODO the template for the dropdowns fixes the width, whereas the template for the list fixes the height
 
   databaseLoaded: boolean = false;
   oniItemsLoaded() {
@@ -63,95 +50,14 @@ export class ComponentSideBuildToolComponent
     this.databaseLoaded = true;
   }
 
-  showCategories(event: any) {
-    this.categoryPanel.toggle(event);
-    this.itemPanels.forEach((itemPanel) => {
-      if (itemPanel != this.itemPanels.last) itemPanel.hide();
-    });
+  // The current-item button: the build menu, open on this building's category.
+  openBuildMenu() {
+    this.buildMenuService.openForItem(this.currentItem?.id);
   }
 
-  paintElement() {
-    const newElement = new BlueprintItemElement(OniItem.elementId);
-    newElement.setElement("Water", 0);
-
-    this.toolService.buildTool.changeItem(newElement);
-
-    this.categoryPanel.hide();
-  }
-
-  showItems(
-    event: any,
-    buildMenuCategory: BuildMenuCategory,
-    indexCategory: number,
-  ) {
-    this.items[indexCategory] = [];
-
-    let lineIndex = 0;
-    let itemIndex = 0;
-
-    for (const buildMenuItem of BuildMenuItem.buildMenuItems)
-      if (buildMenuCategory.category == buildMenuItem.category) {
-        const oniItem = OniItem.getOniItem(buildMenuItem.buildingId);
-        if (this.items[indexCategory][lineIndex] == null)
-          this.items[indexCategory].push([]);
-        const specialItemName: Record<string, string> = {
-          Element: $localize`:special item:Element`,
-        };
-        if (specialItemName[oniItem.id])
-          oniItem.name = specialItemName[oniItem.id];
-        this.items[indexCategory][lineIndex].push(oniItem);
-        itemIndex++;
-
-        if (itemIndex > 6) {
-          itemIndex = 0;
-          lineIndex++;
-        }
-      }
-
-    let currentIndex = 0;
-    this.itemPanels.forEach((itemPanel) => {
-      if (itemPanel != this.itemPanels.last) {
-        if (currentIndex != indexCategory) itemPanel.hide();
-        else {
-          if (this.currentCategory == buildMenuCategory)
-            itemPanel.toggle(event);
-          else itemPanel.show(event);
-        }
-      }
-
-      currentIndex++;
-    });
-
-    this.currentCategory = buildMenuCategory;
-  }
-
-  chooseItem(item: OniItem) {
-    this.itemPanels.forEach((itemPanel) => {
-      itemPanel.hide();
-    });
-    this.currentItem = item;
-    this.uiItemChanged();
-  }
-
-  // Pack names for the DLC marker on a build-menu row. Empty for base-game
-  // buildings, which is what keeps them visually unchanged: the badge and chip
-  // are both gated on this being non-empty. Names come from dlcLabel() so the
-  // build menu, card and details page can never disagree about what a pack is
-  // called, and an id without a label still shows its raw id rather than
-  // hiding the fact that the building is DLC content.
+  // Pack names for the DLC chips under the current item; see buildingDlcLabels.
   dlcLabels(item: OniItem): string[] {
-    return (item.dlcIds ?? []).map(dlcLabel);
-  }
-
-  itemTooltip(item: OniItem): string {
-    const name =
-      item.mod != null
-        ? $localize`${item.name} — from ${item.modTitle} (mod)`
-        : item.name;
-    const dlcs = this.dlcLabels(item);
-    return dlcs.length > 0
-      ? $localize`:buildTool.dlcTooltip:${name} — requires ${dlcs.join(", ")}`
-      : name;
+    return buildingDlcLabels(item);
   }
 
   changeElement(elementChangeInfo: ElementChangeInfo) {
@@ -170,9 +76,10 @@ export class ComponentSideBuildToolComponent
 
   // Re-entering the build tool (pressing "B" again with nothing selected,
   // switching tools and back, ...) must not throw away a brush the user has
-  // already configured — only a genuine building-type change (chooseItem)
-  // should rebuild from the catalogue default. Guards oniItemsLoaded()'s very
-  // first call too, where templateItemToBuild doesn't exist yet.
+  // already configured — only a genuine building-type change (a pick in the
+  // build menu) should rebuild from the catalogue default. Guards
+  // oniItemsLoaded()'s very first call too, where templateItemToBuild doesn't
+  // exist yet.
   private ensureBuildItem() {
     const current = this.toolService.buildTool.templateItemToBuild;
     // A brush the tool switched away from has been destroyed by
@@ -202,11 +109,5 @@ export class ComponentSideBuildToolComponent
     // (see ensureBuildItem): pressing "B" to re-enter the tool must keep
     // whatever element/temperature/material the user already dialed in.
     if (toolType == ToolType.build) this.ensureBuildItem();
-
-    // And we hide all the overlays
-    if (this.itemPanels != null)
-      this.itemPanels.forEach((itemPanel) => {
-        itemPanel.hide();
-      });
   }
 }

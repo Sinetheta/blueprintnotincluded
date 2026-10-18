@@ -31,6 +31,12 @@
   z-index: 10;
 }
 
+/* Small screens: the build menu's one button holds the bottom-left corner
+   (52px and a gap), so the toolbar wraps short of it. */
+.tool-toolbar--beside-launcher {
+  max-width: calc(100vw - 32px - 60px);
+}
+
 /* Bottom-right stack for the note and terrain selection panels. Fixed here,
    once, so the panels themselves only need a width. */
 .corner-panels {

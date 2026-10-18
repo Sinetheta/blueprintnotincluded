@@ -50,6 +50,7 @@ export declare class OniItem {
     buildableElementsArray: BuildableElement[][];
     defaultElement: BuildableElement[];
     materialMass: number[];
+    materialCategory: string[];
     secondaryMaterialCosts: {
         element: BuildableElement;
         mass: number;
