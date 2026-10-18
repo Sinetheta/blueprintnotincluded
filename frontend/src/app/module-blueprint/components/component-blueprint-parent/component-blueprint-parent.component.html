@@ -95,8 +95,13 @@
     (menuCommand)="menuCommand($event)"
   >
   </app-component-menu>
+  <app-build-menu></app-build-menu>
   <div>
-    <div #sidePanelLeft class="side-panel">
+    <div
+      #sidePanelLeft
+      class="side-panel"
+      [style.left.px]="buildMenuService.layout.columnWidth"
+    >
       <app-selection-tool
         #selectionTool
         [hidden]="
@@ -131,7 +136,10 @@
     <app-terrain-edit-panel></app-terrain-edit-panel>
     <app-note-edit-panel></app-note-edit-panel>
   </div>
-  <div class="tool-toolbar">
+  <div
+    class="tool-toolbar"
+    [class.tool-toolbar--beside-launcher]="buildMenuService.layout.compact"
+  >
     <app-toolbar-button
       iconUrl="assets/images/icon-select.png"
       label="Select"

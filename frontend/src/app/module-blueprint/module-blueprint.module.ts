@@ -116,6 +116,7 @@ import { SupportedModsPageComponent } from "./components/supported-mods-page/sup
 import { PlanningToolComponent } from "./components/side-bar/planning-tool/planning-tool.component";
 import { TerrainToolComponent } from "./components/side-bar/terrain-tool/terrain-tool.component";
 import { DigToolComponent } from "./components/side-bar/dig-tool/dig-tool.component";
+import { BuildMenuComponent } from "./components/build-menu/build-menu.component";
 
 @NgModule({
   declarations: [
@@ -187,6 +188,7 @@ import { DigToolComponent } from "./components/side-bar/dig-tool/dig-tool.compon
     PlanningToolComponent,
     TerrainToolComponent,
     DigToolComponent,
+    BuildMenuComponent,
   ],
   exports: [ComponentBlueprintParentComponent],
   imports: [

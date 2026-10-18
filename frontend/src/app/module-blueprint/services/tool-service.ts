@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { Observable, Subject } from "rxjs";
 import { ToolType, ITool, IChangeTool } from "../common/tools/tool";
 import { SelectTool } from "../common/tools/select-tool";
 import {
@@ -44,6 +45,13 @@ export class ToolService implements ITool, IChangeTool {
   }
 
   private observers: IObsToolChanged[];
+
+  // Every canvas right-click, with the tool that took it. The build menu
+  // closes on one that had no building to drop, as the game's does.
+  private rightClickedSubject = new Subject<ToolType>();
+  get rightClicked(): Observable<ToolType> {
+    return this.rightClickedSubject.asObservable();
+  }
 
   constructor(
     public selectTool: SelectTool,
@@ -135,7 +143,9 @@ export class ToolService implements ITool, IChangeTool {
     this.currentTool.leftClick(tile);
   }
   rightClick(tile: Vector2) {
+    const toolType = this.currentTool.toolType;
     this.currentTool.rightClick(tile);
+    this.rightClickedSubject.next(toolType);
   }
   hover(tile: Vector2) {
     this.lastHoverTile = tile;

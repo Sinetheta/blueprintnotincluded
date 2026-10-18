@@ -19,6 +19,8 @@ const MARKUP_PATTERNS: RegExp[] = [
   /<link=".+?">(.*?)<\/link>/gi,
   /<alpha=#.+?>((.|\n)*?)<\/color>/gi,
   /<indent=#.+?>((.|\n)*?)<\/indent>/gi,
+  /<b>(.*?)<\/b>/gi,
+  /<i>(.*?)<\/i>/gi,
 ];
 
 function stripMarkup(value: string): string {

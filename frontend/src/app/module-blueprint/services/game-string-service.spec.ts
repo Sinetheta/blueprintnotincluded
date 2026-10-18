@@ -106,6 +106,7 @@ describe("GameStringService", () => {
       ['<link="x">Linked</link>', "Linked"],
       ["<alpha=#80>Faint</color>", "Faint"],
       ["<indent=#5>Indented</indent>", "Indented"],
+      ["Has <b>bold</b> and <i>italic</i> words", "Has bold and italic words"],
       ["Plain text", "Plain text"],
     ])("strips %s to %s", async (raw, expected) => {
       expect(await strip(raw)).toBe(expected);

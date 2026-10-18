@@ -3,7 +3,7 @@
   <div *ngIf="databaseLoaded">
     <div
       class="ui-clickable-icon element-button-width"
-      (click)="showCategories($event)"
+      (click)="openBuildMenu()"
       style="margin-bottom: 5px"
     >
       <div class="building-panel-content">
@@ -100,70 +100,5 @@
 
     <app-ui-screen-container [blueprintItem]="currentItemToBuild">
     </app-ui-screen-container>
-
-    <!-- These go first so we don't have to add one to the index when querying them -->
-    <p-popover
-      [appendTo]="'body'"
-      *ngFor="
-        let buildMenuCategory of buildMenuCategories;
-        let indexCategory = index
-      "
-    >
-      <div
-        *ngFor="let itemArray of items[indexCategory]"
-        class="building-panel-content"
-      >
-        <div
-          *ngFor="let item of itemArray"
-          class="ui-clickable-icon element-button"
-          (click)="chooseItem(item)"
-          [pTooltip]="itemTooltip(item)"
-          tooltipPosition="bottom"
-          tooltipEvent="both"
-          life="5000"
-        >
-          <img src="{{ item.iconUrl }}" height="40px" />
-          <span
-            *ngIf="dlcLabels(item).length"
-            class="build-dlc-badge"
-            i18n="DLC badge on a build-menu icon|buildTool.dlcBadge"
-            >DLC</span
-          >
-        </div>
-      </div>
-    </p-popover>
   </div>
 </div>
-
-<p-popover #categoryPanel [appendTo]="'body'">
-  <div class="building-panel-content">
-    <div
-      class="ui-clickable-icon element-button"
-      (click)="paintElement()"
-      i18n-pTooltip
-      pTooltip="Paint Element"
-      tooltipPosition="bottom"
-      tooltipEvent="both"
-      life="5000"
-    >
-      <img src="assets/images/ui/manual/liquid_icon.png" height="40px" />
-    </div>
-    <div
-      *ngFor="
-        let buildMenuCategory of buildMenuCategories;
-        let indexCategory = index
-      "
-    >
-      <div
-        class="ui-clickable-icon element-button"
-        (click)="showItems($event, buildMenuCategory, indexCategory)"
-        [pTooltip]="buildMenuCategory.categoryShowName"
-        tooltipPosition="bottom"
-        tooltipEvent="both"
-        life="5000"
-      >
-        <img src="{{ buildMenuCategory.categoryIconUrl }}" height="40px" />
-      </div>
-    </div>
-  </div>
-</p-popover>

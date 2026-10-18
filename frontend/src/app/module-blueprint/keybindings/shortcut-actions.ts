@@ -34,6 +34,26 @@ export const ShortcutAction = {
   // Build tool
   buildRotate: "build.rotate",
 
+  // Build menu. A category's action id is "buildMenu." + its categoryName in
+  // the database (see buildMenuCategoryAction), so a binding follows the
+  // category it names, not a position that a new game category could shift.
+  buildMenuSearch: "buildMenu.search",
+  buildMenuBase: "buildMenu.base",
+  buildMenuOxygen: "buildMenu.oxygen",
+  buildMenuPower: "buildMenu.power",
+  buildMenuFood: "buildMenu.food",
+  buildMenuPlumbing: "buildMenu.plumbing",
+  buildMenuVentilation: "buildMenu.hvac",
+  buildMenuRefinement: "buildMenu.refining",
+  buildMenuMedicine: "buildMenu.medical",
+  buildMenuFurniture: "buildMenu.furniture",
+  buildMenuStations: "buildMenu.equipment",
+  buildMenuUtilities: "buildMenu.utilities",
+  buildMenuAutomation: "buildMenu.automation",
+  buildMenuShipping: "buildMenu.conveyance",
+  buildMenuRocketry: "buildMenu.rocketry",
+  buildMenuRadiation: "buildMenu.hep",
+
   // Edit
   editUndo: "edit.undo",
   editRedo: "edit.redo",
@@ -63,7 +83,14 @@ export type ShortcutActionId =
   (typeof ShortcutAction)[keyof typeof ShortcutAction];
 
 export type ShortcutCategoryId =
-  "camera" | "tools" | "build" | "edit" | "overlay" | "blueprint" | "interface";
+  | "camera"
+  | "tools"
+  | "build"
+  | "buildMenu"
+  | "edit"
+  | "overlay"
+  | "blueprint"
+  | "interface";
 
 export interface ShortcutActionDefinition {
   id: ShortcutActionId;
@@ -86,6 +113,7 @@ export const SHORTCUT_CATEGORIES: ShortcutCategoryDefinition[] = [
   { id: "camera", label: $localize`:keyboard shortcut category:Camera` },
   { id: "tools", label: $localize`:keyboard shortcut category:Tools` },
   { id: "build", label: $localize`:keyboard shortcut category:Build tool` },
+  { id: "buildMenu", label: $localize`:keyboard shortcut category:Build menu` },
   { id: "edit", label: $localize`:keyboard shortcut category:Edit` },
   { id: "overlay", label: $localize`:keyboard shortcut category:Overlays` },
   { id: "blueprint", label: $localize`:keyboard shortcut category:Blueprint` },
@@ -211,6 +239,97 @@ export const SHORTCUT_ACTIONS: ShortcutActionDefinition[] = [
   },
 
   {
+    // Game: Ctrl+F focuses the build menu's search. It takes over the
+    // browser's find while the editor has focus, which is fine: the canvas
+    // has no text to find. A text field still gets the browser's own.
+    id: ShortcutAction.buildMenuSearch,
+    category: "buildMenu",
+    label: $localize`:keyboard shortcut:Search all buildings`,
+    defaults: ["Ctrl+KeyF", "Meta+KeyF"],
+  },
+  // The categories, in the game's order, on the game's keys: the number row
+  // for the first ten, then -, =, Shift+-, Shift+= and Shift+Backspace. Here -
+  // and = are zoom, so Utilities and Automation ship unbound instead; the
+  // shifted three are free and keep the game's keys.
+  ...buildMenuCategoryShortcuts([
+    [
+      ShortcutAction.buildMenuBase,
+      $localize`:build menu category shortcut:Base`,
+      "Digit1",
+    ],
+    [
+      ShortcutAction.buildMenuOxygen,
+      $localize`:build menu category shortcut:Oxygen`,
+      "Digit2",
+    ],
+    [
+      ShortcutAction.buildMenuPower,
+      $localize`:build menu category shortcut:Power`,
+      "Digit3",
+    ],
+    [
+      ShortcutAction.buildMenuFood,
+      $localize`:build menu category shortcut:Food`,
+      "Digit4",
+    ],
+    [
+      ShortcutAction.buildMenuPlumbing,
+      $localize`:build menu category shortcut:Plumbing`,
+      "Digit5",
+    ],
+    [
+      ShortcutAction.buildMenuVentilation,
+      $localize`:build menu category shortcut:Ventilation`,
+      "Digit6",
+    ],
+    [
+      ShortcutAction.buildMenuRefinement,
+      $localize`:build menu category shortcut:Refinement`,
+      "Digit7",
+    ],
+    [
+      ShortcutAction.buildMenuMedicine,
+      $localize`:build menu category shortcut:Medicine`,
+      "Digit8",
+    ],
+    [
+      ShortcutAction.buildMenuFurniture,
+      $localize`:build menu category shortcut:Furniture`,
+      "Digit9",
+    ],
+    [
+      ShortcutAction.buildMenuStations,
+      $localize`:build menu category shortcut:Stations`,
+      "Digit0",
+    ],
+    [
+      ShortcutAction.buildMenuUtilities,
+      $localize`:build menu category shortcut:Utilities`,
+      null,
+    ],
+    [
+      ShortcutAction.buildMenuAutomation,
+      $localize`:build menu category shortcut:Automation`,
+      null,
+    ],
+    [
+      ShortcutAction.buildMenuShipping,
+      $localize`:build menu category shortcut:Shipping`,
+      "Shift+Minus",
+    ],
+    [
+      ShortcutAction.buildMenuRocketry,
+      $localize`:build menu category shortcut:Rocketry`,
+      "Shift+Equal",
+    ],
+    [
+      ShortcutAction.buildMenuRadiation,
+      $localize`:build menu category shortcut:Radiation`,
+      "Shift+Backspace",
+    ],
+  ]),
+
+  {
     id: ShortcutAction.editUndo,
     category: "edit",
     label: $localize`:keyboard shortcut:Undo`,
@@ -318,6 +437,17 @@ export const SHORTCUT_ACTIONS: ShortcutActionDefinition[] = [
   },
 ];
 
+function buildMenuCategoryShortcuts(
+  rows: [ShortcutActionId, string, string | null][],
+): ShortcutActionDefinition[] {
+  return rows.map(([id, label, chord]) => ({
+    id,
+    category: "buildMenu",
+    label,
+    defaults: chord == null ? [] : [chord],
+  }));
+}
+
 const ACTIONS_BY_ID = new Map<ShortcutActionId, ShortcutActionDefinition>(
   SHORTCUT_ACTIONS.map((action) => [action.id, action]),
 );
@@ -336,4 +466,16 @@ export function getShortcutActionsByCategory(
   category: ShortcutCategoryId,
 ): ShortcutActionDefinition[] {
   return SHORTCUT_ACTIONS.filter((action) => action.category == category);
+}
+
+// The action that opens a build menu category, by the category's name in the
+// database ("base", "hvac"). Undefined for a category the catalogue doesn't
+// know, which still shows in the menu, just without a key.
+export function buildMenuCategoryAction(
+  categoryName: string,
+): ShortcutActionId | undefined {
+  const id = `buildMenu.${categoryName.toLowerCase()}`;
+  return id != ShortcutAction.buildMenuSearch && isShortcutActionId(id)
+    ? id
+    : undefined;
 }

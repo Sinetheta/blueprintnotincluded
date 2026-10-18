@@ -3,6 +3,7 @@ import {
   SHORTCUT_ACTIONS,
   SHORTCUT_CATEGORIES,
   ShortcutAction,
+  buildMenuCategoryAction,
   getShortcutAction,
   getShortcutActionsByCategory,
   isShortcutActionId,
@@ -89,6 +90,90 @@ describe("shortcut action catalogue", () => {
       [ShortcutAction.toolDig, "KeyG"],
     ])("binds %s to the game's %s", (actionId, code) => {
       expect(getShortcutAction(actionId)?.defaults).toContain(code);
+    });
+  });
+
+  describe("build menu", () => {
+    // The database's categoryName values, in the database's (the game's) order.
+    const CATEGORIES = [
+      "base",
+      "oxygen",
+      "power",
+      "food",
+      "plumbing",
+      "hvac",
+      "refining",
+      "medical",
+      "furniture",
+      "equipment",
+      "utilities",
+      "automation",
+      "conveyance",
+      "rocketry",
+      "hep",
+    ];
+    const defaultsOf = (categoryName: string) =>
+      getShortcutAction(buildMenuCategoryAction(categoryName)!)!.defaults;
+
+    it("has an action for every category, in the build menu group", () => {
+      for (const name of CATEGORIES) {
+        const actionId = buildMenuCategoryAction(name);
+        expect(actionId, name).toBeDefined();
+        expect(getShortcutAction(actionId!)?.category).toBe("buildMenu");
+      }
+    });
+
+    it("finds a category's action whatever the case of its name", () => {
+      expect(buildMenuCategoryAction("HVAC")).toBe(
+        ShortcutAction.buildMenuVentilation,
+      );
+    });
+
+    it("has no action for a category it doesn't know, nor for search", () => {
+      expect(buildMenuCategoryAction("moddedcategory")).toBeUndefined();
+      expect(buildMenuCategoryAction("search")).toBeUndefined();
+    });
+
+    it("binds the first ten categories to the number row, as the game does", () => {
+      const numberRow = [
+        "Digit1",
+        "Digit2",
+        "Digit3",
+        "Digit4",
+        "Digit5",
+        "Digit6",
+        "Digit7",
+        "Digit8",
+        "Digit9",
+        "Digit0",
+      ];
+      expect(CATEGORIES.slice(0, 10).map(defaultsOf)).toEqual(
+        numberRow.map((code) => [code]),
+      );
+    });
+
+    // The game's - and = are this site's zoom keys.
+    it("ships the 11th and 12th categories unbound", () => {
+      expect(defaultsOf("utilities")).toEqual([]);
+      expect(defaultsOf("automation")).toEqual([]);
+      expect(
+        getShortcutAction(ShortcutAction.cameraZoomOut)?.defaults,
+      ).toContain("Minus");
+      expect(
+        getShortcutAction(ShortcutAction.cameraZoomIn)?.defaults,
+      ).toContain("Equal");
+    });
+
+    it("gives the last three the game's shifted keys", () => {
+      expect(defaultsOf("conveyance")).toEqual(["Shift+Minus"]);
+      expect(defaultsOf("rocketry")).toEqual(["Shift+Equal"]);
+      expect(defaultsOf("hep")).toEqual(["Shift+Backspace"]);
+    });
+
+    it("focuses the search on Ctrl+F, as the game does", () => {
+      expect(
+        getShortcutAction(ShortcutAction.buildMenuSearch)?.defaults,
+      ).toEqual(["Ctrl+KeyF", "Meta+KeyF"]);
     });
   });
 

@@ -1,0 +1,277 @@
+<ng-template #categoryButtons>
+  <button
+    type="button"
+    class="build-menu-category build-menu-paint"
+    [attr.aria-label]="paintElementLabel"
+    (click)="paintElement()"
+    (mouseenter)="showPaintTip($event.currentTarget)"
+    (mouseleave)="hideTip()"
+  >
+    <img src="assets/images/ui/manual/liquid_icon.png" alt="" />
+  </button>
+  <span class="build-menu-rule" aria-hidden="true"></span>
+  <button
+    *ngFor="let category of categories"
+    type="button"
+    class="build-menu-category"
+    [class.build-menu-category--active]="isActive(category)"
+    [attr.aria-pressed]="isActive(category)"
+    [attr.aria-label]="category.name"
+    (click)="toggleCategory(category)"
+    (mouseenter)="showCategoryTip(category, $event.currentTarget)"
+    (mouseleave)="hideTip()"
+  >
+    <img [src]="category.iconUrl" alt="" />
+  </button>
+</ng-template>
+
+<ng-template #panelHeader>
+  <header class="build-menu-header">
+    <h2 class="build-menu-title">{{ title }}</h2>
+    <div
+      class="build-menu-view-toggle"
+      role="group"
+      aria-label="View"
+      i18n-aria-label="build menu"
+    >
+      <button
+        type="button"
+        class="build-menu-icon-button"
+        [class.build-menu-icon-button--on]="viewMode === 'grid'"
+        [attr.aria-pressed]="viewMode === 'grid'"
+        aria-label="Grid view"
+        i18n-aria-label="build menu"
+        pTooltip="Toggle Grid View"
+        i18n-pTooltip="build menu"
+        tooltipPosition="top"
+        (click)="setViewMode('grid')"
+      >
+        <i class="pi pi-th-large" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="build-menu-icon-button"
+        [class.build-menu-icon-button--on]="viewMode === 'list'"
+        [attr.aria-pressed]="viewMode === 'list'"
+        aria-label="List view"
+        i18n-aria-label="build menu"
+        pTooltip="Toggle List View"
+        i18n-pTooltip="build menu"
+        tooltipPosition="top"
+        (click)="setViewMode('list')"
+      >
+        <i class="pi pi-list" aria-hidden="true"></i>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="build-menu-icon-button"
+      aria-label="Close the build menu"
+      i18n-aria-label="build menu"
+      (click)="menu.close()"
+    >
+      <i class="pi pi-times" aria-hidden="true"></i>
+    </button>
+  </header>
+</ng-template>
+
+<ng-template #searchBox>
+  <div class="build-menu-search">
+    <i class="pi pi-search build-menu-search-icon" aria-hidden="true"></i>
+    <input
+      #searchInput
+      class="build-menu-search-input"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      enterkeyhint="search"
+      placeholder="Search all buildings..."
+      i18n-placeholder="build menu"
+      aria-label="Search all buildings"
+      i18n-aria-label="build menu"
+      [(ngModel)]="query"
+      (keydown)="onSearchKeydown($event)"
+    />
+    <button
+      *ngIf="query"
+      type="button"
+      class="build-menu-icon-button build-menu-search-clear"
+      aria-label="Clear search"
+      i18n-aria-label="build menu"
+      (click)="clearQuery()"
+    >
+      <i class="pi pi-times" aria-hidden="true"></i>
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #entryIcon let-entry>
+  <span class="build-menu-entry-icon">
+    <img [src]="entry.item.iconUrl" alt="" />
+    <span
+      *ngIf="dlcLabels(entry).length"
+      class="build-dlc-badge"
+      i18n="DLC badge on a build-menu icon|buildTool.dlcBadge"
+      >DLC</span
+    >
+  </span>
+</ng-template>
+
+<ng-template #panelBody>
+  <div class="build-menu-body">
+    <ng-container *ngIf="menu.isSearching; else browse">
+      <ol
+        *ngIf="menu.results.length; else noResults"
+        class="build-menu-results"
+      >
+        <li
+          *ngFor="
+            let result of menu.results;
+            let index = index;
+            trackBy: trackResult
+          "
+        >
+          <button
+            type="button"
+            class="build-menu-entry build-menu-entry--row"
+            [class.build-menu-entry--highlight]="index === highlight"
+            [class.build-menu-entry--current]="isCurrent(result.entry)"
+            [attr.data-result-index]="index"
+            [attr.aria-label]="label(result.entry)"
+            (click)="choose(result.entry)"
+            (mouseenter)="
+              highlight = index;
+              showEntryTip(result.entry, $event.currentTarget)
+            "
+            (mouseleave)="hideTip()"
+          >
+            <ng-container
+              *ngTemplateOutlet="
+                entryIcon;
+                context: { $implicit: result.entry }
+              "
+            ></ng-container>
+            <span class="build-menu-entry-name">{{ result.entry.name }}</span>
+            <span class="build-menu-entry-category">{{
+              result.entry.categoryName
+            }}</span>
+          </button>
+        </li>
+      </ol>
+      <ng-template #noResults>
+        <p class="build-menu-empty" i18n="build menu">NO RESULTS FOUND</p>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #browse>
+      <section
+        *ngFor="let group of menu.openCategory?.groups; trackBy: trackGroup"
+        class="build-menu-group"
+      >
+        <h3 class="build-menu-group-title">{{ group.title }}</h3>
+        <ul
+          class="build-menu-items"
+          [class.build-menu-items--grid]="viewMode === 'grid'"
+        >
+          <li *ngFor="let entry of group.entries; trackBy: trackEntry">
+            <button
+              type="button"
+              class="build-menu-entry"
+              [class.build-menu-entry--tile]="viewMode === 'grid'"
+              [class.build-menu-entry--row]="viewMode === 'list'"
+              [class.build-menu-entry--current]="isCurrent(entry)"
+              [attr.aria-pressed]="isCurrent(entry)"
+              [attr.aria-label]="label(entry)"
+              (click)="choose(entry)"
+              (mouseenter)="showEntryTip(entry, $event.currentTarget)"
+              (mouseleave)="hideTip()"
+            >
+              <ng-container
+                *ngTemplateOutlet="entryIcon; context: { $implicit: entry }"
+              ></ng-container>
+              <span class="build-menu-entry-name">{{ entry.name }}</span>
+            </button>
+          </li>
+        </ul>
+      </section>
+    </ng-template>
+  </div>
+</ng-template>
+
+<ng-container *ngIf="!layout.compact; else compactLayout">
+  <nav
+    class="build-menu-column"
+    [style.--build-menu-slot]="layout.slot + 'px'"
+    aria-label="Build menu"
+    i18n-aria-label="build menu"
+  >
+    <ng-container *ngTemplateOutlet="categoryButtons"></ng-container>
+  </nav>
+  <section
+    #panel
+    *ngIf="isOpen"
+    class="build-menu-panel"
+    [style.left.px]="panelLeft"
+    [style.width.px]="panelWidth"
+    [style.max-height.px]="panelMaxHeight"
+    [attr.aria-label]="title"
+  >
+    <ng-container *ngTemplateOutlet="panelHeader"></ng-container>
+    <ng-container *ngTemplateOutlet="searchBox"></ng-container>
+    <ng-container *ngTemplateOutlet="panelBody"></ng-container>
+  </section>
+</ng-container>
+
+<!-- Small screens: one button bottom-left, and a sheet with the search on
+     top and the categories as a row. -->
+<ng-template #compactLayout>
+  <div class="build-menu-launcher">
+    <app-toolbar-button
+      [iconUrl]="categories[0]?.iconUrl ?? ''"
+      label="Build menu"
+      i18n-label="build menu"
+      [active]="isOpen"
+      (buttonClick)="toggleSheet()"
+    ></app-toolbar-button>
+  </div>
+  <section
+    #panel
+    *ngIf="isOpen"
+    class="build-menu-sheet"
+    [style.max-height.px]="sheetMaxHeight"
+    [attr.aria-label]="title"
+  >
+    <ng-container *ngTemplateOutlet="panelHeader"></ng-container>
+    <ng-container *ngTemplateOutlet="searchBox"></ng-container>
+    <nav
+      class="build-menu-row"
+      aria-label="Build menu categories"
+      i18n-aria-label="build menu"
+    >
+      <ng-container *ngTemplateOutlet="categoryButtons"></ng-container>
+    </nav>
+    <ng-container *ngTemplateOutlet="panelBody"></ng-container>
+  </section>
+</ng-template>
+
+<div
+  *ngIf="tip as current"
+  class="build-menu-tip"
+  role="tooltip"
+  [style.left.px]="current.left"
+  [style.top.px]="current.top"
+  [style.bottom.px]="current.bottom"
+>
+  <div class="build-menu-tip-title">
+    <span>{{ current.title }}</span>
+    <kbd *ngIf="current.hotkey" class="build-menu-tip-key">{{
+      current.hotkey
+    }}</kbd>
+  </div>
+  <p *ngFor="let line of current.lines" class="build-menu-tip-line">
+    {{ line }}
+  </p>
+  <div *ngIf="current.meta.length" class="build-menu-tip-meta">
+    <span *ngFor="let fact of current.meta">{{ fact }}</span>
+  </div>
+</div>

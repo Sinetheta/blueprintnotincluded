@@ -3,24 +3,9 @@ import { NO_ERRORS_SCHEMA } from "@angular/core";
 
 import { ToolService } from "src/app/module-blueprint/services/tool-service";
 import { ToolType } from "src/app/module-blueprint/common/tools/tool";
-import {
-  BlueprintHelpers,
-  BlueprintItemElement,
-  OniItem,
-} from "../../../../../../../lib/index";
+import { BlueprintHelpers } from "../../../../../../../lib/index";
+import { BuildMenuService } from "src/app/module-blueprint/services/build-menu.service";
 import { ComponentSideBuildToolComponent } from "./build-tool.component";
-
-// A lightweight stand-in for primeng's Popover with the methods the
-// component calls. QueryList is faked as an array-with-`last` + `forEach`.
-function makePanel() {
-  return { hide: vi.fn(), show: vi.fn(), toggle: vi.fn() };
-}
-function makePanelList(panels: any[]) {
-  return {
-    last: panels[panels.length - 1],
-    forEach: (cb: (p: any) => void) => panels.forEach(cb),
-  } as any;
-}
 
 describe("ComponentSideBuildToolComponent", () => {
   let component: ComponentSideBuildToolComponent;
@@ -28,6 +13,7 @@ describe("ComponentSideBuildToolComponent", () => {
 
   let buildTool: any;
   let toolService: any;
+  let buildMenu: any;
 
   beforeEach(async () => {
     buildTool = {
@@ -42,11 +28,15 @@ describe("ComponentSideBuildToolComponent", () => {
       buildTool,
       subscribeToolChanged: vi.fn(),
     };
+    buildMenu = { openForItem: vi.fn() };
 
     await TestBed.configureTestingModule({
       declarations: [ComponentSideBuildToolComponent],
       schemas: [NO_ERRORS_SCHEMA],
-      providers: [{ provide: ToolService, useValue: toolService }],
+      providers: [
+        { provide: ToolService, useValue: toolService },
+        { provide: BuildMenuService, useValue: buildMenu },
+      ],
     }).compileComponents();
   });
 
@@ -84,109 +74,11 @@ describe("ComponentSideBuildToolComponent", () => {
     });
   });
 
-  describe("showCategories", () => {
-    it("toggles the category panel and hides all non-last item panels", () => {
-      const a = makePanel();
-      const b = makePanel();
-      const last = makePanel();
-      component.categoryPanel = makePanel() as any;
-      component.itemPanels = makePanelList([a, b, last]);
-
-      const event = { evt: true };
-      component.showCategories(event);
-
-      expect(component.categoryPanel.toggle).toHaveBeenCalledWith(event);
-      expect(a.hide).toHaveBeenCalled();
-      expect(b.hide).toHaveBeenCalled();
-      expect(last.hide).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("paintElement", () => {
-    it("creates a Water element item, builds it, and hides the panel", () => {
-      // The lib database isn't loaded in unit tests; stub the lookup the
-      // BlueprintItem constructor performs.
-      vi.spyOn(OniItem, "getOniItem").mockReturnValue({} as any);
-      const setElement = vi
-        .spyOn(BlueprintItemElement.prototype, "setElement")
-        .mockImplementation(() => {});
-      component.categoryPanel = makePanel() as any;
-
-      component.paintElement();
-
-      expect(setElement).toHaveBeenCalledWith("Water", 0);
-      expect(buildTool.changeItem).toHaveBeenCalledWith(
-        expect.any(BlueprintItemElement),
-      );
-      expect(component.categoryPanel.hide).toHaveBeenCalled();
-    });
-  });
-
-  describe("chooseItem", () => {
-    it("hides every panel, records the item, and rebuilds it", () => {
-      const a = makePanel();
-      const b = makePanel();
-      component.itemPanels = makePanelList([a, b]);
-      const instance = { id: "Tile" } as any;
-      const spy = vi
-        .spyOn(BlueprintHelpers, "createInstance")
-        .mockReturnValue(instance);
-      const item = { id: "Tile" } as any;
-
-      component.chooseItem(item);
-
-      expect(a.hide).toHaveBeenCalled();
-      expect(b.hide).toHaveBeenCalled();
-      expect(component.currentItem).toBe(item);
-      expect(spy).toHaveBeenCalledWith("Tile");
-      expect(buildTool.changeItem).toHaveBeenCalledWith(instance);
-    });
-  });
-
-  describe("itemTooltip", () => {
-    it("returns the building name for a vanilla building", () => {
-      expect(component.itemTooltip({ name: "Tile" } as OniItem)).toBe("Tile");
-    });
-
-    it("identifies the source mod for a modded building", () => {
-      expect(
-        component.itemTooltip({
-          name: "Filtered Gas Pump",
-          mod: "1887986467",
-          modTitle: "Smart Pumps",
-        } as OniItem),
-      ).toBe("Filtered Gas Pump — from Smart Pumps (mod)");
-    });
-
-    it("names the required pack for a DLC building", () => {
-      expect(
-        component.itemTooltip({
-          name: "Rocket Platform",
-          dlcIds: ["EXPANSION1_ID"],
-        } as OniItem),
-      ).toBe("Rocket Platform — requires Spaced Out!");
-    });
-
-    it("lists every pack when a building needs more than one", () => {
-      expect(
-        component.itemTooltip({
-          name: "Bionic Rocket Thing",
-          dlcIds: ["EXPANSION1_ID", "DLC3_ID"],
-        } as OniItem),
-      ).toBe(
-        "Bionic Rocket Thing — requires Spaced Out!, The Bionic Booster Pack",
-      );
-    });
-
-    it("keeps the mod suffix ahead of the DLC suffix", () => {
-      expect(
-        component.itemTooltip({
-          name: "Thing",
-          mod: "1",
-          modTitle: "Mod",
-          dlcIds: ["DLC2_ID"],
-        } as OniItem),
-      ).toBe("Thing — from Mod (mod) — requires The Frosty Planet Pack");
+  describe("openBuildMenu", () => {
+    it("opens the build menu on the current building's category", () => {
+      component.currentItem = { id: "LiquidPump" } as any;
+      component.openBuildMenu();
+      expect(buildMenu.openForItem).toHaveBeenCalledWith("LiquidPump");
     });
   });
 
@@ -226,20 +118,12 @@ describe("ComponentSideBuildToolComponent", () => {
   });
 
   describe("toolChanged", () => {
-    it("only hides panels for non-build tools", () => {
+    it("leaves the brush alone for other tools", () => {
       const spy = vi.spyOn(BlueprintHelpers, "createInstance");
-      const a = makePanel();
-      component.itemPanels = makePanelList([a]);
 
       component.toolChanged(ToolType.select);
 
       expect(spy).not.toHaveBeenCalled();
-      expect(a.hide).toHaveBeenCalled();
-    });
-
-    it("tolerates missing item panels", () => {
-      component.itemPanels = null as any;
-      expect(() => component.toolChanged(ToolType.select)).not.toThrow();
     });
 
     // The "B resets an already-configured element brush to Vacuum" bug:
@@ -252,14 +136,11 @@ describe("ComponentSideBuildToolComponent", () => {
         isElement: true,
       };
       component.currentItem = { id: "Element" } as any;
-      const a = makePanel();
-      component.itemPanels = makePanelList([a]);
 
       component.toolChanged(ToolType.build);
 
       expect(spy).not.toHaveBeenCalled();
       expect(buildTool.changeItem).not.toHaveBeenCalled();
-      expect(a.hide).toHaveBeenCalled();
     });
 
     it("rebuilds when the build tool shows a different item than currentItem", () => {

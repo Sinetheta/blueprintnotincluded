@@ -1,0 +1,435 @@
+/* The build menu: a category column floating bottom-left over the canvas, the
+   flyout panel beside it, and on small screens one button and a sheet. Sample
+   Board tokens throughout (the host carries .bni-skin): the column is the
+   deep board, the panel a mount, the tooltip the one light tag. */
+
+:host {
+  display: contents;
+}
+
+/* ─── Column ─────────────────────────────────────────────────────────────── */
+
+.build-menu-column {
+  --build-menu-slot: 44px;
+  position: fixed;
+  left: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bni-board-deep);
+  border: 1px solid var(--bni-rule);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+.build-menu-category {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--build-menu-slot);
+  height: var(--build-menu-slot);
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.build-menu-category img {
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.build-menu-category:hover {
+  background: var(--bni-mount-hi);
+}
+
+.build-menu-category--active {
+  background: var(--bni-mark-tint);
+  box-shadow: inset 3px 0 0 var(--bni-mark);
+}
+
+.build-menu-category:focus-visible,
+.build-menu-icon-button:focus-visible,
+.build-menu-entry:focus-visible {
+  outline: 2px solid var(--bni-mark-hi);
+  outline-offset: -2px;
+}
+
+/* Paint Element is a brush, not a category: a hairline sets it apart. */
+.build-menu-rule {
+  flex: none;
+  height: 1px;
+  margin: 3px 2px;
+  background: var(--bni-rule-hi);
+}
+
+/* ─── Panel ──────────────────────────────────────────────────────────────── */
+
+.build-menu-panel {
+  position: fixed;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--bni-mount);
+  border: 1px solid var(--bni-rule);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.build-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px 4px 12px;
+}
+
+.build-menu-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--bni-ink);
+  font-family: var(--bni-display);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.045em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.build-menu-view-toggle {
+  display: flex;
+}
+
+.build-menu-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bni-muted);
+  cursor: pointer;
+}
+
+.build-menu-icon-button:hover {
+  background: var(--bni-mount-hi);
+  color: var(--bni-ink);
+}
+
+.build-menu-icon-button--on {
+  color: var(--bni-mark-hi);
+}
+
+.build-menu-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 4px 12px 8px;
+}
+
+.build-menu-search-icon {
+  position: absolute;
+  left: 9px;
+  color: var(--bni-faint);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.build-menu-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 30px 0 30px;
+  border: 1px solid var(--bni-rule);
+  background: var(--bni-inset);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  color: var(--bni-body);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.build-menu-search-input::placeholder {
+  color: var(--bni-faint);
+}
+
+.build-menu-search-input:hover {
+  border-color: var(--bni-rule-hi);
+}
+
+.build-menu-search-input:focus {
+  border-color: var(--bni-mark);
+  outline: none;
+}
+
+.build-menu-search-clear {
+  position: absolute;
+  right: 2px;
+}
+
+.build-menu-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 10px;
+}
+
+.build-menu-group + .build-menu-group {
+  margin-top: 8px;
+}
+
+.build-menu-group-title {
+  margin: 0 4px 4px;
+  padding: 4px 0 3px;
+  border-bottom: 1px solid var(--bni-rule);
+  color: var(--bni-muted);
+  font-family: var(--bni-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.build-menu-items,
+.build-menu-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.build-menu-items--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 2px;
+}
+
+/* ─── Buildings ──────────────────────────────────────────────────────────── */
+
+.build-menu-entry {
+  position: relative;
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--bni-body);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.build-menu-entry:hover,
+.build-menu-entry--highlight {
+  background: var(--bni-mount-hi);
+  color: var(--bni-ink);
+}
+
+.build-menu-entry--current {
+  border-color: var(--bni-mark);
+  background: var(--bni-mark-tint);
+  color: var(--bni-ink);
+}
+
+.build-menu-entry-icon {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.build-menu-entry-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.build-menu-entry--tile {
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 100%;
+  min-height: 86px;
+  padding: 6px 3px 5px;
+}
+
+.build-menu-entry--tile .build-menu-entry-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.build-menu-entry--tile .build-menu-entry-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.build-menu-entry--row {
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 2px 8px 2px 4px;
+}
+
+.build-menu-entry--row .build-menu-entry-icon {
+  width: 30px;
+  height: 30px;
+}
+
+.build-menu-entry--row .build-menu-entry-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.build-menu-entry-category {
+  flex: none;
+  color: var(--bni-faint);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.build-menu-empty {
+  margin: 18px 4px 10px;
+  color: var(--bni-muted);
+  font-family: var(--bni-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+/* DLC marker on a build-menu icon. A corner tag rather than a tint so the
+   sprite itself stays recognisable; the pack name is in the tooltip.
+   Base-game icons render nothing here. */
+.build-dlc-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  padding: 1px 3px;
+  border: 1px solid var(--bni-rule-hi);
+  border-radius: 2px;
+  background: var(--bni-chip);
+  color: var(--bni-ink);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ─── Tooltip ────────────────────────────────────────────────────────────── */
+
+.build-menu-tip {
+  position: fixed;
+  z-index: 700;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  background: var(--bni-tag);
+  color: var(--bni-tag-ink);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  font-size: 12.5px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.build-menu-tip-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.build-menu-tip-key {
+  flex: none;
+  padding: 0 4px;
+  border: 1px solid var(--bni-tag-ink-2);
+  border-radius: 2px;
+  color: var(--bni-tag-ink-2);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.build-menu-tip-line {
+  margin: 4px 0 0;
+  white-space: pre-line;
+}
+
+.build-menu-tip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 6px;
+  color: var(--bni-tag-ink-2);
+  font-size: 11.5px;
+}
+
+/* ─── Small screens ──────────────────────────────────────────────────────── */
+
+.build-menu-launcher {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+.build-menu-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 650;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--bni-mount);
+  border-top: 1px solid var(--bni-rule-hi);
+  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.5);
+}
+
+.build-menu-row {
+  --build-menu-slot: 40px;
+  display: flex;
+  flex: none;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 0 12px 6px;
+  scrollbar-width: none;
+}
+
+.build-menu-row .build-menu-rule {
+  width: 1px;
+  height: auto;
+  margin: 4px 3px;
+}
+
+.build-menu-row .build-menu-category--active {
+  box-shadow: inset 0 -3px 0 var(--bni-mark);
+}
