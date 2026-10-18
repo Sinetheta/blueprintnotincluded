@@ -328,14 +328,6 @@ describe('Blueprint metadata API', function () {
       expect(names).to.not.include('Power Blueprint');
     });
 
-    it('returns 400 for unknown category filter', async function () {
-      const response = await TestSetup.request()
-        .get('/api/getblueprints')
-        .query({ olderthan: Date.now(), category: 'notACategory' });
-
-      expect(response.status).to.equal(400);
-    });
-
     it('untagged blueprints are excluded when a category filter is active', async function () {
       // Seed an untagged blueprint
       await TestSetup.request()
@@ -388,6 +380,16 @@ describe('Blueprint metadata API', function () {
       expect(names).to.include('Explicitly Unmodded Blueprint');
       expect(names).to.not.include('Modded Blueprint');
       expect(names).to.not.include('Power Blueprint'); // modded left null, not false
+    });
+  });
+
+  describe('GET /api/getblueprints — facet filter validation', function () {
+    it('returns 400 for unknown category filter', async function () {
+      const response = await TestSetup.request()
+        .get('/api/getblueprints')
+        .query({ olderthan: Date.now(), category: 'notACategory' });
+
+      expect(response.status).to.equal(400);
     });
 
     it('returns 400 for an invalid modded value', async function () {

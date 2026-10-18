@@ -6,6 +6,7 @@ import { BlueprintSearchModel, mongoTextLang, SearchRowOrigin } from '../models/
 import { getSearchTermDictionary } from './search-term-dictionary';
 import { detectLanguageCode } from './language-detection-service';
 import { TranslationService } from './translation-service';
+import { runInBackground } from './background-tasks';
 import {
   isVietnameseTitleGateActive,
   VietnameseTitleTranslationService,
@@ -374,28 +375,34 @@ export function syncMachineTitle(
   userId: string | null,
   declaredLang?: string | null
 ): void {
-  deriveSearchRowWithTranslation(blueprint, userId, declaredLang)
-    .then(fields => {
-      if (fields.origin !== 'machine') return;
-      // sourceHash pins this write to the content the translation was
-      // actually computed for — a rapid re-save before this resolves changes
-      // the row's sourceHash, and this update should then no-op rather than
-      // clobber the newer save's title with a stale translation.
-      return BlueprintSearchModel.model.updateOne(
-        {
-          blueprintId: blueprint._id as mongoose.Types.ObjectId,
-          lang: fields.lang,
-          sourceHash: fields.sourceHash,
-        },
-        {
-          $set: { title: fields.title, titleOriginal: fields.titleOriginal, origin: fields.origin },
-        }
-      );
-    })
-    .catch(err => {
-      console.log('machine title sync error');
-      console.log(err);
-    });
+  runInBackground(
+    deriveSearchRowWithTranslation(blueprint, userId, declaredLang)
+      .then(fields => {
+        if (fields.origin !== 'machine') return;
+        // sourceHash pins this write to the content the translation was
+        // actually computed for — a rapid re-save before this resolves changes
+        // the row's sourceHash, and this update should then no-op rather than
+        // clobber the newer save's title with a stale translation.
+        return BlueprintSearchModel.model.updateOne(
+          {
+            blueprintId: blueprint._id as mongoose.Types.ObjectId,
+            lang: fields.lang,
+            sourceHash: fields.sourceHash,
+          },
+          {
+            $set: {
+              title: fields.title,
+              titleOriginal: fields.titleOriginal,
+              origin: fields.origin,
+            },
+          }
+        );
+      })
+      .catch(err => {
+        console.log('machine title sync error');
+        console.log(err);
+      })
+  );
 }
 
 // Cheap status/signal patch for write paths that don't touch content
@@ -417,10 +424,12 @@ export function syncSearchRowStatus(
     >
   >
 ): void {
-  BlueprintSearchModel.model.updateMany({ blueprintId }, { $set: patch }).catch(err => {
-    console.log('search index status sync error');
-    console.log(err);
-  });
+  runInBackground(
+    BlueprintSearchModel.model.updateMany({ blueprintId }, { $set: patch }).catch(err => {
+      console.log('search index status sync error');
+      console.log(err);
+    })
+  );
 }
 
 // Phase 5 (spec/multilingual-search-plan.md — lazy accretion): a reader who
@@ -550,8 +559,10 @@ export function syncTranslatedSearchRow(params: {
   translatedDescription: string;
   userId: string | null;
 }): void {
-  upsertTranslatedSearchRow(params).catch(err => {
-    console.log('lazy accretion search row sync error');
-    console.log(err);
-  });
+  runInBackground(
+    upsertTranslatedSearchRow(params).catch(err => {
+      console.log('lazy accretion search row sync error');
+      console.log(err);
+    })
+  );
 }

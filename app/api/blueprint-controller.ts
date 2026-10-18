@@ -47,6 +47,7 @@ import {
   syncCurrentVersion,
 } from './services/blueprint-version-service';
 import { PreviewImageService } from './services/preview-image-service';
+import { runInBackground } from './services/background-tasks';
 import { deriveRooms } from './services/room-derivation-service';
 import { deriveMods } from './services/mod-derivation-service';
 import { deriveDlcs } from './services/dlc-derivation-service';
@@ -1874,42 +1875,54 @@ export class BlueprintController {
 
     // Copy-as-fork bookkeeping — mirrors POST /api/blueprints/:id/fork
     if (blueprint.forkedFrom != null && forkSource != null) {
-      BlueprintModel.model
-        .findOneAndUpdate({ _id: forkSource.source._id }, { $inc: { forkCount: 1 } }, { new: true })
-        .select('forkCount')
-        .then(updated => {
-          // Mirror the new count onto the parent's search rows (ranking
-          // reads it denormalized; fire-and-forget like every search sync).
-          if (updated?.forkCount != null) {
-            syncSearchRowStatus(forkSource.source._id as mongoose.Types.ObjectId, {
-              forkCount: updated.forkCount,
-            });
-          }
-        })
-        .catch(err => {
-          console.log('fork count increment error');
+      runInBackground(
+        BlueprintModel.model
+          .findOneAndUpdate(
+            { _id: forkSource.source._id },
+            { $inc: { forkCount: 1 } },
+            { new: true }
+          )
+          .select('forkCount')
+          .then(updated => {
+            // Mirror the new count onto the parent's search rows (ranking
+            // reads it denormalized; fire-and-forget like every search sync).
+            if (updated?.forkCount != null) {
+              syncSearchRowStatus(forkSource.source._id as mongoose.Types.ObjectId, {
+                forkCount: updated.forkCount,
+              });
+            }
+          })
+          .catch(err => {
+            console.log('fork count increment error');
+            console.log(err);
+          })
+      );
+      runInBackground(
+        NotificationController.notify({
+          recipientId: forkSource.source.owner,
+          actorId: ownerId,
+          type: 'fork',
+          blueprintId: newBlueprint._id as mongoose.Types.ObjectId,
+        }).catch(err => {
+          console.log('fork notification error');
           console.log(err);
-        });
-      NotificationController.notify({
-        recipientId: forkSource.source.owner,
-        actorId: ownerId,
-        type: 'fork',
-        blueprintId: newBlueprint._id as mongoose.Types.ObjectId,
-      }).catch(err => {
-        console.log('fork notification error');
-        console.log(err);
-      });
+        })
+      );
     }
 
     // Render-on-write: warm the preview cache so the first browse view of
     // this save doesn't pay the render (preview-images-perf-2.md Phase 2).
     // The render data carries the rocket-interior choice beside the blueprint
     // data, as PreviewController.loadRenderData does for on-demand renders.
-    PreviewImageService.instance.prerender(newBlueprint.id, newBlueprint.modifiedAt, async () => ({
-      ...data,
-      rocketInterior: newBlueprint.rocketInterior ?? null,
-      rocketInteriorOrigin: newBlueprint.rocketInteriorOrigin ?? null,
-    }));
+    void PreviewImageService.instance.prerender(
+      newBlueprint.id,
+      newBlueprint.modifiedAt,
+      async () => ({
+        ...data,
+        rocketInterior: newBlueprint.rocketInterior ?? null,
+        rocketInteriorOrigin: newBlueprint.rocketInteriorOrigin ?? null,
+      })
+    );
 
     try {
       BatchUtils.UpdatePositionCorrection(newBlueprint);

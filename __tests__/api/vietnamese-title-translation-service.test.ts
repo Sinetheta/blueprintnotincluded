@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, it } from 'mocha';
+import { after, afterEach, before, beforeEach, describe, it } from 'mocha';
 import { expect } from 'chai';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -7,7 +7,6 @@ import mongoose from 'mongoose';
 dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 process.env.NODE_ENV = 'test';
 
-import { TestSetup } from '../setup/testSetup';
 import { TranslationUnitModel } from '../../app/api/models/translation-unit';
 import { TranslationBudgetModel } from '../../app/api/models/translation-budget';
 import {
@@ -43,11 +42,13 @@ class FakeVietnameseTitleProvider implements VietnameseTitleProvider {
   public status: VietnameseTitleResult['status'] = 'translated';
   public restoredVi = 'Điện phân';
   public english = 'Electrolysis';
-  public delayMs = 0;
+  // When set, the first call waits on it — a window in which a concurrent
+  // call can race it.
+  public holdFirstCall: Promise<void> | null = null;
 
   async translate(inputs: Array<{ id: string; text: string }>) {
     this.calls.push(inputs.map(input => input.text));
-    if (this.delayMs) await new Promise(resolve => setTimeout(resolve, this.delayMs));
+    if (this.calls.length === 1 && this.holdFirstCall) await this.holdFirstCall;
     return {
       results: inputs.map(input => ({
         id: input.id,
@@ -103,13 +104,45 @@ function r(restoredVi: string, english: string): Omit<VietnameseTitleResult, 'id
   return { status: 'translated', restoredVi, english, alternatives: [] };
 }
 
+// The error a promise rejects with. Throws if it resolves instead — outside
+// any catch, so that failure can never be mistaken for the rejection.
+async function rejectionOf(promise: Promise<unknown>): Promise<Error> {
+  try {
+    await promise;
+  } catch (error) {
+    return error as Error;
+  }
+  throw new Error('expected the promise to reject');
+}
+
+// Every GEMINI_* knob the specs below set, so afterEach can put back what
+// .env.test blanked rather than leave the keys unset.
+const GEMINI_ENV = [
+  'GEMINI_VI_TITLE_TRANSLATION_ENABLED',
+  'GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD',
+  'GEMINI_VI_TITLE_MAX_INPUT_TOKENS',
+  'GEMINI_VI_TITLE_MAX_OUTPUT_TOKENS',
+  'GEMINI_API_KEY',
+] as const;
+let savedGeminiEnv: Record<string, string | undefined> = {};
+
+function saveGeminiEnv() {
+  savedGeminiEnv = Object.fromEntries(GEMINI_ENV.map(key => [key, process.env[key]]));
+}
+
+function restoreGeminiEnv() {
+  for (const key of GEMINI_ENV) {
+    if (savedGeminiEnv[key] === undefined) delete process.env[key];
+    else process.env[key] = savedGeminiEnv[key];
+  }
+}
+
 describe('VietnameseTitleTranslationService', function () {
   let fake: FakeVietnameseTitleProvider;
   let service: VietnameseTitleTranslationService;
 
   beforeEach(async function () {
-    this.timeout(10000);
-    await TestSetup.beforeEach();
+    saveGeminiEnv();
     await TranslationUnitModel.model.deleteMany({});
     await TranslationBudgetModel.model.deleteMany({});
     process.env.GEMINI_VI_TITLE_TRANSLATION_ENABLED = 'true';
@@ -120,14 +153,9 @@ describe('VietnameseTitleTranslationService', function () {
   });
 
   afterEach(async function () {
-    delete process.env.GEMINI_VI_TITLE_TRANSLATION_ENABLED;
-    delete process.env.GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD;
-    delete process.env.GEMINI_VI_TITLE_MAX_INPUT_TOKENS;
-    delete process.env.GEMINI_VI_TITLE_MAX_OUTPUT_TOKENS;
-    delete process.env.GEMINI_API_KEY;
+    restoreGeminiEnv();
     await TranslationUnitModel.model.deleteMany({});
     await TranslationBudgetModel.model.deleteMany({});
-    await TestSetup.afterEach();
   });
 
   it('accepts exact mechanical restoration, stores provenance, and reuses its own cache', async function () {
@@ -208,12 +236,8 @@ describe('VietnameseTitleTranslationService', function () {
       },
     };
     const failingService = new VietnameseTitleTranslationService(failing);
-    try {
-      await failingService.translateOne('Dien phan', null);
-      expect.fail('expected provider failure');
-    } catch (error) {
-      expect((error as Error).message).to.equal('provider failed');
-    }
+    const error = await rejectionOf(failingService.translateOne('Dien phan', null));
+    expect(error.message).to.equal('provider failed');
     const row = await TranslationBudgetModel.model.findOne({ userId: null });
     expect(row!.geminiReservedMicroUsd).to.equal(4096);
     expect(row!.geminiObservedMicroUsd).to.equal(0);
@@ -221,11 +245,19 @@ describe('VietnameseTitleTranslationService', function () {
 
   it('atomically rejects concurrent reservations above the monthly cap', async function () {
     process.env.GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD = '4096';
-    fake.delayMs = 20;
-    const results = await Promise.allSettled([
+    // The first provider call stays open, so neither reservation has been
+    // settled when the other is made.
+    let release!: () => void;
+    fake.holdFirstCall = new Promise<void>(resolve => (release = resolve));
+    const attempts = [
       service.translateOne('Dien phan', null),
       service.translateOne('Dien phan 2', null),
-    ]);
+    ];
+    // Atomic: the over-cap reservation is refused while the winner is still
+    // held. Non-atomic: both reach the provider and the unheld one finishes.
+    await Promise.race(attempts.map(attempt => attempt.catch(() => undefined)));
+    release();
+    const results = await Promise.allSettled(attempts);
     expect(results.filter(result => result.status === 'fulfilled')).to.have.length(1);
     const rejected = results.find(result => result.status === 'rejected') as PromiseRejectedResult;
     expect(rejected.reason).to.be.instanceOf(TranslationBudgetExceeded);
@@ -252,15 +284,13 @@ describe('VietnameseTitleTranslationService', function () {
           body: { error: { message: `boom ${status}` } },
         }),
       };
-      try {
-        await new GeminiVietnameseTitleProvider(transport, 'k').translate([
+      const error = await rejectionOf(
+        new GeminiVietnameseTitleProvider(transport, 'k').translate([
           { id: 'a', text: 'Dien phan' },
-        ]);
-        expect.fail(`expected HTTP ${status} to throw`);
-      } catch (error) {
-        expect((error as { status?: number }).status).to.equal(status);
-        seen.push({ status, unrecoverable: isUnrecoverableProviderError(error) });
-      }
+        ])
+      );
+      expect((error as { status?: number }).status).to.equal(status);
+      seen.push({ status, unrecoverable: isUnrecoverableProviderError(error) });
     }
 
     expect(seen).to.deep.equal([
@@ -288,59 +318,6 @@ describe('VietnameseTitleTranslationService', function () {
     expect(isVietnameseTitleGateActive()).to.equal(false);
   });
 
-  // Regression: staging and production share ONE database, so every migration
-  // is run at least twice over the same data and the second run must be a
-  // no-op, not an error. The first failure was real — Mongoose's autoIndex had
-  // already built the widened key under its own generated name, and the
-  // migration insisted on a different one:
-  //   "Index already exists with a different name:
-  //    textHash_1_sourceLang_1_targetLang_1_mode_1"
-  it('converges whether autoIndex or the migration builds the key first', async function () {
-    // The name Mongo generates for the widened key — what the schema's
-    // unnamed index and the migration must both end up agreeing on.
-    const AUTO_INDEX_NAME = 'textHash_1_sourceLang_1_targetLang_1_mode_1';
-    const collection = mongoose.connection.db!.collection('translationunits');
-    const keyOf = async () =>
-      (await collection.indexes()).find(
-        index =>
-          JSON.stringify(index.key) ===
-          JSON.stringify({ textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 })
-      );
-
-    // Stand the collection up the way a running app does: autoIndex first.
-    await collection.dropIndexes();
-    await collection.createIndex(
-      { textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 },
-      { unique: true }
-    );
-
-    await translationUnitModeMigration.up(mongoose.connection.db);
-    expect((await keyOf())!.name).to.equal(AUTO_INDEX_NAME);
-
-    // A legacy hand-picked name for the same keys is adopted too, not
-    // duplicated — the state a partially-fixed database can be left in.
-    await collection.dropIndexes();
-    await collection.createIndex(
-      { textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 },
-      { unique: true, name: 'translation_unit_mode_key' }
-    );
-    await translationUnitModeMigration.up(mongoose.connection.db);
-    expect((await keyOf())!.name).to.equal(AUTO_INDEX_NAME);
-
-    // The second environment's deploy, over the same database.
-    await translationUnitModeMigration.up(mongoose.connection.db);
-    const settled = await keyOf();
-    expect(settled!.name).to.equal(AUTO_INDEX_NAME);
-    expect(settled!.unique).to.equal(true);
-
-    // And down/up must survive the same double-run.
-    await translationUnitModeMigration.down(mongoose.connection.db);
-    await translationUnitModeMigration.down(mongoose.connection.db);
-    expect(await keyOf()).to.equal(undefined);
-    await translationUnitModeMigration.up(mongoose.connection.db);
-    expect((await keyOf())!.name).to.equal(AUTO_INDEX_NAME);
-  });
-
   it('reproduces the reviewed A/B verdicts on the full experiment fixture', async function () {
     const script = new Map(AB_EXPERIMENT_ARM_B.map(([text, result]) => [text, result]));
     const scripted = new VietnameseTitleTranslationService(
@@ -363,12 +340,8 @@ describe('VietnameseTitleTranslationService', function () {
   });
 
   it('rejects non-ASCII input without constructing a call', async function () {
-    try {
-      await service.translateOne('Điện phân', null);
-      expect.fail('non-ASCII input must fail');
-    } catch (error) {
-      expect((error as Error).message).to.contain('non-empty ASCII');
-    }
+    const error = await rejectionOf(service.translateOne('Điện phân', null));
+    expect(error.message).to.contain('non-empty ASCII');
     expect(fake.calls).to.have.length(0);
   });
 
@@ -394,20 +367,88 @@ describe('VietnameseTitleTranslationService', function () {
   it('strips Vietnamese marks and d-with-stroke mechanically', function () {
     expect(normalizeRomanizedVietnamese('Điện phân nước ĐẦY')).to.equal('Dien phan nuoc DAY');
   });
+});
+
+// Run against a sibling scratch database, never the shared one: these drop and
+// rebuild the translationunits indexes, and a failure halfway must not leave
+// the rest of the suite on the legacy three-field unique key.
+describe('migration 20260805000000_translation-unit-modes', function () {
+  let scratch: mongoose.Connection;
+  let db: mongoose.mongo.Db;
+  let collection: mongoose.mongo.Collection;
+
+  before(function () {
+    // Still ends in _test, the suite's guard on what it may wipe.
+    scratch = mongoose.connection.useDb(
+      mongoose.connection.name.replace(/_test$/, '_migrations_test'),
+      { useCache: true }
+    );
+  });
+
+  beforeEach(async function () {
+    await scratch.dropDatabase();
+    db = scratch.db!;
+    // up() is a no-op without the collection, which a deployed app always has.
+    collection = await db.createCollection('translationunits');
+  });
+
+  after(async function () {
+    await scratch.dropDatabase();
+  });
+
+  // Regression: staging and production share ONE database, so every migration
+  // is run at least twice over the same data and the second run must be a
+  // no-op, not an error. The first failure was real — Mongoose's autoIndex had
+  // already built the widened key under its own generated name, and the
+  // migration insisted on a different one:
+  //   "Index already exists with a different name:
+  //    textHash_1_sourceLang_1_targetLang_1_mode_1"
+  it('converges whether autoIndex or the migration builds the key first', async function () {
+    // The name Mongo generates for the widened key — what the schema's
+    // unnamed index and the migration must both end up agreeing on.
+    const AUTO_INDEX_NAME = 'textHash_1_sourceLang_1_targetLang_1_mode_1';
+    const keyOf = async () =>
+      (await collection.indexes()).find(
+        index =>
+          JSON.stringify(index.key) ===
+          JSON.stringify({ textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 })
+      );
+
+    // Stand the collection up the way a running app does: autoIndex first.
+    await collection.dropIndexes();
+    await collection.createIndex(
+      { textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 },
+      { unique: true }
+    );
+
+    await translationUnitModeMigration.up(db);
+    expect((await keyOf())!.name).to.equal(AUTO_INDEX_NAME);
+
+    // A legacy hand-picked name for the same keys is adopted too, not
+    // duplicated — the state a partially-fixed database can be left in.
+    await collection.dropIndexes();
+    await collection.createIndex(
+      { textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 },
+      { unique: true, name: 'translation_unit_mode_key' }
+    );
+    await translationUnitModeMigration.up(db);
+    expect((await keyOf())!.name).to.equal(AUTO_INDEX_NAME);
+
+    // The second environment's deploy, over the same database.
+    await translationUnitModeMigration.up(db);
+    const settled = await keyOf();
+    expect(settled!.name).to.equal(AUTO_INDEX_NAME);
+    expect(settled!.unique).to.equal(true);
+
+    // And down/up must survive the same double-run.
+    await translationUnitModeMigration.down(db);
+    await translationUnitModeMigration.down(db);
+    expect(await keyOf()).to.equal(undefined);
+    await translationUnitModeMigration.up(db);
+    expect((await keyOf())!.name).to.equal(AUTO_INDEX_NAME);
+  });
 
   it('migrates legacy Google/human rows to standard mode and installs the mode-aware key', async function () {
-    const db = mongoose.connection.db!;
-    const collection = db.collection('translationunits');
-    const indexes = await collection.indexes();
-    for (const index of indexes) {
-      if (
-        JSON.stringify(index.key) ===
-        JSON.stringify({ textHash: 1, sourceLang: 1, targetLang: 1, mode: 1 })
-      ) {
-        await collection.dropIndex(index.name!);
-      }
-    }
-    await collection.updateMany({}, { $unset: { mode: '' } });
     await collection.createIndex(
       { textHash: 1, sourceLang: 1, targetLang: 1 },
       { unique: true, name: 'legacy_translation_key' }
@@ -542,28 +583,50 @@ describe('GeminiVietnameseTitleProvider', function () {
   });
 
   it('fails closed on missing usage, truncation, malformed JSON, and duplicate IDs', async function () {
-    const bodies: unknown[] = [
+    const one = [{ id: 'a', text: 'A' }];
+    const cases: Array<{ body: unknown; inputs: typeof one; error: RegExp }> = [
       {
-        candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"results":[]}' }] } }],
+        body: {
+          candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"results":[]}' }] } }],
+        },
+        inputs: one,
+        error: /omitted complete token usage/,
       },
-      { candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: '{}' }] } }] },
       {
-        candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'not-json' }] } }],
-        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+        body: {
+          candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: '{}' }] } }],
+        },
+        inputs: one,
+        error: /did not finish normally: MAX_TOKENS/,
       },
       {
-        candidates: [
-          {
-            finishReason: 'STOP',
-            content: {
-              parts: [{ text: JSON.stringify({ results: [badResult('a'), badResult('a')] }) }],
+        body: {
+          candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'not-json' }] } }],
+          usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+        },
+        inputs: one,
+        error: /not valid JSON/,
+      },
+      {
+        body: {
+          candidates: [
+            {
+              finishReason: 'STOP',
+              content: {
+                parts: [{ text: JSON.stringify({ results: [badResult('a'), badResult('a')] }) }],
+              },
             },
-          },
+          ],
+          usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+        },
+        inputs: [
+          { id: 'a', text: 'A' },
+          { id: 'b', text: 'B' },
         ],
-        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+        error: /duplicate/,
       },
     ];
-    for (const body of bodies) {
+    for (const { body, inputs, error } of cases) {
       const provider = new GeminiVietnameseTitleProvider(
         {
           async send() {
@@ -572,46 +635,43 @@ describe('GeminiVietnameseTitleProvider', function () {
         },
         'secret'
       );
-      try {
-        await provider.translate(
-          body === bodies[3]
-            ? [
-                { id: 'a', text: 'A' },
-                { id: 'b', text: 'B' },
-              ]
-            : [{ id: 'a', text: 'A' }]
-        );
-        expect.fail('malformed provider response should fail');
-      } catch (error) {
-        expect(error).to.be.instanceOf(Error);
-      }
+      expect((await rejectionOf(provider.translate(inputs))).message).to.match(error);
     }
   });
 
   it('fails closed on blocks, HTTP errors, excessive usage, and oversized requests', async function () {
-    const bodies: Array<{ status: number; body: unknown }> = [
-      { status: 200, body: { promptFeedback: { blockReason: 'SAFETY' } } },
-      { status: 429, body: { error: { message: 'quota denied' } } },
+    const cases: Array<{ response: { status: number; body: unknown }; error: RegExp }> = [
       {
-        status: 200,
-        body: {
-          candidates: [
-            {
-              finishReason: 'STOP',
-              content: {
-                parts: [{ text: JSON.stringify({ results: [badResult('a')] }) }],
+        response: { status: 200, body: { promptFeedback: { blockReason: 'SAFETY' } } },
+        error: /blocked: SAFETY/,
+      },
+      {
+        response: { status: 429, body: { error: { message: 'quota denied' } } },
+        error: /HTTP 429: quota denied/,
+      },
+      {
+        response: {
+          status: 200,
+          body: {
+            candidates: [
+              {
+                finishReason: 'STOP',
+                content: {
+                  parts: [{ text: JSON.stringify({ results: [badResult('a')] }) }],
+                },
               },
+            ],
+            usageMetadata: {
+              promptTokenCount: 4097,
+              candidatesTokenCount: 1,
+              totalTokenCount: 4098,
             },
-          ],
-          usageMetadata: {
-            promptTokenCount: 4097,
-            candidatesTokenCount: 1,
-            totalTokenCount: 4098,
           },
         },
+        error: /usage beyond a per-call cap/,
       },
     ];
-    for (const response of bodies) {
+    for (const { response, error } of cases) {
       const provider = new GeminiVietnameseTitleProvider(
         {
           async send() {
@@ -620,30 +680,26 @@ describe('GeminiVietnameseTitleProvider', function () {
         },
         'secret'
       );
-      try {
-        await provider.translate([{ id: 'a', text: 'A' }]);
-        expect.fail('unsafe provider response should fail');
-      } catch (error) {
-        expect(error).to.be.instanceOf(Error);
-      }
+      expect((await rejectionOf(provider.translate([{ id: 'a', text: 'A' }]))).message).to.match(
+        error
+      );
     }
 
+    saveGeminiEnv();
     process.env.GEMINI_VI_TITLE_MAX_INPUT_TOKENS = '1';
-    const provider = new GeminiVietnameseTitleProvider(
-      {
-        async send() {
-          throw new Error('must not send');
-        },
-      },
-      'secret'
-    );
     try {
-      await provider.translate([{ id: 'a', text: 'A' }]);
-      expect.fail('oversized request should fail');
-    } catch (error) {
-      expect((error as Error).message).to.contain('reserves');
+      const provider = new GeminiVietnameseTitleProvider(
+        {
+          async send() {
+            throw new Error('must not send');
+          },
+        },
+        'secret'
+      );
+      const oversized = await rejectionOf(provider.translate([{ id: 'a', text: 'A' }]));
+      expect(oversized.message).to.contain('reserves');
     } finally {
-      delete process.env.GEMINI_VI_TITLE_MAX_INPUT_TOKENS;
+      restoreGeminiEnv();
     }
   });
 
@@ -685,15 +741,11 @@ describe('GeminiVietnameseTitleProvider', function () {
       },
       'test-secret'
     );
-    try {
-      await provider.translate([{ id: 'a', text: 'Dien phan' }]);
-      expect.fail('transport failure should propagate safely');
-    } catch (error) {
-      const message = (error as Error).message;
-      expect(message).not.to.contain('test-secret');
-      expect(message).not.to.contain('Dien phan');
-      expect(message.length).to.be.at.most(300);
-    }
+    const { message } = await rejectionOf(provider.translate([{ id: 'a', text: 'Dien phan' }]));
+    expect(message).to.contain('[REDACTED]');
+    expect(message).not.to.contain('test-secret');
+    expect(message).not.to.contain('Dien phan');
+    expect(message.length).to.be.at.most(300);
   });
 });
 

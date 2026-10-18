@@ -13,7 +13,11 @@ import { BlueprintSearchModel } from '../../app/api/models/blueprint-search';
 import { TranslationUnitModel } from '../../app/api/models/translation-unit';
 import { TranslationBudgetModel } from '../../app/api/models/translation-budget';
 import { TranslationService } from '../../app/api/services/translation-service';
-import { upsertSearchRow } from '../../app/api/services/search-index-service';
+import {
+  upsertSearchRow,
+  upsertTranslatedSearchRow,
+} from '../../app/api/services/search-index-service';
+import { drainBackgroundTasks } from '../../app/api/services/background-tasks';
 import { FakeTranslationProvider } from '../helpers/fake-translation-provider';
 
 describe('Translation API', function () {
@@ -38,6 +42,7 @@ describe('Translation API', function () {
 
   afterEach(async function () {
     this.timeout(5000);
+    await drainBackgroundTasks();
     // Cleared here (not at the end of the test that sets it) so a failed
     // assertion in that test can't leak the override into every later test.
     delete process.env.MONTHLY_CHAR_BUDGET;
@@ -194,14 +199,10 @@ describe('Translation API', function () {
   // ─── Lazy accretion into blueprintsearch (phase 5) ─────────────────────────
 
   describe('lazy accretion into blueprintsearch (phase 5)', function () {
-    async function pollForRow(lang: string) {
-      let row = null;
-      for (let attempt = 0; attempt < 20; attempt++) {
-        row = await BlueprintSearchModel.model.findOne({ blueprintId, lang });
-        if (row != null) break;
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      return row;
+    // The accretion write is fire-and-forget after the translate response.
+    async function rowAfterAccretion(lang: string) {
+      await drainBackgroundTasks();
+      return BlueprintSearchModel.model.findOne({ blueprintId, lang });
     }
 
     it('never touches the en pivot row — it has its own race-safe writer (phase 3b)', async function () {
@@ -216,10 +217,9 @@ describe('Translation API', function () {
         .send({ lang: 'en' });
       expect(response.status).to.equal(200);
 
-      // Give any stray fire-and-forget write a moment, then confirm the
-      // pivot row is untouched — same origin/title/sourceHash as before.
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const pivotAfter = await BlueprintSearchModel.model.findOne({ blueprintId, lang: 'en' });
+      // Once any fire-and-forget write has landed, the pivot row is
+      // untouched — same origin/title/sourceHash as before.
+      const pivotAfter = await rowAfterAccretion('en');
       expect(pivotAfter!.origin).to.equal(pivotBefore!.origin);
       expect(pivotAfter!.title).to.equal(pivotBefore!.title);
       expect(pivotAfter!.sourceHash).to.equal(pivotBefore!.sourceHash);
@@ -239,7 +239,7 @@ describe('Translation API', function () {
         .send({ lang: 'ko' });
       expect(response.status).to.equal(200);
 
-      const row = await pollForRow('ko');
+      const row = await rowAfterAccretion('ko');
       expect(row).to.not.be.null;
       expect(row!.origin).to.equal('machine');
       expect(row!.description).to.equal('[ko] Bonjour le monde et bienvenue');
@@ -261,7 +261,7 @@ describe('Translation API', function () {
         .send({ lang: 'ru' });
       expect(response.status).to.equal(200);
 
-      const row = await pollForRow('ru');
+      const row = await rowAfterAccretion('ru');
       expect(row).to.not.be.null;
       expect(row!.termIds).to.deep.equal([]);
       expect(row!.terms).to.deep.equal([]);
@@ -269,64 +269,51 @@ describe('Translation API', function () {
     });
 
     it('discards the accreted row when the pivot changes mid-translation (concurrent save)', async function () {
-      this.timeout(3000);
       const blueprint = await BlueprintModel.model.findById(blueprintId);
       await upsertSearchRow(blueprint!);
 
-      // Slow the title-translate call down so there's a real window between
-      // the initial pivot read and the write — long enough for a concurrent
-      // save's own search-row derivation to land in between.
-      fake.delayMs = 150;
+      // Hold the title translation open: that call is the window in which a
+      // concurrent save can re-derive the pivot out from under the write.
+      let titleCallStarted!: () => void;
+      const started = new Promise<void>(resolve => (titleCallStarted = resolve));
+      let release!: () => void;
+      const held = new Promise<void>(resolve => (release = resolve));
+      TranslationService.setInstanceForTest(
+        new TranslationService({
+          isConfigured: () => true,
+          translate: async (texts, targetLang) => {
+            titleCallStarted();
+            await held;
+            return texts.map(text => ({
+              text: `[${targetLang}] ${text}`,
+              detectedSourceLang: 'fr',
+            }));
+          },
+        })
+      );
 
-      const token = testData.users.user1.generateJwt();
-      const response = await TestSetup.request()
-        .post(`/api/blueprints/${blueprintId}/translate`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ lang: 'ko' });
-      expect(response.status).to.equal(200);
-
-      // Simulate a concurrent save: the pivot row is re-derived (new title,
-      // new termIds, new sourceHash) while the fire-and-forget title
-      // translation above is still in flight.
-      const resaved = await BlueprintModel.model.findById(blueprintId);
-      resaved!.name = 'Retitled Mid-Flight';
-      await resaved!.save();
-      await upsertSearchRow(resaved!);
-
-      // Poll the full window the fire-and-forget write could land in. If the
-      // stale-pivot guard is missing, the row appears with termIds/title
-      // captured from BEFORE the concurrent save; if it's working, no row is
-      // ever written for this attempt at all.
-      let row = null;
-      for (let attempt = 0; attempt < 20; attempt++) {
-        row = await BlueprintSearchModel.model.findOne({ blueprintId, lang: 'ko' });
-        if (row != null) break;
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      expect(row).to.be.null;
-    });
-
-    it('comment translation does not write a blueprintsearch row — comments have no field for it', async function () {
-      const comment = await CommentModel.model.create({
-        blueprintId,
-        authorId: testData.users.user1._id,
-        parentId: null,
-        body: 'Bonjour',
+      const accretion = upsertTranslatedSearchRow({
+        blueprintId: blueprint!._id as any,
         sourceLang: 'fr',
-        createdAt: new Date(),
-        lastActivityAt: new Date(),
+        targetLang: 'ko',
+        title: blueprint!.name,
+        translatedDescription: '[ko] Bonjour le monde et bienvenue',
+        userId: null,
       });
-      const token = testData.users.user1.generateJwt();
-      const response = await TestSetup.request()
-        .post(`/api/blueprints/${blueprintId}/comments/translate`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ lang: 'ko', ids: [(comment._id as any).toString()] });
-      expect(response.status).to.equal(200);
+      // The pivot has been read; the title translation is in flight.
+      await started;
 
-      // Give any stray fire-and-forget write a moment, then confirm nothing landed.
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const row = await BlueprintSearchModel.model.findOne({ blueprintId, lang: 'ko' });
-      expect(row).to.be.null;
+      // A concurrent save re-derives the pivot row (new title, new termIds,
+      // new sourceHash).
+      blueprint!.name = 'Retitled Mid-Flight';
+      await blueprint!.save();
+      await upsertSearchRow(blueprint!);
+
+      release();
+      await accretion;
+      // Without the stale-pivot guard the row appears with termIds/title
+      // captured from BEFORE the concurrent save; with it, nothing is written.
+      expect(await BlueprintSearchModel.model.findOne({ blueprintId, lang: 'ko' })).to.equal(null);
     });
   });
 

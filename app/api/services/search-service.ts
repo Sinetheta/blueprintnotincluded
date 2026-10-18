@@ -185,21 +185,10 @@ async function translateQueryRemainder(
 }
 
 /**
- * Resolves a free-text search to a relevance-ordered blueprint id list.
- * Returns [] when nothing matches (callers turn that into an empty page via
- * an $in match on nothing).
- */
-export async function searchBlueprintIds(
-  query: string,
-  options?: SearchOptions
-): Promise<mongoose.Types.ObjectId[]> {
-  return (await searchBlueprints(query, options)).map(match => match.id);
-}
-
-/**
- * As `searchBlueprintIds`, but each match carries its cluster key and the
- * signals a collapse needs. Callers that collapse duplicates use this;
- * callers that only need a filter (facet counts) use the id list.
+ * Resolves a free-text search to its relevance-ordered matches. Returns []
+ * when nothing matches (callers turn that into an empty page via an $in
+ * match on nothing). Each match carries its cluster key and the signals a
+ * collapse needs; callers that only need a filter (facet counts) map to ids.
  */
 export async function searchBlueprints(
   query: string,
