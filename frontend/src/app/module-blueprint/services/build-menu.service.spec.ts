@@ -168,6 +168,28 @@ describe("BuildMenuService", () => {
       expect(pump.description).toContain("intake");
       expect(pump.categoryName).toBe("Plumbing");
     });
+
+    // getOniItem throws on an unknown id, as the real one does.
+    it("skips an entry whose building isn't in the database, and keeps the rest", () => {
+      vi.mocked(OniItem.getOniItem).mockImplementation((id: string) => {
+        const item = ITEMS.get(id);
+        if (item == null) throw new Error(`not found: ${id}`);
+        return item;
+      });
+      BuildMenuItem.buildMenuItems.splice(1, 0, {
+        category: BASE,
+        buildingId: "RemovedFromTheGame",
+        subcategory: "ladders",
+      } as BuildMenuItem);
+
+      service.load();
+
+      expect(
+        service.categories[0].groups.flatMap((g) =>
+          g.entries.map((e) => e.name),
+        ),
+      ).toEqual(["Ladder", "Fire Pole", "Tile", "Odd Thing"]);
+    });
   });
 
   describe("opening and closing", () => {
