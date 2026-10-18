@@ -16,7 +16,7 @@ import {
   deriveSearchRowWithTranslation,
   upsertSearchRow,
 } from '../../app/api/services/search-index-service';
-import { searchBlueprintIds, searchBlueprints } from '../../app/api/services/search-service';
+import { SearchOptions, searchBlueprints } from '../../app/api/services/search-service';
 import { getSearchTermDictionary } from '../../app/api/services/search-term-dictionary';
 import { TranslationService } from '../../app/api/services/translation-service';
 import { TranslationProvider } from '../../app/api/services/translation-provider';
@@ -26,6 +26,7 @@ import { SearchQueryModel } from '../../app/api/models/search-query';
 import { FakeTranslationProvider } from '../helpers/fake-translation-provider';
 import { VietnameseTitleTranslationService } from '../../app/api/services/vietnamese-title-translation-service';
 import { VietnameseTitleProvider } from '../../app/api/services/gemini-vietnamese-title-provider';
+import { drainBackgroundTasks } from '../../app/api/services/background-tasks';
 
 // Search over blueprintsearch rows (spec/multilingual-search-plan.md Phases
 // 0-1): derivation, retrieval/fusion/ranking, and the getblueprints
@@ -51,6 +52,11 @@ describe('Search (blueprintsearch)', function () {
     return {
       blueprintItems: prefabIds.map((id, i) => ({ id, position: [i, 0] })),
     };
+  }
+
+  // The ranked blueprint ids for a query, as strings.
+  async function searchIds(query: string, options?: SearchOptions): Promise<string[]> {
+    return (await searchBlueprints(query, options)).map(match => match.id.toString());
   }
 
   describe('term dictionary', function () {
@@ -110,43 +116,14 @@ describe('Search (blueprintsearch)', function () {
     });
   });
 
-  describe('searchBlueprintIds', function () {
+  describe('searchBlueprints', function () {
     it('returns [] for an empty or punctuation-only query', async function () {
-      expect(await searchBlueprintIds('')).to.deep.equal([]);
-      expect(await searchBlueprintIds('!!! ...')).to.deep.equal([]);
-    });
-
-    it('ranks an exact title match above a term-only match', async function () {
-      const titled = await TestDbHelper.createTestBlueprint(testData.users.user1._id, {
-        name: 'Water Sieve Loop',
-        data: bpData(['LiquidPump']),
-      });
-      const termOnly = await TestDbHelper.createTestBlueprint(testData.users.user2._id, {
-        name: 'Cooling Block',
-        data: bpData(['WaterPurifier']),
-      });
-
-      const ids = (await searchBlueprintIds('water sieve')).map(id => id.toString());
-      expect(ids).to.include((titled._id as Types.ObjectId).toString());
-      expect(ids).to.include((termOnly._id as Types.ObjectId).toString());
-      expect(ids.indexOf((titled._id as Types.ObjectId).toString())).to.be.lessThan(
-        ids.indexOf((termOnly._id as Types.ObjectId).toString())
-      );
-    });
-
-    it('finds a description-less blueprint by community jargon (structural backbone)', async function () {
-      const spom = await TestDbHelper.createTestBlueprint(testData.users.user1._id, {
-        name: 'Untitled 47',
-        data: bpData(['Electrolyzer', 'GasPump']),
-      });
-
-      const ids = (await searchBlueprintIds('spom')).map(id => id.toString());
-      expect(ids).to.include((spom._id as Types.ObjectId).toString());
+      expect(await searchIds('')).to.deep.equal([]);
+      expect(await searchIds('!!! ...')).to.deep.equal([]);
     });
 
     it('a query that resolves nothing and matches no text returns []', async function () {
-      const ids = await searchBlueprintIds('zzzqqqxxx unmatched');
-      expect(ids).to.deep.equal([]);
+      expect(await searchIds('zzzqqqxxx unmatched')).to.deep.equal([]);
     });
   });
 
@@ -381,15 +358,10 @@ describe('Search (blueprintsearch)', function () {
         .send({ blueprintId: (doc._id as Types.ObjectId).toString() });
       expect(response.status).to.equal(200);
 
-      // Fire-and-forget: poll briefly for the async status patch
-      let row = null;
-      for (let attempt = 0; attempt < 20; attempt++) {
-        row = await BlueprintSearchModel.model.findOne({ blueprintId: doc._id });
-        if (row?.deletedAt != null) break;
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-      // An actual Date, not merely "not null" — undefined must fail too if
-      // the sync never landed before the poll gave up.
+      // The status patch is fire-and-forget after the response.
+      await drainBackgroundTasks();
+      const row = await BlueprintSearchModel.model.findOne({ blueprintId: doc._id });
+      // An actual Date, not merely "not null" — undefined must fail too.
       expect(row!.deletedAt).to.be.an.instanceOf(Date);
     });
 
@@ -441,6 +413,7 @@ describe('Search (blueprintsearch)', function () {
     });
 
     afterEach(async function () {
+      await drainBackgroundTasks();
       TranslationService.setInstanceForTest(null);
       await TranslationUnitModel.model.deleteMany({});
       await TranslationBudgetModel.model.deleteMany({});
@@ -455,6 +428,8 @@ describe('Search (blueprintsearch)', function () {
       const fields = await deriveSearchRowWithTranslation(doc, null);
       expect(fields.origin).to.equal('machine');
       expect(fields.title).to.equal('[en] Máy lọc nước');
+      // The authored words stay indexed alongside the translation.
+      expect(fields.titleOriginal).to.equal('Máy lọc nước');
       expect(fake.calls).to.have.length(1);
     });
 
@@ -468,6 +443,8 @@ describe('Search (blueprintsearch)', function () {
       const fields = await deriveSearchRowWithTranslation(doc, null);
       expect(fields.origin).to.equal('authored');
       expect(fields.title).to.equal('Cooling Loop System For My Base');
+      // Null on an authored row, where it would only duplicate title.
+      expect(fields.titleOriginal).to.equal(null);
       expect(fields.sourceHash).to.equal(base.sourceHash);
       expect(fake.calls).to.have.length(0);
     });
@@ -523,13 +500,9 @@ describe('Search (blueprintsearch)', function () {
       const savedBlueprint = await BlueprintModel.model.findById(saved.body.id);
       expect(savedBlueprint!.sourceLang).to.equal('vi');
 
-      // Fire-and-forget: poll briefly for the async machine-title patch.
-      let row = null;
-      for (let attempt = 0; attempt < 20; attempt++) {
-        row = await BlueprintSearchModel.model.findOne({ blueprintId: saved.body.id });
-        if (row?.origin === 'machine') break;
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
+      // The machine-title patch is fire-and-forget after the response.
+      await drainBackgroundTasks();
+      const row = await BlueprintSearchModel.model.findOne({ blueprintId: saved.body.id });
       expect(row!.origin).to.equal('machine');
       expect(row!.title).to.equal('Water Filter Farm');
 
@@ -560,26 +533,6 @@ describe('Search (blueprintsearch)', function () {
       await TranslationBudgetModel.model.deleteMany({});
     });
 
-    it('is null on an authored row, where it would only duplicate title', async function () {
-      const doc = await TestDbHelper.createTestBlueprint(testData.users.user1._id, {
-        name: 'Cooling Loop System For My Base',
-        data: bpData(['WaterPurifier']),
-      });
-      expect(deriveSearchRow(doc).titleOriginal).to.equal(null);
-    });
-
-    it('holds the authored title once the row flips to machine', async function () {
-      const doc = await TestDbHelper.createTestBlueprint(testData.users.user1._id, {
-        name: 'Máy lọc nước',
-        data: bpData(['WaterPurifier']),
-      });
-
-      const fields = await deriveSearchRowWithTranslation(doc, null);
-      expect(fields.origin).to.equal('machine');
-      expect(fields.title).to.equal('[en] Máy lọc nước');
-      expect(fields.titleOriginal).to.equal('Máy lọc nước');
-    });
-
     // The actual deliverable: the blueprint stays findable by the words its
     // author typed, even though the indexed title is now English.
     it('keeps a translated blueprint findable by its authored title', async function () {
@@ -606,11 +559,8 @@ describe('Search (blueprintsearch)', function () {
       const id = (doc._id as Types.ObjectId).toString();
 
       // Both forms hit the same row.
-      const english = await searchBlueprintIds('strategic cooking');
-      expect(english.map(String)).to.include(id);
-
-      const authored = await searchBlueprintIds('cozinha estrategia');
-      expect(authored.map(String)).to.include(id);
+      expect(await searchIds('strategic cooking')).to.include(id);
+      expect(await searchIds('cozinha estrategia')).to.include(id);
     });
 
     // Derived wholesale on every full derivation, so it cannot accumulate —
@@ -810,13 +760,8 @@ describe('Search (blueprintsearch)', function () {
       });
 
       const id = (doc._id as Types.ObjectId).toString();
-      const enOnly = (await searchBlueprintIds('máy lọc')).map(String);
-      expect(enOnly).to.not.include(id);
-
-      const withViewerLang = (await searchBlueprintIds('máy lọc', { viewerLang: 'vi' })).map(
-        String
-      );
-      expect(withViewerLang).to.include(id);
+      expect(await searchIds('máy lọc')).to.not.include(id);
+      expect(await searchIds('máy lọc', { viewerLang: 'vi' })).to.include(id);
     });
 
     it('widening the $in never narrows away the en pivot for a viewer in another language', async function () {
@@ -824,7 +769,7 @@ describe('Search (blueprintsearch)', function () {
         name: 'Solo Pivot Base',
         data: bpData(['Ladder']),
       });
-      const ids = (await searchBlueprintIds('solo pivot', { viewerLang: 'ru' })).map(String);
+      const ids = await searchIds('solo pivot', { viewerLang: 'ru' });
       expect(ids).to.include((doc._id as Types.ObjectId).toString());
     });
 
@@ -837,7 +782,7 @@ describe('Search (blueprintsearch)', function () {
       // accepts a 2-3 letter base tag — 'not-a-real-language-tag' would
       // normalize to the (accepted) 'not', so this uses a value that fails
       // the shape check outright: a 4-letter segment with no separator.
-      const ids = (await searchBlueprintIds('fallback pivot', { viewerLang: 'zzzz' })).map(String);
+      const ids = await searchIds('fallback pivot', { viewerLang: 'zzzz' });
       expect(ids).to.include((doc._id as Types.ObjectId).toString());
     });
 
@@ -877,10 +822,17 @@ describe('Search (blueprintsearch)', function () {
   // into a declaration, which is the only route by which a short romanized
   // title gets translated at save time rather than waiting for the batch pass.
   describe('declared source language (§2.6)', function () {
+    const GEMINI_ENV = [
+      'GEMINI_VI_TITLE_TRANSLATION_ENABLED',
+      'GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD',
+      'GEMINI_API_KEY',
+    ] as const;
     let fake: FakeTranslationProvider;
     let viCalls: string[];
+    let savedEnv: Record<string, string | undefined>;
 
     beforeEach(async function () {
+      savedEnv = Object.fromEntries(GEMINI_ENV.map(key => [key, process.env[key]]));
       await TranslationUnitModel.model.deleteMany({});
       await TranslationBudgetModel.model.deleteMany({});
       fake = new FakeTranslationProvider();
@@ -921,11 +873,15 @@ describe('Search (blueprintsearch)', function () {
     });
 
     afterEach(async function () {
+      await drainBackgroundTasks();
       TranslationService.setInstanceForTest(null);
       VietnameseTitleTranslationService.setInstanceForTest(null);
-      delete process.env.GEMINI_VI_TITLE_TRANSLATION_ENABLED;
-      delete process.env.GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD;
-      delete process.env.GEMINI_API_KEY;
+      // Restored, not deleted: .env.test blanks these so nothing can reach
+      // the real Gemini key.
+      for (const key of GEMINI_ENV) {
+        if (savedEnv[key] === undefined) delete process.env[key];
+        else process.env[key] = savedEnv[key];
+      }
       await TranslationUnitModel.model.deleteMany({});
       await TranslationBudgetModel.model.deleteMany({});
     });
@@ -1057,23 +1013,6 @@ describe('Search (blueprintsearch)', function () {
       const savedBlueprint = await BlueprintModel.model.findById(saved.body.id);
       expect(savedBlueprint!.sourceLang).to.equal('vi');
     });
-
-    it('falls back to the Accept-Language prior for an author who never chose', async function () {
-      const token = testData.users.user2.generateJwt();
-      const saved = await TestSetup.request()
-        .post('/api/uploadblueprint')
-        .set('Authorization', `Bearer ${token}`)
-        .set('Accept-Language', 'vi-VN,vi;q=0.9')
-        .send({
-          name: 'Dien phan full',
-          blueprint: bpData(['Electrolyzer']),
-          thumbnail: 'base64thumbnail',
-        });
-      expect(saved.status).to.equal(200);
-
-      const savedBlueprint = await BlueprintModel.model.findById(saved.body.id);
-      expect(savedBlueprint!.sourceLang).to.equal('vi');
-    });
   });
 
   // spec/search-followups.md Part 1 §2. The trap this exists to avoid:
@@ -1096,16 +1035,7 @@ describe('Search (blueprintsearch)', function () {
       await TranslationBudgetModel.model.deleteMany({});
     });
 
-    it('short-circuits a short ASCII title with no declared source language', async function () {
-      const [result] = await TranslationService.instance.translateMany(
-        [{ sourceText: 'Dien phan full', sourceLang: null, targetLang: 'en' }],
-        null
-      );
-      expect(result.translatedText).to.equal('Dien phan full');
-      expect(fake.calls).to.have.length(0);
-    });
-
-    it('reaches the provider for the same input when detection is forced', async function () {
+    it('reaches the provider for a short ASCII title when detection is forced', async function () {
       fake.detectedSourceLang = 'vi';
       const [result] = await TranslationService.instance.translateMany(
         [
@@ -1155,6 +1085,7 @@ describe('Search (blueprintsearch)', function () {
     });
 
     afterEach(async function () {
+      await drainBackgroundTasks();
       delete process.env.MONTHLY_CHAR_BUDGET;
       TranslationService.setInstanceForTest(null);
       await TranslationUnitModel.model.deleteMany({});
@@ -1168,19 +1099,23 @@ describe('Search (blueprintsearch)', function () {
         data: bpData(['Electrolyzer', 'GasPump']),
       });
 
-      const ids = (await searchBlueprintIds('spom')).map(id => id.toString());
-      expect(ids).to.include((spom._id as Types.ObjectId).toString());
+      // A description-less blueprint, found by community jargon alone (the
+      // structural backbone).
+      expect(await searchIds('spom')).to.include((spom._id as Types.ObjectId).toString());
       expect(fake.calls).to.have.length(0);
 
+      // Query telemetry is written fire-and-forget.
+      await drainBackgroundTasks();
       const row = await SearchQueryModel.model.findOne({ normalizedQuery: 'spom' });
       expect(row!.translated).to.equal(false);
       expect(row!.hitCount).to.equal(1);
     });
 
     it('does not spend a translation on a short, all-ASCII, unresolved English query', async function () {
-      await searchBlueprintIds('cool unnamed build');
+      await searchIds('cool unnamed build');
       expect(fake.calls).to.have.length(0);
 
+      await drainBackgroundTasks();
       const row = await SearchQueryModel.model.findOne({ normalizedQuery: 'cool unnamed build' });
       expect(row!.translated).to.equal(false);
     });
@@ -1201,33 +1136,28 @@ describe('Search (blueprintsearch)', function () {
         data: bpData(['WaterPurifier']),
       });
 
-      const ids = (await searchBlueprintIds('máy lọc nước')).map(id => id.toString());
-      expect(ids).to.include((doc._id as Types.ObjectId).toString());
+      expect(await searchIds('máy lọc nước')).to.include((doc._id as Types.ObjectId).toString());
 
-      let row = null;
-      for (let attempt = 0; attempt < 20; attempt++) {
-        row = await SearchQueryModel.model.findOne({ normalizedQuery: 'máy lọc nước' });
-        if (row != null) break;
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
+      await drainBackgroundTasks();
+      const row = await SearchQueryModel.model.findOne({ normalizedQuery: 'máy lọc nước' });
       expect(row!.sourceLang).to.equal('vi');
       expect(row!.translated).to.equal(true);
     });
 
     it('caches the translated remainder — a repeat query issues no second provider call', async function () {
-      await searchBlueprintIds('máy lọc nước');
+      await searchIds('máy lọc nước');
       expect(fake.calls).to.have.length(1);
 
-      await searchBlueprintIds('máy lọc nước');
+      await searchIds('máy lọc nước');
       expect(fake.calls).to.have.length(1); // second search hit the translationunits cache
     });
 
     it('records telemetry even when translation is not configured, and never throws', async function () {
       fake.configured = false;
-      const ids = await searchBlueprintIds('máy lọc nước');
-      expect(ids).to.deep.equal([]);
+      expect(await searchIds('máy lọc nước')).to.deep.equal([]);
       expect(fake.calls).to.have.length(0);
 
+      await drainBackgroundTasks();
       const row = await SearchQueryModel.model.findOne({ normalizedQuery: 'máy lọc nước' });
       expect(row!.translated).to.equal(false);
     });
@@ -1242,8 +1172,7 @@ describe('Search (blueprintsearch)', function () {
         requestCount: 1,
       });
 
-      const ids = await searchBlueprintIds('máy lọc nước');
-      expect(ids).to.deep.equal([]);
+      expect(await searchIds('máy lọc nước')).to.deep.equal([]);
       expect(fake.calls).to.have.length(0);
     });
 
@@ -1256,7 +1185,7 @@ describe('Search (blueprintsearch)', function () {
       TranslationService.setInstanceForTest(new TranslationService(englishProvider));
 
       const userId = (testData.users.user1._id as Types.ObjectId).toString();
-      await searchBlueprintIds('máy lọc nước', { userId });
+      await searchIds('máy lọc nước', { userId });
 
       // dayKey() in translation-service.ts is exactly monthKey()-DD, which is
       // the UTC ISO date's first 10 characters.

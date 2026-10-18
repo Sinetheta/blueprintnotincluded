@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach } from 'mocha';
+import { describe, it, before, beforeEach, afterEach, after } from 'mocha';
 import { expect } from 'chai';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -12,6 +12,7 @@ import { TestSetup, TestDbHelper } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
 import { BlueprintVersionModel } from '../../app/api/models/blueprint-version';
 import { NotificationModel } from '../../app/api/models/notification';
+import { drainBackgroundTasks } from '../../app/api/services/background-tasks';
 
 const SAMPLE_BLUEPRINT_DATA = {
   version: '1.0',
@@ -133,23 +134,23 @@ describe('Fork + BlueprintVersion API', function () {
 
     it('lists versions newest first and excludes soft-deleted ones', async function () {
       const token = testData.users.user1.generateJwt();
-      await TestSetup.request()
-        .post(`/api/blueprints/${popularId}/versions`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ name: 'first' });
-      const second = await TestSetup.request()
-        .post(`/api/blueprints/${popularId}/versions`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ name: 'second' });
+      const ids: Record<string, string> = {};
+      for (const name of ['first', 'second', 'third']) {
+        const created = await TestSetup.request()
+          .post(`/api/blueprints/${popularId}/versions`)
+          .set('Authorization', `Bearer ${token}`)
+          .send({ name });
+        ids[name] = created.body.version.id;
+      }
 
       await TestSetup.request()
-        .delete(`/api/blueprints/${popularId}/versions/${second.body.version.id}`)
+        .delete(`/api/blueprints/${popularId}/versions/${ids.second}`)
         .set('Authorization', `Bearer ${token}`);
 
       const response = await TestSetup.request().get(`/api/blueprints/${popularId}/versions`);
       expect(response.status).to.equal(200);
       const names = response.body.versions.map((v: any) => v.name);
-      expect(names).to.deep.equal(['first']);
+      expect(names).to.deep.equal(['third', 'first']);
     });
   });
 
@@ -173,6 +174,12 @@ describe('Fork + BlueprintVersion API', function () {
         .post(`/api/blueprints/${new Types.ObjectId().toString()}/versions`)
         .set('Authorization', `Bearer ${token}`);
       expect(unknown.status).to.equal(404);
+
+      await BlueprintModel.model.updateOne({ _id: popularId }, { deletedAt: new Date() });
+      const deleted = await TestSetup.request()
+        .post(`/api/blueprints/${popularId}/versions`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(deleted.status).to.equal(404);
     });
 
     it('returns 400 for an over-long name', async function () {
@@ -359,36 +366,64 @@ describe('Fork + BlueprintVersion API', function () {
   });
 
   // ─── Migration 2a/2b idempotency ──────────────────────────────────────────────
+  //
+  // Run against a sibling scratch database seeded with copies of this test's
+  // blueprints, never the shared one: `down` drops a collection and an index,
+  // and a failure halfway must not leave the rest of the suite without them.
 
   describe('migration 20260707000000_blueprint-version-init', function () {
-    it('is idempotent and migrates isCopy/copyOf fork provenance', async function () {
-      const db = mongoose.connection.db!;
+    let scratch: mongoose.Connection;
+    let db: mongoose.mongo.Db;
 
-      const blueprintCount = await BlueprintModel.model.countDocuments({});
+    const blueprints = () => db.collection('blueprints');
+    const versions = () => db.collection('blueprintversions');
+    const findBlueprint = (id: string) => blueprints().findOne({ _id: new Types.ObjectId(id) });
+
+    before(function () {
+      // Still ends in _test, the suite's guard on what it may wipe.
+      scratch = mongoose.connection.useDb(
+        mongoose.connection.name.replace(/_test$/, '_migrations_test'),
+        { useCache: true }
+      );
+    });
+
+    beforeEach(async function () {
+      await scratch.dropDatabase();
+      db = scratch.db!;
+      const seeded = await mongoose.connection.db!.collection('blueprints').find().toArray();
+      await blueprints().insertMany(seeded);
+    });
+
+    after(async function () {
+      await scratch.dropDatabase();
+    });
+
+    it('is idempotent and migrates isCopy/copyOf fork provenance', async function () {
+      const blueprintCount = await blueprints().countDocuments({});
 
       await versionInitMigration.up(db);
-      const countAfterFirst = await BlueprintVersionModel.model.countDocuments({});
+      const countAfterFirst = await versions().countDocuments({});
       expect(countAfterFirst).to.equal(blueprintCount); // one per seeded blueprint
 
       await versionInitMigration.up(db);
-      const countAfterSecond = await BlueprintVersionModel.model.countDocuments({});
+      const countAfterSecond = await versions().countDocuments({});
       expect(countAfterSecond).to.equal(countAfterFirst);
 
-      const popular = await BlueprintModel.model.findById(popularId);
-      expect(popular!.currentVersionId).to.not.equal(null);
+      const popular = await findBlueprint(popularId);
+      expect(popular!.currentVersionId).to.exist;
 
-      const copiedId = testData.blueprints.copiedBlueprint._id.toString();
-      const copied = await BlueprintModel.model.findById(copiedId);
-      expect(copied!.forkedFrom).to.not.equal(null);
-      expect(copied!.forkedFrom!.blueprintId.toString()).to.equal(popularId);
-      expect(copied!.forkedFrom!.versionId.toString()).to.equal(popular!.currentVersionId!.toString());
+      const copied = await findBlueprint(testData.blueprints.copiedBlueprint._id.toString());
+      expect(copied!.forkedFrom).to.be.an('object');
+      expect(copied!.forkedFrom.blueprintId.toString()).to.equal(popularId);
+      expect(copied!.forkedFrom.versionId.toString()).to.equal(
+        popular!.currentVersionId.toString()
+      );
       expect(popular!.forkCount).to.equal(1);
     });
 
     it('reuses an orphaned version left by a crashed run instead of duplicating it', async function () {
-      const db = mongoose.connection.db!;
       // Simulate a run that inserted the version but crashed before linking currentVersionId.
-      const orphan = await db.collection('blueprintversions').insertOne({
+      const orphan = await versions().insertOne({
         blueprintId: new Types.ObjectId(popularId),
         name: null,
         data: testData.blueprints.popularBlueprint.data,
@@ -400,36 +435,34 @@ describe('Fork + BlueprintVersion API', function () {
 
       await versionInitMigration.up(db);
 
-      const versionCount = await BlueprintVersionModel.model.countDocuments({
+      const versionCount = await versions().countDocuments({
         blueprintId: new Types.ObjectId(popularId),
       });
       expect(versionCount).to.equal(1);
 
-      const popular = await BlueprintModel.model.findById(popularId);
-      expect(popular!.currentVersionId!.toString()).to.equal(orphan.insertedId.toString());
+      const popular = await findBlueprint(popularId);
+      expect(popular!.currentVersionId.toString()).to.equal(orphan.insertedId.toString());
     });
 
     it('backfills the parent forkCount exactly once across re-runs', async function () {
-      await versionInitMigration.up(mongoose.connection.db!);
-      await versionInitMigration.up(mongoose.connection.db!);
-      await versionInitMigration.up(mongoose.connection.db!);
+      await versionInitMigration.up(db);
+      await versionInitMigration.up(db);
+      await versionInitMigration.up(db);
 
-      const popular = await BlueprintModel.model.findById(popularId);
+      const popular = await findBlueprint(popularId);
       expect(popular!.forkCount).to.equal(1);
     });
 
     it('down removes currentVersionId/forkedFrom, drops the versions collection, and reverts forkCount', async function () {
-      const db = mongoose.connection.db!;
       await versionInitMigration.up(db);
       await versionInitMigration.down(db);
 
-      const popular = await db.collection('blueprints').findOne({ _id: new Types.ObjectId(popularId) });
+      const popular = await findBlueprint(popularId);
       expect(popular).to.not.have.property('currentVersionId');
       expect(popular).to.not.have.property('forkedFrom');
       expect(popular!.forkCount).to.equal(0);
 
-      const versionCount = await BlueprintVersionModel.model.countDocuments({});
-      expect(versionCount).to.equal(0);
+      expect(await versions().countDocuments({})).to.equal(0);
     });
   });
 
@@ -439,8 +472,8 @@ describe('Fork + BlueprintVersion API', function () {
 
   describe('copy-as-fork via POST /api/uploadblueprint', function () {
     // Fork bookkeeping (forkCount inc + notification) is fire-and-forget
-    // after res.json — give the writes a beat to land before asserting
-    const settle = () => new Promise(resolve => setTimeout(resolve, 50));
+    // after res.json — let the writes land before asserting
+    const settle = drainBackgroundTasks;
 
     function upload(token: string, body: Record<string, unknown>) {
       return TestSetup.request()

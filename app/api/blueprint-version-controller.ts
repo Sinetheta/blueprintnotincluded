@@ -119,7 +119,7 @@ export class BlueprintVersionController {
       await BlueprintModel.model.updateOne({ _id: source._id }, { $inc: { forkCount: 1 } });
 
       // Render-on-write: warm the fork's preview cache (Phase 2).
-      PreviewImageService.instance.prerender(forked.id, now, async () => ({
+      void PreviewImageService.instance.prerender(forked.id, now, async () => ({
         ...forkedVersion.data,
         rocketInterior: forked.rocketInterior ?? null,
         rocketInteriorOrigin: forked.rocketInteriorOrigin ?? null,
@@ -346,7 +346,7 @@ export class BlueprintVersionController {
       await blueprint.save();
 
       // Render-on-write: warm the preview cache with the restored data (Phase 2).
-      PreviewImageService.instance.prerender(blueprint.id, blueprint.modifiedAt, async () => ({
+      void PreviewImageService.instance.prerender(blueprint.id, blueprint.modifiedAt, async () => ({
         ...version.data,
         rocketInterior: blueprint.rocketInterior ?? null,
         rocketInteriorOrigin: blueprint.rocketInteriorOrigin ?? null,
