@@ -55,25 +55,33 @@ export class BatchUtils {
     }
   }
 
+  // Shifts building positions past the ±8000 bounds back by 9999, in place.
+  // Returns whether anything moved. Tolerates data with no blueprintItems.
+  static correctPositions(data: MdbBlueprint | null | undefined): boolean {
+    const items = data?.blueprintItems;
+    if (!Array.isArray(items)) return false;
+
+    let corrected = false;
+    for (let building of items) {
+      if (building.position != null && building.position.x > 8000) {
+        building.position.x = building.position.x - 9999;
+        corrected = true;
+      }
+
+      if (building.position != null && building.position.y < -8000) {
+        building.position.y = building.position.y + 9999;
+        corrected = true;
+      }
+    }
+    return corrected;
+  }
+
   static UpdatePositionCorrection(toCorrect: Blueprint) {
     console.log('Analysing blueprints : ' + toCorrect.name);
 
     let toCorrectData = toCorrect.data as MdbBlueprint;
 
-    let save = false;
-    for (let building of toCorrectData.blueprintItems) {
-      if (building.position != null && building.position.x > 8000) {
-        building.position.x = building.position.x - 9999;
-        save = true;
-      }
-
-      if (building.position != null && building.position.y < -8000) {
-        building.position.y = building.position.y + 9999;
-        save = true;
-      }
-    }
-
-    if (save) {
+    if (BatchUtils.correctPositions(toCorrectData)) {
       toCorrect.data = toCorrectData;
       toCorrect.markModified('data');
       toCorrect
