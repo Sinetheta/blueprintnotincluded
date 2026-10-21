@@ -1,10 +1,6 @@
 import { expect } from 'chai';
 import * as path from 'path';
-import {
-  ONE_DAY_SECONDS,
-  ONE_YEAR_SECONDS,
-  staticCacheControl,
-} from '../../app/static-controller';
+import { ONE_DAY_SECONDS, ONE_YEAR_SECONDS, staticCacheControl } from '../../app/static-controller';
 
 // The policy express.static applies to app/public (routes.ts). Everything not
 // matched here keeps express's default `max-age=0` + ETag revalidation.
@@ -38,7 +34,7 @@ describe('staticCacheControl', () => {
       'scripts.js',
       'favicon.ico',
       'site.webmanifest',
-      'assets/SPOM.yaml',
+      'assets/strings/strings.json',
     ])
       expect(staticCacheControl(pub(file)), file).to.equal(null);
   });
