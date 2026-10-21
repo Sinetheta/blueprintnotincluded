@@ -193,3 +193,43 @@ describe('CameraService.setOverlayForItem', function () {
     }
   });
 });
+
+describe('CameraService.isCellRectVisible', () => {
+  // A 1000x500 canvas at 50 px per cell shows 20 x 10 cells. cameraOffset is the
+  // world position of the canvas's top-left corner, negated on x: here cells
+  // x in [10, 30) and y in (90, 100] are on screen.
+  const makeCamera = () => {
+    const camera = new CameraService({ addChild() {} });
+    camera.currentZoom = 50;
+    camera.cameraOffset = new Vector2(-10, 100);
+    camera.viewportSize = new Vector2(1000, 500);
+    return camera;
+  };
+
+  it('is true for a cell inside the viewport and false well outside it', () => {
+    const camera = makeCamera();
+    expect(camera.isCellRectVisible(new Vector2(15, 95), new Vector2(15, 95), 0)).to.equal(true);
+    expect(camera.isCellRectVisible(new Vector2(50, 95), new Vector2(50, 95), 0)).to.equal(false);
+    expect(camera.isCellRectVisible(new Vector2(15, 50), new Vector2(15, 50), 0)).to.equal(false);
+  });
+
+  it('counts a rectangle that merely overlaps an edge, and honours the margin', () => {
+    const camera = makeCamera();
+    // Straddles the right edge.
+    expect(camera.isCellRectVisible(new Vector2(28, 95), new Vector2(33, 93), 0)).to.equal(true);
+    // Two cells past the right edge: culled with no margin, kept with 4.
+    expect(camera.isCellRectVisible(new Vector2(32, 95), new Vector2(32, 95), 0)).to.equal(false);
+    expect(camera.isCellRectVisible(new Vector2(32, 95), new Vector2(32, 95), 4)).to.equal(true);
+    // Just below the bottom edge, same story.
+    expect(camera.isCellRectVisible(new Vector2(15, 88), new Vector2(15, 88), 0)).to.equal(false);
+    expect(camera.isCellRectVisible(new Vector2(15, 88), new Vector2(15, 88), 4)).to.equal(true);
+  });
+
+  it('is always true for a camera with no viewport (server previews, exports)', () => {
+    const camera = makeCamera();
+    camera.viewportSize = null;
+    expect(camera.isCellRectVisible(new Vector2(9999, -9999), new Vector2(9999, -9999), 0)).to.equal(
+      true
+    );
+  });
+});

@@ -79,6 +79,12 @@ export class DrawPixi implements PixiUtil {
     //options.forceCanvas = true;
 
     PIXI.utils.skipHello();
+    // The flat icons are drawn at 16-128 px per cell from art at ~200 px per
+    // cell. Without mipmaps that minification samples a handful of texels and
+    // shimmers as the camera moves; PIXI only mipmaps power-of-two textures
+    // by default, which none of the icons are. ON generates them for every
+    // texture on WebGL2 (and leaves WebGL1, which cannot, alone).
+    PIXI.settings.MIPMAP_TEXTURES = PIXI.MIPMAP_MODES.ON;
     this.pixiApp = new PIXI.Application(options);
     this.backGraphics = new PIXI.Graphics();
     this.backGraphics.zIndex = -100;
@@ -113,14 +119,18 @@ export class DrawPixi implements PixiUtil {
 
     //console.log('drawAll');
     if (this.pixiApp != null) {
-      //if (this.pixiApp.renderer.width != this.parent.canvasRef.nativeElement.width ||
-      //this.pixiApp.renderer.height != this.parent.canvasRef.nativeElement.height)
-      this.pixiApp.renderer.resize(
-        this.parent.canvasRef.nativeElement.width,
-        this.parent.canvasRef.nativeElement.height,
-      );
-      //console.log('resize');
-      //return;
+      const canvas: HTMLCanvasElement = this.parent.canvasRef.nativeElement;
+      const renderer = this.pixiApp.renderer;
+      // resize() reassigns the view's width and height, which resets its
+      // drawing buffer, so only do it when the canvas really changed size.
+      // Compare with `screen`, the size the renderer last projected for:
+      // renderer.width reads the view itself, which the canvas component has
+      // already set, so that comparison would never resize at all.
+      if (
+        renderer.screen.width != canvas.width ||
+        renderer.screen.height != canvas.height
+      )
+        renderer.resize(canvas.width, canvas.height);
     }
 
     this.parent.drawAll();

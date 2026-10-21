@@ -1446,13 +1446,21 @@ export class ComponentCanvasComponent
 
     //this.canvasRef.nativeElement.height = this.divCalcHeight.nativeElement.offsetHeight - 7;
 
-    if (this.forceSize) {
-      this.canvasRef.nativeElement.width = this.forcedSize.x;
-      this.canvasRef.nativeElement.height = this.forcedSize.y;
-    } else {
-      this.canvasRef.nativeElement.width = window.innerWidth;
-      this.canvasRef.nativeElement.height = window.innerHeight;
-    }
+    // Assigning a canvas's width or height resets its drawing buffer even
+    // when the value is unchanged, so only touch them on a real resize.
+    const canvas: HTMLCanvasElement = this.canvasRef.nativeElement;
+    const targetWidth = this.forceSize ? this.forcedSize.x : window.innerWidth;
+    const targetHeight = this.forceSize
+      ? this.forcedSize.y
+      : window.innerHeight;
+    if (canvas.width != targetWidth) canvas.width = targetWidth;
+    if (canvas.height != targetHeight) canvas.height = targetHeight;
+    if (
+      this.cameraService.viewportSize == null ||
+      this.cameraService.viewportSize.x != targetWidth ||
+      this.cameraService.viewportSize.y != targetHeight
+    )
+      this.cameraService.viewportSize = new Vector2(targetWidth, targetHeight);
 
     this.cameraService.updateZoom();
 

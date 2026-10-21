@@ -880,7 +880,24 @@ export class BlueprintItem {
     // Overlay stuff
     this.container.zIndex = this.depth;
     this.container.alpha = this.alpha;
+
+    // Off-screen items keep their container (position, tint, selection state
+    // all stay current above) but are left out of the render pass. PIXI
+    // otherwise batches every sprite of every item each frame, which is what
+    // makes a large blueprint slow to pan at the zoom levels where only a
+    // fraction of it fits the canvas. `renderable` rather than `visible`,
+    // which setDrawnVisible owns. The margin covers art that overhangs its
+    // footprint: a uiImageRect icon, a connection sprite's cap, a rotated
+    // multi-cell building.
+    this.container.renderable = camera.isCellRectVisible(
+      this.topLeft,
+      this.bottomRight,
+      BlueprintItem.offscreenMarginCells
+    );
   }
+
+  // Cells of slack around an item's footprint before it is culled.
+  static offscreenMarginCells = 4;
 
   private drawPixiUtility(camera: CameraService, pixiUtil: PixiUtil) {
     if (this.utilitySprites == null) this.utilitySprites = [];
