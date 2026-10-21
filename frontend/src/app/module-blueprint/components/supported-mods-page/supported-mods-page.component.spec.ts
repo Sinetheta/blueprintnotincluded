@@ -42,7 +42,7 @@ describe("SupportedModsPageComponent", () => {
     );
     expect(icons.length).toBe(2);
     expect(icons[0].properties["src"]).toBe(
-      "assets/ui_image/FilteredGasPump.png",
+      "assets/ui_thumb/FilteredGasPump.webp",
     );
   });
 });

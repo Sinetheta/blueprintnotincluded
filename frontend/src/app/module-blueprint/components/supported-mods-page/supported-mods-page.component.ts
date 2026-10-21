@@ -1,5 +1,6 @@
 import { Component, OnInit } from "@angular/core";
 import { ModIndexEntry, ModsService } from "../../services/mods-service";
+import { StringHelpers } from "../../../../../../lib/index";
 
 @Component({
   selector: "app-supported-mods-page",
@@ -14,5 +15,9 @@ export class SupportedModsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.modsService.getMods().subscribe((mods) => (this.mods = mods));
+  }
+
+  thumbUrl(building: string): string {
+    return StringHelpers.iconThumbUrl(building);
   }
 }

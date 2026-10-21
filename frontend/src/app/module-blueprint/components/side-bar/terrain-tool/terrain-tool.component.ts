@@ -1,5 +1,5 @@
 import { Component } from "@angular/core";
-import { terrainIconUrl, TerrainFeature } from "../../../../../../../lib/index";
+import { TerrainFeature } from "../../../../../../../lib/index";
 import { TerrainTool } from "../../../common/tools/terrain-tool";
 import { TerrainAnnotationService } from "../../../services/terrain-annotation.service";
 
@@ -25,10 +25,6 @@ export class TerrainToolComponent {
 
   get features(): TerrainFeature[] {
     return TerrainFeature.features;
-  }
-
-  iconUrl(id: string): string {
-    return terrainIconUrl({ id, x: 0, y: 0 });
   }
 
   footprintLabel(feature: TerrainFeature): string {

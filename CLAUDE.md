@@ -93,6 +93,14 @@ run the single repeatable step:
   the build menu resolves element/building/category ids against), and print a validation
   report. Exits non-zero if the import is incomplete (missing icons, incomplete connection
   dirs, `po_string.json` absent, etc.).
+- The import also renders `frontend/src/assets/ui_thumb/<name>.webp` (longest side 128 px)
+  for every PNG in the frontend's `ui_image/` (`app/api/batch/icon-thumbnails.ts`). Every
+  `<img>` that shows a building, element or terrain icon binds `thumbUrl`, not `iconUrl`:
+  the build menu once showed the canvas art, 75 KB a file on average, at 48 px. The canvas
+  (`ImageSource` / `flatIconId`) and the server preview still draw from `ui_image/`.
+  `npm run icons:thumbs` regenerates the thumbnails alone; a test fails when the two sets
+  disagree. Committed, like `ui_image/` — not a build step, so the frontend build needs no
+  image library.
 - `npm run import:2024:dry-run` - Validate + report counts only; writes/copies nothing.
 - The committed runtime DB artifact is the loose `database-2024.json` (readable diffs).
   The `database-2024.zip` (both roots) is a **gitignored** build derivative: the backend

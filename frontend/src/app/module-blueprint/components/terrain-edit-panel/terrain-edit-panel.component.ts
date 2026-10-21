@@ -3,7 +3,7 @@ import {
   activeTileOf,
   BniTerrainFeature,
   terrainDisplayName,
-  terrainIconUrl,
+  terrainThumbUrl,
   TerrainFeature,
 } from "../../../../../../lib/index";
 import {
@@ -61,7 +61,7 @@ export class TerrainEditPanelComponent {
   get iconUrl(): string {
     const feature = this.feature;
     return feature != null
-      ? terrainIconUrl({ id: feature.id, x: 0, y: 0 })
+      ? terrainThumbUrl({ id: feature.id, x: 0, y: 0 })
       : "";
   }
 

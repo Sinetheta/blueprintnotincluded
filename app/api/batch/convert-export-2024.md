@@ -522,6 +522,16 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
   `frontend/src/assets/images/` at import) — they no longer slice the legacy atlas pages.
 - **Loaders**: backend reads `database-2024.json` directly; frontend fetches
   `database-2024.zip` (regenerated from the committed JSON by its `prebuild`/`prestart`).
+- **Menu thumbnails**: `icon-thumbnails.ts` renders `frontend/src/assets/ui_thumb/<name>.webp`
+  (≤128 px a side) for every frontend `ui_image/*.png`, after the sync, content-aware and
+  pruned like the sprites. `OniItem.thumbUrl`, `BuildableElement.thumbUrl` and
+  `TerrainFeature.thumbUrl` (`StringHelpers.iconThumbUrl`) point at them, and every `<img>`
+  of an icon binds those; `iconUrl` stays the full art for the canvas and the preview worker.
+- **Canvas textures**: the editor enables PIXI mipmaps (`MIPMAP_MODES.ON`, WebGL2) since the
+  icons are drawn at 16–128 px per cell from ~200 px-per-cell art, and skips the render
+  pass for items whose cell rectangle (plus a 4-cell margin for overhanging art) is outside
+  `CameraService.viewportSize` (`BlueprintItem.drawPixi` → `container.renderable`). A camera
+  with no viewport — the preview worker, export cameras — culls nothing.
 - **DLC data**: each building record now includes `dlcIds: string[]` (e.g. `['EXPANSION1_ID']`
   for Spaced Out buildings). The converter (`import:2024`) populates this from the raw export's
   `kPrefabID.requiredDlcIds`. Used by `BlueprintAnalyzer` to derive metadata.

@@ -54,6 +54,7 @@ export * from './src/drawing/dig-markers';
 
 export * from './src/blueprint/blueprint';
 export * from './src/blueprint/blueprint-helpers';
+export * from './src/string-helpers';
 export * from './src/blueprint/blueprint-metadata';
 export * from './src/blueprint/blueprint-name';
 export * from './src/blueprint/content-locale';
