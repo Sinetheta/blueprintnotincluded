@@ -88,11 +88,14 @@ export async function syncIconThumbnails(
 export const FRONTEND_UI_IMAGE_DIR = path.join(__dirname, '../../../frontend/src/assets/ui_image');
 export const FRONTEND_UI_THUMB_DIR = path.join(__dirname, '../../../frontend/src/assets/ui_thumb');
 
-export async function syncSiteIconThumbnails(): Promise<ThumbnailStats> {
-  const stats = await syncIconThumbnails(FRONTEND_UI_IMAGE_DIR, FRONTEND_UI_THUMB_DIR);
+export async function syncSiteIconThumbnails(
+  srcDir: string = FRONTEND_UI_IMAGE_DIR,
+  destDir: string = FRONTEND_UI_THUMB_DIR
+): Promise<ThumbnailStats> {
+  const stats = await syncIconThumbnails(srcDir, destDir);
   console.log(
     '--- synced ui_thumb ->',
-    path.normalize(FRONTEND_UI_THUMB_DIR),
+    path.normalize(destDir),
     `(written ${stats.written}, unchanged ${stats.unchanged}, removed ${stats.removed}) ---`
   );
   return stats;

@@ -241,3 +241,40 @@ describe('BlueprintItem off-screen culling', function () {
     expect(item.container.renderable).to.equal(true);
   });
 });
+
+describe('BlueprintItem off-screen culling of port markers', function () {
+  const anything: any = new Proxy(function () {}, {
+    get: (_t, p) => (p === 'then' ? undefined : anything),
+    apply: () => anything,
+    set: () => true,
+  });
+  const pixiUtil: any = {
+    getNewContainer: () => ({ scale: {}, renderable: true, addChild() {} }),
+    getNewBaseTexture: () => anything,
+    getNewTextureWhole: () => anything,
+    getNewTexture: () => anything,
+    getNewRectangle: () => anything,
+    getSpriteFrom: () => anything,
+  };
+
+  it('hides and restores the markers with the item', function () {
+    loadGameDatabase();
+    const camera = new CameraService({ addChild() {} });
+    camera.currentZoom = 50;
+    camera.cameraOffset = new Vector2(-10, 100);
+    camera.viewportSize = new Vector2(1000, 500);
+    const item = new BlueprintItem('Tile');
+    item.cleanUp();
+    item.position = new Vector2(200, 95);
+    item.prepareBoundingBox();
+    const marker: any = { renderable: true, texture: { baseTexture: { valid: true } } };
+    item.utilitySprites = [marker, null];
+
+    item.drawPixi(camera, pixiUtil);
+    expect(marker.renderable).to.equal(false);
+
+    camera.cameraOffset = new Vector2(-190, 100);
+    item.drawPixi(camera, pixiUtil);
+    expect(marker.renderable).to.equal(true);
+  });
+});

@@ -19,6 +19,5 @@ reviews:
     - "!frontend/src/assets/strings/**"
     - "!**/*.png"
     - "!**/*.webp"
-    - "!**/package-lock.json"
     - "!lib/**/*.d.ts"
     - "!lib/**/*.d.ts.map"
