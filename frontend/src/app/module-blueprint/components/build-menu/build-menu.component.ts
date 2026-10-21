@@ -115,7 +115,12 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     return this.menu.viewMode;
   }
 
-  // Bottom-left, beside the column: as tall as its content, never past the nav.
+  // Column and panel both hang from just under the nav.
+  get top(): number {
+    return this.menu.navBottom + NAV_GAP;
+  }
+
+  // Beside the column: as tall as its content, never past the bottom edge.
   get panelMaxHeight(): number {
     return Math.max(
       120,

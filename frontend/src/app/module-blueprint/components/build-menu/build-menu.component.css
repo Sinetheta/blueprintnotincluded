@@ -1,5 +1,7 @@
-/* The build menu: a category column floating bottom-left over the canvas, the
-   flyout panel beside it, and on small screens one button and a sheet. Sample
+/* The build menu: a category column floating top-left over the canvas, the
+   flyout panel beside it, both hung from the nav (the component sets their
+   top) so a panel that shrinks — a narrowing search — keeps its search box
+   still and gives the canvas back from below, and on small screens one button and a sheet. Sample
    Board tokens throughout (the host carries .bni-skin): the column is the
    deep board, the panel a mount, the tooltip the one light tag. */
 
@@ -13,7 +15,6 @@
   --build-menu-slot: 44px;
   position: fixed;
   left: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -73,7 +74,6 @@
 
 .build-menu-panel {
   position: fixed;
-  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 20;
   display: flex;
   flex-direction: column;

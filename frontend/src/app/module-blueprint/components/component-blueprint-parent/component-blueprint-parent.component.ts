@@ -127,8 +127,8 @@ export class ComponentBlueprintParentComponent
   importStringDialog!: DialogImportStringComponent;
 
   // The left ui panel is not static, because when in a iframe we don't load it
-  @ViewChild("sidePanelLeft", { static: false })
-  sidePanelLeft!: ElementRef;
+  @ViewChild("sidePanel", { static: false })
+  sidePanel!: ElementRef;
 
   @ViewChild("selectionTool", { static: false })
   selectionTool!: ComponentSideSelectionToolComponent;
@@ -253,7 +253,7 @@ export class ComponentBlueprintParentComponent
   resizeTools() {
     if (!this.forceSize) {
       const sidePanelPosition: number =
-        this.sidePanelLeft.nativeElement.getBoundingClientRect().y;
+        this.sidePanel.nativeElement.getBoundingClientRect().y;
       this.selectionTool.setMaxHeight(sidePanelPosition);
       this.buildMenuService.navBottom = sidePanelPosition;
     }

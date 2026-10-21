@@ -18,11 +18,13 @@ export class ComponentSideSelectionToolComponent {
     private renderer: Renderer2,
   ) {}
 
+  // The card sits top-right, above the tool toolbar in the bottom-right
+  // corner (52px buttons, 16px from the edge): it stops short of it.
   setMaxHeight(position: number) {
     this.renderer.setStyle(
       this.selectToolCard.nativeElement,
       "max-height",
-      "calc(100vh - " + position + "px - 20px)",
+      "calc(100vh - " + position + "px - 96px)",
     );
   }
 
