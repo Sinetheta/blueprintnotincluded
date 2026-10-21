@@ -894,6 +894,11 @@ export class BlueprintItem {
       this.bottomRight,
       BlueprintItem.offscreenMarginCells
     );
+    // The port markers sit on the camera's container, not this one, so the
+    // flag has to reach each of them directly — and be restored the same way.
+    if (this.utilitySprites != null)
+      for (const sprite of this.utilitySprites)
+        if (sprite != null) sprite.renderable = this.container.renderable;
   }
 
   // Cells of slack around an item's footprint before it is culled.

@@ -1410,7 +1410,10 @@ export async function convertExport2024(opts: ConvertOptions): Promise<void> {
   );
   // The <img>-sized renditions of the frontend's ui_image set, kept in step
   // with it (icon-thumbnails.ts).
-  await syncSiteIconThumbnails();
+  await syncSiteIconThumbnails(
+    path.join(assetDir, '../../frontend/src/assets/ui_image'),
+    path.join(assetDir, '../../frontend/src/assets/ui_thumb')
+  );
   syncAssetDir(
     connectionDir,
     [
