@@ -43,7 +43,10 @@ jobs:
 
     services:
       mongodb:
-        image: mongo:8.0.23
+        # 8.2, not 8.0.x: the GitHub runner image of 2026-10-18 moved to a kernel
+        # >= 6.19, on which MongoDB 8.0 refuses to start (SERVER-121912). The dev
+        # container has the same escape hatch in MONGO_TAG.
+        image: mongo:8.2
         ports:
           - 27017:27017
         options: >-
