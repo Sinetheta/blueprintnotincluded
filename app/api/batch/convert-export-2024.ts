@@ -356,6 +356,18 @@ interface MirrorStats {
   removed: number;
 }
 
+// A PNG sharp cannot decode is copied as-is rather than failing the import: the
+// file still renders (canvas decoded it for the perceptual compare, or it is new),
+// and the report names it so the export can be looked at.
+async function optimizeOrKeep(bytes: Buffer, srcPath: string): Promise<Buffer> {
+  try {
+    return await optimizePng(bytes);
+  } catch (err) {
+    console.log(`--- kept ${path.basename(srcPath)} unoptimised: ${(err as Error).message} ---`);
+    return bytes;
+  }
+}
+
 // Mirror src -> dest content-aware (fs.cpSync is unavailable in the backend's
 // @types/node): write a file only when missing or its pixels differ, and delete
 // anything in dest no longer present in src. Unchanged files keep their mtime, so
@@ -398,7 +410,7 @@ async function mirrorDir(
         case 'changed': {
           const bytes = fs.readFileSync(srcPath);
           const isPng = entry.name.toLowerCase().endsWith('.png');
-          fs.writeFileSync(destPath, isPng ? await optimizePng(bytes) : bytes);
+          fs.writeFileSync(destPath, isPng ? await optimizeOrKeep(bytes, srcPath) : bytes);
           stats.copied++;
           break;
         }
