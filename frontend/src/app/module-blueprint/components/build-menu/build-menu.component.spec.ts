@@ -162,10 +162,13 @@ describe("BuildMenuComponent", () => {
     });
 
     it("shows a category's name and hotkey on hover", () => {
+      vi.useFakeTimers();
       component.showCategoryTip(
         service.categories[1],
         el().querySelectorAll(".build-menu-category")[2],
       );
+      vi.advanceTimersByTime(400);
+      vi.useRealTimers();
       fixture.detectChanges();
       expect(
         el().querySelector(".build-menu-tip-title")?.textContent,
@@ -173,6 +176,27 @@ describe("BuildMenuComponent", () => {
       expect(
         el().querySelector(".build-menu-tip-key")?.textContent?.trim(),
       ).toBe("5");
+    });
+
+    // A pointer crossing the column shouldn't flash a tip per button; once
+    // one is up, the next one is instant.
+    it("waits before the first tip, then shows the next at once", () => {
+      vi.useFakeTimers();
+      const buttons = el().querySelectorAll(".build-menu-category");
+      component.showCategoryTip(service.categories[0], buttons[1]);
+      vi.advanceTimersByTime(399);
+      expect(component.tip).toBeNull();
+      vi.advanceTimersByTime(1);
+      expect(component.tip?.title).toBe("Base");
+      component.hideTip();
+      component.showCategoryTip(service.categories[1], buttons[2]);
+      expect(component.tip?.title).toBe("Plumbing");
+      // Left alone, the column cools down again.
+      component.hideTip();
+      vi.advanceTimersByTime(300);
+      component.showCategoryTip(service.categories[0], buttons[1]);
+      expect(component.tip).toBeNull();
+      vi.useRealTimers();
     });
   });
 
@@ -228,7 +252,11 @@ describe("BuildMenuComponent", () => {
 
     it("drops a building's tooltip when the menu closes under it", () => {
       const entry = service.categories[0].groups[0].entries[0];
-      component.showEntryTip(entry, el().querySelector(".build-menu-entry"));
+      component.showEntryTip(
+        entry,
+        el().querySelector(".build-menu-entry"),
+        true,
+      );
       fixture.detectChanges();
       expect(el().querySelector(".build-menu-tip")).not.toBeNull();
       // Escape with focus on the canvas: the service closes the menu and the

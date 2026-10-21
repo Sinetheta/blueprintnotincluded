@@ -67,8 +67,7 @@ describe("TabInkDirective", () => {
       fixture.detectChanges();
       await settle();
 
-      expect(ink.style.width).toBe("50px");
-      expect(ink.style.transform).toBe("translate(60px, 18px)");
+      expect(ink.style.transform).toBe("translate(60px, 18px) scaleX(50)");
       expect(ink.classList.contains("bni-tab-ink--ready")).toBe(true);
     });
 
@@ -99,7 +98,7 @@ describe("TabInkDirective", () => {
       await settle();
 
       expect(ink.classList.contains("bni-tab-ink--ready")).toBe(false);
-      expect(ink.style.width).toBe("");
+      expect(ink.style.transform).toBe("");
     });
   });
 });

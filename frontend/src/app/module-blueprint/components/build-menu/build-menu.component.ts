@@ -27,6 +27,11 @@ import { BuildMenuLayout, EDGE_GAP, NAV_GAP } from "./build-menu-layout";
 const PANEL_WIDTH = 344;
 const PANEL_GAP = 6;
 const TIP_WIDTH = 280;
+// The first tooltip waits, so a pointer crossing the column on its way to
+// the canvas doesn't flash one per button; once one is up, the next shows at
+// once, and stays instant for a moment after the pointer leaves.
+const TIP_DELAY_MS = 400;
+const TIP_WARM_MS = 300;
 
 interface BuildMenuTip {
   title: string;
@@ -61,6 +66,8 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
   // which is how such an event is told apart from the pointer moving.
   private pointerAtKeyMove: { x: number; y: number } | null = null;
   private lastPointer: { x: number; y: number } | null = null;
+  private tipTimer: ReturnType<typeof setTimeout> | null = null;
+  private tipWarmUntil = 0;
 
   readonly isApple =
     typeof navigator != "undefined" &&
@@ -83,13 +90,14 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.menu.focusSearchRequests.subscribe(() => this.focusSearchBox()),
       this.menu.dismissed.subscribe(() => {
-        this.tip = null;
+        this.hideTip();
         this.highlight = 0;
       }),
     );
   }
 
   ngOnDestroy() {
+    this.cancelPendingTip();
     for (const unregister of this.unregisters) unregister();
     this.unregisters = [];
     for (const subscription of this.subscriptions) subscription.unsubscribe();
@@ -148,7 +156,7 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
   // A resize moves whatever the tooltip was beside.
   @HostListener("window:resize")
   onResize() {
-    this.tip = null;
+    this.hideTip();
   }
 
   // ─── Categories ────────────────────────────────────────────────────────
@@ -158,7 +166,7 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
   }
 
   toggleCategory(category: BuildMenuCategoryView) {
-    this.tip = null;
+    this.hideTip();
     this.menu.toggleCategory(category.id);
     this.highlight = 0;
   }
@@ -217,7 +225,7 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
   set query(query: string) {
     this.menu.query = query;
     this.highlight = 0;
-    this.tip = null;
+    this.hideTip();
     this.pointerAtKeyMove = null;
   }
 
@@ -286,7 +294,7 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
       if (row == null) return;
       row.scrollIntoView?.({ block: "nearest" });
       const result = this.menu.results[index];
-      if (result != null) this.showEntryTip(result.entry, row);
+      if (result != null) this.showEntryTip(result.entry, row, true);
     });
   }
 
@@ -319,7 +327,12 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     });
   }
 
-  showEntryTip(entry: BuildMenuItemEntry, target: EventTarget | null) {
+  // Immediate for the arrow keys: the tip is what the highlight says.
+  showEntryTip(
+    entry: BuildMenuItemEntry,
+    target: EventTarget | null,
+    immediate = false,
+  ) {
     const item = entry.item;
     const meta = [
       `${item.size.x}×${item.size.y}`,
@@ -333,11 +346,19 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
         meta,
       },
       true,
+      immediate,
     );
   }
 
   hideTip() {
+    this.cancelPendingTip();
+    if (this.tip != null) this.tipWarmUntil = Date.now() + TIP_WARM_MS;
     this.tip = null;
+  }
+
+  private cancelPendingTip() {
+    if (this.tipTimer != null) clearTimeout(this.tipTimer);
+    this.tipTimer = null;
   }
 
   // Beside what it describes: right of the column for a category, right of
@@ -347,7 +368,9 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
     target: EventTarget | null,
     content: Omit<BuildMenuTip, "left" | "top" | "bottom">,
     besidePanel = false,
+    immediate = false,
   ) {
+    this.cancelPendingTip();
     const element = target as HTMLElement | null;
     if (this.layout.compact || element?.getBoundingClientRect == null) return;
     const rect = element.getBoundingClientRect();
@@ -359,12 +382,20 @@ export class BuildMenuComponent implements OnInit, OnDestroy {
       Math.min(right + PANEL_GAP, window.innerWidth - TIP_WIDTH - EDGE_GAP),
     );
     const lowHalf = rect.top > window.innerHeight * 0.55;
-    this.tip = {
+    const tip: BuildMenuTip = {
       ...content,
       left,
       top: lowHalf ? undefined : Math.max(this.menu.navBottom, rect.top),
       bottom: lowHalf ? window.innerHeight - rect.bottom : undefined,
     };
+    if (immediate || this.tip != null || Date.now() < this.tipWarmUntil) {
+      this.tip = tip;
+      return;
+    }
+    this.tipTimer = setTimeout(() => {
+      this.tipTimer = null;
+      this.tip = tip;
+    }, TIP_DELAY_MS);
   }
 
   // ─── Shortcuts ─────────────────────────────────────────────────────────

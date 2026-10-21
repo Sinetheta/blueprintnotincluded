@@ -25,7 +25,7 @@
     </div>
   </div>
 
-  <p-popover #elementPanel [appendTo]="'body'">
+  <p-popover #elementPanel [appendTo]="'body'" appOverlayMotion>
     <app-cell-element-picker
       [forceTag]="forceTag"
       (selectElementCell)="chooseElement($event)"

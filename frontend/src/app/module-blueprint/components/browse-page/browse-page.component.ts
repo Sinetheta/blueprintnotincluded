@@ -170,6 +170,13 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
     })).sort((a, b) => a.label.localeCompare(b.label)),
   ];
 
+  // Cards stagger in by position within each page of 12, 25ms apart, and the
+  // stagger stops growing after the first row or so: past ~150ms it stops
+  // reading as one arrival and starts reading as waiting.
+  enterDelay(index: number): string {
+    return `${Math.min(index % 12, 6) * 25}ms`;
+  }
+
   get subcategoryOptions(): { label: string; value: string | null }[] {
     if (!this.filterCategory) return [];
     const subs =

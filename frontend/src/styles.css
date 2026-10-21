@@ -25,9 +25,9 @@ body {
   border: 1px solid var(--p-content-hover-background);
   box-sizing: border-box;
   display: inline-block;
-  transition:
-    background-color 0.2s,
-    box-shadow 0.2s;
+  /* Background only: the box-shadow is the focus ring, which shows the
+     moment Tab lands rather than fading in behind it. */
+  transition: background-color 0.2s;
   cursor: pointer;
   border-radius: 3px;
 }

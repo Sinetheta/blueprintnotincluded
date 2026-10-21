@@ -387,7 +387,7 @@
           <app-blueprint-card
             *ngFor="let item of blueprintListItems; let i = index"
             animate.enter="card-enter"
-            [style.--enter-delay]="(i % 12) * 30 + 'ms'"
+            [style.--enter-delay]="enterDelay(i)"
             [item]="item"
             [loggedIn]="loggedIn"
           ></app-blueprint-card>
