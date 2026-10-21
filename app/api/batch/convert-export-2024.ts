@@ -10,9 +10,11 @@
 //      frontend regenerates its database-2024.zip from this JSON at build/serve time
 //      (frontend prebuild/prestart); the backend reads the JSON directly. This script
 //      emits no .zip (both .zip paths are gitignored build derivatives).
-//   3. Syncs export/ui_image/ and export/connection_sprites/ into both asset roots,
-//      content-aware: only files whose bytes actually changed are rewritten and only
-//      removed files are pruned, so unchanged icons keep their mtime (no churn).
+//   3. Syncs export/ui_image/ and export/connection_sprites/ into the frontend asset
+//      root (frontend/src/assets/), the one root every renderer reads: the editor over
+//      HTTP, the server preview from the built frontend. Content-aware: only files whose
+//      pixels actually changed are rewritten (losslessly recompressed, png-optimize.ts)
+//      and only removed files are pruned, so unchanged icons keep their mtime (no churn).
 //   4. Flattens export/database/po_string.json into the frontend's English game-string
 //      map (frontend/src/assets/strings/strings.json) — the display names the website
 //      resolves element/building/category ids against. Without this, freshly added
@@ -51,6 +53,7 @@ import { Overlay } from '../../../lib/src/enums/overlay';
 import { PermittedRotations } from '../../../lib/src/enums/permitted-rotations';
 import { ElementState } from '../../../lib/src/enums/element-state';
 import { syncSiteIconThumbnails } from './icon-thumbnails';
+import { optimizePng } from './png-optimize';
 import {
   ROOM_BOUNDARY_DOORS,
   ROOM_TAGS_USED,
@@ -313,6 +316,12 @@ function pngVisuallyEqual(src: string, dest: string): boolean {
     return false;
   }
   if (!a.w || !a.h || a.w !== b.w || a.h !== b.h) return false;
+  // The committed file is the export's PNG recompressed (optimizePng), so after a
+  // re-import of the same art the bytes always differ while the pixels never do.
+  // Settle that case before paying for the blur.
+  const aBytes = Buffer.from(a.data.buffer, a.data.byteOffset, a.data.byteLength);
+  const bBytes = Buffer.from(b.data.buffer, b.data.byteOffset, b.data.byteLength);
+  if (aBytes.equals(bBytes)) return true;
   const [ar, ag, ab] = blurredPremultPlanes(a);
   const [br, bg, bb] = blurredPremultPlanes(b);
   let changed = 0;
@@ -332,7 +341,8 @@ type SpriteVerdict = 'identical' | 'preserved' | 'changed';
 // Decide whether a synced sprite should be rewritten. Byte-identical files are 'identical'
 // (skip, keep mtime). PNGs whose bytes changed but whose pixels are visually identical are
 // 'preserved' (keep the committed file, so re-import doesn't churn on export re-encode
-// jitter). Everything else is 'changed' and gets copied.
+// jitter, and the committed file stays the recompressed one). Everything else is
+// 'changed' and gets written, PNGs recompressed on the way.
 function classifySprite(src: string, dest: string): SpriteVerdict {
   if (!filesDiffer(src, dest)) return 'identical';
   if (dest.toLowerCase().endsWith('.png') && pngVisuallyEqual(src, dest)) return 'preserved';
@@ -347,18 +357,20 @@ interface MirrorStats {
 }
 
 // Mirror src -> dest content-aware (fs.cpSync is unavailable in the backend's
-// @types/node): write a file only when missing or its bytes differ, and delete
+// @types/node): write a file only when missing or its pixels differ, and delete
 // anything in dest no longer present in src. Unchanged files keep their mtime, so
 // re-imports don't churn the asset tree and mtime stays a reliable "changed" signal.
+// A PNG is written losslessly recompressed (optimizePng): the export's encoding is
+// about a fifth larger than the same pixels need.
 //
 // `overrides` maps a top-level file name to the file to mirror in its place (pinned
 // icons, see PINNED_ICONS). It is not passed down: sub-directories mirror as-is.
-function mirrorDir(
+async function mirrorDir(
   src: string,
   dest: string,
   stats: MirrorStats,
   overrides?: Map<string, string>
-): void {
+): Promise<void> {
   fs.mkdirSync(dest, { recursive: true });
   const srcEntries = fs.readdirSync(src, { withFileTypes: true });
   const srcNames = new Set(srcEntries.map((e) => e.name));
@@ -377,16 +389,19 @@ function mirrorDir(
       // Clear a same-named file before descending (type changed src->dest).
       if (fs.existsSync(destPath) && !fs.statSync(destPath).isDirectory())
         fs.rmSync(destPath, { force: true });
-      mirrorDir(srcPath, destPath, stats);
+      await mirrorDir(srcPath, destPath, stats);
     } else {
       // Clear a same-named dir before writing a file (type changed src->dest).
       if (fs.existsSync(destPath) && fs.statSync(destPath).isDirectory())
         fs.rmSync(destPath, { recursive: true, force: true });
       switch (classifySprite(srcPath, destPath)) {
-        case 'changed':
-          fs.copyFileSync(srcPath, destPath);
+        case 'changed': {
+          const bytes = fs.readFileSync(srcPath);
+          const isPng = entry.name.toLowerCase().endsWith('.png');
+          fs.writeFileSync(destPath, isPng ? await optimizePng(bytes) : bytes);
           stats.copied++;
           break;
+        }
         case 'preserved':
           stats.preserved++;
           break;
@@ -397,29 +412,27 @@ function mirrorDir(
   }
 }
 
-// Mirror an export sub-folder into each served asset root. No-op if src is absent.
-function syncAssetDir(
+// Mirror an export sub-folder into the served asset root. No-op if src is absent.
+async function syncAssetDir(
   src: string,
-  targets: string[],
+  target: string,
   label: string,
   overrides?: Map<string, string>
-): void {
+): Promise<void> {
   if (!fs.existsSync(src)) {
     console.log('--- skipped', label, '(not in export) ---');
     return;
   }
-  for (const target of targets) {
-    const stats: MirrorStats = { copied: 0, skipped: 0, preserved: 0, removed: 0 };
-    mirrorDir(src, target, stats, overrides);
-    console.log(
-      '--- synced',
-      label,
-      '->',
-      path.normalize(target),
-      `(updated ${stats.copied}, unchanged ${stats.skipped}, ` +
-        `preserved ${stats.preserved} re-encoded, removed ${stats.removed}) ---`
-    );
-  }
+  const stats: MirrorStats = { copied: 0, skipped: 0, preserved: 0, removed: 0 };
+  await mirrorDir(src, target, stats, overrides);
+  console.log(
+    '--- synced',
+    label,
+    '->',
+    path.normalize(target),
+    `(updated ${stats.copied}, unchanged ${stats.skipped}, ` +
+      `preserved ${stats.preserved} re-encoded, removed ${stats.removed}) ---`
+  );
 }
 
 // Write bytes only when the target is missing or its content changed, so an
@@ -1396,35 +1409,24 @@ export async function convertExport2024(opts: ConvertOptions): Promise<void> {
     `(updated ${indicatorsCopied}/${utilityIndicatorNames.length}) ---`
   );
 
-  // Sync sprites into the served asset dirs (backend + frontend). The DB references
-  // these by filename, so they must travel together with the regenerated JSON.
+  // Sync sprites into the served asset root. The DB references these by filename,
+  // so they must travel together with the regenerated JSON. The frontend root is
+  // the only one: the editor fetches it over HTTP and the server preview worker
+  // reads it from the built frontend (preview-render-worker.ts resolveAssetBaseDir),
+  // so a backend copy under assets/ would be a second 100 MB nobody reads.
   const assetDir = path.dirname(opts.out); // assets/database
-  syncAssetDir(
-    uiImageDir,
-    [
-      path.join(assetDir, '../ui_image'),
-      path.join(assetDir, '../../frontend/src/assets/ui_image'),
-    ],
-    'ui_image',
-    pinnedIconFiles
-  );
-  // The <img>-sized renditions of the frontend's ui_image set, kept in step
-  // with it (icon-thumbnails.ts).
+  const frontendAssets = path.join(assetDir, '../../frontend/src/assets');
+  await syncAssetDir(uiImageDir, path.join(frontendAssets, 'ui_image'), 'ui_image', pinnedIconFiles);
+  // The <img>-sized renditions of the ui_image set, kept in step with it
+  // (icon-thumbnails.ts).
   await syncSiteIconThumbnails(
-    path.join(assetDir, '../../frontend/src/assets/ui_image'),
-    path.join(assetDir, '../../frontend/src/assets/ui_thumb')
+    path.join(frontendAssets, 'ui_image'),
+    path.join(frontendAssets, 'ui_thumb')
   );
-  syncAssetDir(
-    connectionDir,
-    [
-      path.join(assetDir, '../connection_sprites'),
-      path.join(assetDir, '../../frontend/src/assets/connection_sprites'),
-    ],
-    'connection_sprites'
-  );
+  await syncAssetDir(connectionDir, path.join(frontendAssets, 'connection_sprites'), 'connection_sprites');
   // ui_image_facade/ is intentionally NOT synced: 988 facade/permit PNGs that no
   // current code path references. To enable, add a syncAssetDir call for
-  // path.join(opts.exportDir, 'ui_image_facade') -> assets/ui_image_facade (+ frontend).
+  // path.join(opts.exportDir, 'ui_image_facade') -> frontend/src/assets/ui_image_facade.
 }
 
 function normalizeDlcIds(raw: string[] | string | null | undefined): string[] {

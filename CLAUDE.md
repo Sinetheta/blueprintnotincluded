@@ -88,7 +88,9 @@ run the single repeatable step:
 
 - `npm run import:2024` - Regenerate `database-2024.json` into both asset roots
   (`assets/database/` + `frontend/src/assets/database/`), content-aware sync `ui_image/`
-  and `connection_sprites/` into both roots, flatten `po_string.json` into the frontend's
+  and `connection_sprites/` into `frontend/src/assets/` (the only copy of the art: the
+  editor fetches it and the server preview reads it from the built frontend, so there
+  is no backend copy), flatten `po_string.json` into the frontend's
   English game-string map (`frontend/src/assets/strings/strings.json` — the display names
   the build menu resolves element/building/category ids against), and print a validation
   report. Exits non-zero if the import is incomplete (missing icons, incomplete connection
@@ -98,6 +100,9 @@ run the single repeatable step:
   `<img>` that shows a building, element or terrain icon binds `thumbUrl`, not `iconUrl`:
   the build menu once showed the canvas art, 75 KB a file on average, at 48 px. The canvas
   (`ImageSource` / `flatIconId`) and the server preview still draw from `ui_image/`.
+  `frontend/src/assets/images/` holds the site's own art and the overlay/indicator sprites;
+  `__tests__/asset-processing/image-assets.test.ts` fails on a file there that no code or
+  database entry references, and on a reference with no file.
   `npm run icons:thumbs` regenerates the thumbnails alone; a test fails when the two sets
   disagree. Committed, like `ui_image/` — not a build step, so the frontend build needs no
   image library.
@@ -107,7 +112,10 @@ run the single repeatable step:
   reads the JSON directly, the frontend regenerates the zip from it via `prebuild`/
   `prestart` (`frontend/scripts/build-database-zip.js`). The converter emits no `.zip`.
 - Sprite sync rewrites a file only when it actually changed and prunes removed ones, so
-  unchanged icons keep their mtime and git shows only real changes. The export is NOT
+  unchanged icons keep their mtime and git shows only real changes. A PNG it writes is
+  losslessly recompressed first (`app/api/batch/png-optimize.ts`, about 16% smaller than
+  the export's encoding, pixels untouched); the perceptual comparison below is what keeps
+  a re-import from seeing the recompressed file as a change. The export is NOT
   byte-deterministic across game updates (Klei re-rasterizes untouched art), so a PNG
   that differs in bytes is additionally checked _perceptually_ (`pngVisuallyEqual`:
   alpha-premultiply → small Gaussian blur → count pixels still differing) and preserved

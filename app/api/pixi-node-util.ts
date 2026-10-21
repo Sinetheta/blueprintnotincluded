@@ -102,7 +102,7 @@ export class PixiNodeUtil implements PixiUtil {
    * Decode an image into a BaseTexture, optionally capping its longest side.
    *
    * The cap exists because the building art is authored at print resolution --
-   * assets/ui_image is 1,369 icons totalling ~419MB of RGBA at native size, up
+   * ui_image/ is 1,361 icons totalling ~419MB of RGBA at native size, up
    * to 1524x1263 -- while a preview draws a building into a few tens of
    * pixels. The full-size bitmap is still decoded here, since libpng gives no
    * way to scale while decoding, but it is freed as soon as the downscale is
