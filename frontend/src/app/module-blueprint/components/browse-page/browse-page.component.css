@@ -351,12 +351,18 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .browse-sidebar {
+  /* Searching is the main thing to do here, so the box stays out on a
+     narrow screen; Filters folds away only the facets under it. */
+  .browse-sidebar:not(.open) > :not(.search-box) {
     display: none;
   }
 
-  .browse-sidebar.open {
-    display: block;
+  .browse-body {
+    gap: 14px;
+  }
+
+  .browse-sidebar:not(.open) .search-box {
+    margin-bottom: 0;
   }
 
   .filters-toggle {
@@ -378,5 +384,18 @@
 
   .create-cta {
     margin-left: 0;
+  }
+
+  /* Six sorts don't fit a phone: one row that scrolls sideways, rather than
+     two rows with the underline wandering between them. */
+  .sort-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sort-tabs .bni-tab {
+    flex: none;
+    white-space: nowrap;
   }
 }
