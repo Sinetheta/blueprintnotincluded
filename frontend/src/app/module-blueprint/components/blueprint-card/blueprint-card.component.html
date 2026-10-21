@@ -67,7 +67,7 @@
         [routerLink]="['/discover']"
         [queryParams]="{ category: item.category }"
         [title]="categoryTooltip(item.category)"
-        >{{ item.category }}</a
+        >{{ categoryLabel(item.category) }}</a
       >
       <span *ngIf="!item.category" class="bni-chip bni-chip--untagged" i18n
         >Untagged</span

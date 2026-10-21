@@ -24,6 +24,7 @@ import {
 } from "../../utils/chip-tooltip";
 import { dlcLabel } from "../../../../../../lib/index";
 import { roomTypeLabel } from "../../utils/room-labels";
+import { categoryLabel, subcategoryLabel } from "../../utils/category-labels";
 import sanitize from "sanitize-filename";
 import { ModsService } from "../../services/mods-service";
 import { TranslationService } from "../../services/translation.service";
@@ -55,6 +56,8 @@ export class BlueprintDetailsPageComponent implements OnInit {
 
   readonly categoryTooltip = categoryTooltip;
   readonly subcategoryTooltip = subcategoryTooltip;
+  readonly categoryLabel = categoryLabel;
+  readonly subcategoryLabel = subcategoryLabel;
   readonly dlcTooltip = dlcTooltip;
   readonly baseGameTooltip = baseGameTooltip;
   readonly dlcLabel = dlcLabel;

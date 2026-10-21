@@ -1,4 +1,5 @@
 import { dlcLabel } from "../../../../../lib/index";
+import { categoryLabel, subcategoryLabel } from "./category-labels";
 
 // Built on dlcLabel() rather than a map of its own: pack names live in lib
 // (one place, checked against the game's own strings), and an id we have no
@@ -15,12 +16,13 @@ export function excludeDlcTooltip(dlcId: string): string {
   return $localize`:chipTooltip.excludeDlc:Hides blueprints that need the ${dlcLabel(dlcId)} DLC`;
 }
 
+// Both take the stored id and name it as the chip does.
 export function categoryTooltip(category: string): string {
-  return $localize`Browse ${category} blueprints`;
+  return $localize`Browse ${categoryLabel(category)} blueprints`;
 }
 
 export function subcategoryTooltip(subcategory: string): string {
-  return $localize`Browse ${subcategory} blueprints`;
+  return $localize`Browse ${subcategoryLabel(subcategory)} blueprints`;
 }
 
 export function roomTooltip(roomLabel: string): string {
