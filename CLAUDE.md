@@ -179,7 +179,7 @@ Copy `.env.sample` to `.env` and configure:
 
 ## Database
 
-Uses MongoDB 8.0.23 locally and in CI (prod upgrade from 7.0.34 pending) with Mongoose models in `app/api/models/`:
+Uses MongoDB 8.0.23 locally and 8.2 in CI — GitHub's runners moved to a kernel ≥ 6.19 on 2026-10-18, where 8.0.x will not start (SERVER-121912) — (prod upgrade from 7.0.34 pending) with Mongoose models in `app/api/models/`:
 
 - `blueprint.ts` - Blueprint documents
 - `user.ts` - User accounts
