@@ -4,7 +4,7 @@ import { Application, Request, Response, NextFunction } from 'express';
 import express from 'express';
 import { expressjwt as expressJwt } from 'express-jwt';
 
-import { StaticController } from './static-controller';
+import { StaticController, staticCacheControl } from './static-controller';
 import { BlueprintController } from './api/blueprint-controller';
 import { BlueprintVersionController } from './api/blueprint-version-controller';
 import { VersionController } from './api/version-controller';
@@ -177,7 +177,14 @@ export class Routes {
     app.get('/blueprint/:blueprintId', this.staticController.getBlueprint);
     app.get('/discover', this.staticController.getDiscover);
     app.get('/profile/:username', this.staticController.getProfile);
-    app.use(express.static(path.join(__dirname, 'public')));
+    app.use(
+      express.static(path.join(__dirname, 'public'), {
+        setHeaders: (res, filePath) => {
+          const cacheControl = staticCacheControl(filePath);
+          if (cacheControl != null) res.setHeader('Cache-Control', cacheControl);
+        },
+      })
+    );
     app.get('/*path', this.staticController.serveHtml);
   }
 }
