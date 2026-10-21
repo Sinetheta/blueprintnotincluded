@@ -86,7 +86,8 @@ export interface BuildMenuSearchResult<
 // a two-word query sits in the same bands as a one-word one. The bands are
 // strict: any whole-word or prefix match on the name beats any substring of
 // the name, which beats the subcategory, which beats the effect line and the
-// description. Typos and the prefab id are worth the least that still shows.
+// description. Typos and the prefab id are worth the least that still shows,
+// and only show at all when nothing is named (searchBuildMenu).
 const SCORE = {
   nameWord: 100,
   namePrefix: 90,
@@ -221,9 +222,16 @@ function tokenScore(item: SearchableEntry, token: string): number {
   return 0;
 }
 
-// Every building that matches every word of the query, best first. Ties keep
-// the menu's own order. An empty query matches nothing: the menu shows the
-// open category instead.
+// A building whose every word matched its name or subcategory. Once any
+// building does, the rest — typos, the effect line, the prefab id, the
+// description — are noise: "oxygen diffuser" wants the Oxygen Diffuser, not
+// every building whose description breathes. They are the fallback for a
+// query that names nothing.
+const NAMED_SCORE = SCORE.subcategorySubstring;
+
+// Every building that matches every word of the query, best first: the named
+// ones if there are any, otherwise the rest. Ties keep the menu's own order.
+// An empty query matches nothing: the menu shows the open category instead.
 export function searchBuildMenu<T extends BuildMenuEntry>(
   entries: SearchableEntry<T>[],
   query: string,
@@ -232,10 +240,12 @@ export function searchBuildMenu<T extends BuildMenuEntry>(
   if (tokens.length == 0) return [];
   const phrase = tokens.join(" ");
 
-  const results: BuildMenuSearchResult<T>[] = [];
+  const named: BuildMenuSearchResult<T>[] = [];
+  const rest: BuildMenuSearchResult<T>[] = [];
   for (const item of entries) {
     let total = 0;
     let matchedAll = true;
+    let weakest = Infinity;
     for (const token of tokens) {
       const score = tokenScore(item, token);
       if (score == 0) {
@@ -243,6 +253,7 @@ export function searchBuildMenu<T extends BuildMenuEntry>(
         break;
       }
       total += score;
+      weakest = Math.min(weakest, score);
     }
     if (!matchedAll) continue;
 
@@ -250,9 +261,10 @@ export function searchBuildMenu<T extends BuildMenuEntry>(
     if (item.name.joined == phrase) score += EXACT_NAME_BONUS;
     else if (item.name.joined.startsWith(phrase))
       score += NAME_STARTS_WITH_BONUS;
-    results.push({ entry: item.entry, score });
+    (weakest >= NAMED_SCORE ? named : rest).push({ entry: item.entry, score });
   }
 
+  const results = named.length > 0 ? named : rest;
   return results.sort(
     (a, b) => b.score - a.score || a.entry.order - b.entry.order,
   );
