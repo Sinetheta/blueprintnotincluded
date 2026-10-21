@@ -65,6 +65,7 @@ import { DialogExportImagesComponent } from "./components/dialogs/dialog-export-
 import { BlueprintNameValidationDirective } from "./directives/blueprint-name-validation.directive";
 import { QueuedPreviewDirective } from "./directives/queued-preview.directive";
 import { TabInkDirective } from "./directives/tab-ink.directive";
+import { OverlayMotionDirective } from "./directives/overlay-motion.directive";
 import { StarRatingComponent } from "./components/star-rating/star-rating.component";
 import { RatingWidgetComponent } from "./components/rating-widget/rating-widget.component";
 import { ForkButtonComponent } from "./components/fork-button/fork-button.component";
@@ -195,6 +196,7 @@ import { BuildMenuComponent } from "./components/build-menu/build-menu.component
     CommonModule,
     QueuedPreviewDirective,
     TabInkDirective,
+    OverlayMotionDirective,
     RouterModule,
     FormsModule,
     ReactiveFormsModule,

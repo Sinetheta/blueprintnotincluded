@@ -306,8 +306,8 @@
   /* fade-out on list-context switches; duration must match LIST_FADE_OUT_MS
    * in the component */
   transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+    opacity 160ms ease-out,
+    transform 160ms ease-out;
 }
 
 .blueprint-grid--leaving {
@@ -326,16 +326,17 @@
  * scroll); --enter-delay staggers them by grid position */
 /* the one authored moment: specimens settle onto the board, dropping the last
  * few pixels and coming to rest. Exponential ease-out so the landing decelerates
- * hard rather than gliding. */
+ * hard rather than gliding. Short, because it plays on every sort and filter
+ * change: the last card of a page lands ~450ms after the click. */
 .card-enter {
-  animation: card-settle 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: card-settle 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: var(--enter-delay, 0ms);
 }
 
 @keyframes card-settle {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+    transform: translateY(8px) scale(0.985);
   }
 }
 

@@ -81,10 +81,10 @@ export class TabInkDirective implements AfterViewInit, OnDestroy {
     // follows the active tab onto its own row when the flex row wraps.
     // Every write below is guarded: unconditional writes re-set attributes
     // even when the value is unchanged, refiring the observers in a loop.
+    // The bar is 1px wide and scaled to the tab, so a move is a transform
+    // alone: no layout on every frame of the slide.
     const top = active.offsetTop + active.offsetHeight - 2;
-    const width = `${active.offsetWidth}px`;
-    const transform = `translate(${active.offsetLeft}px, ${top}px)`;
-    if (this.ink.style.width !== width) this.ink.style.width = width;
+    const transform = `translate(${active.offsetLeft}px, ${top}px) scaleX(${active.offsetWidth})`;
     if (this.ink.style.transform !== transform)
       this.ink.style.transform = transform;
     // --ready lands in the same style flush as the first position write, so

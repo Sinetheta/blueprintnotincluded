@@ -172,7 +172,7 @@
     </span>
   </div>
 
-  <p-popover #elementPanel [appendTo]="'body'">
+  <p-popover #elementPanel [appendTo]="'body'" appOverlayMotion>
     <app-cell-element-picker
       *ngIf="elementPickerRow"
       [forceTag]="elementPickerRow.elementForceTag"

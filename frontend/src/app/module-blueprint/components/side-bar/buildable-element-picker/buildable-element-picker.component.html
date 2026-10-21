@@ -37,7 +37,7 @@
           {{ currentElement[indexElement].name }}
         </div>
 
-        <p-popover [appendTo]="'body'">
+        <p-popover [appendTo]="'body'" appOverlayMotion>
           <div *ngIf="!isGasLiquid" class="element-choices">
             <div
               *ngFor="
@@ -53,6 +53,7 @@
                 [pTooltip]="tooltipFor(buildableElement)"
                 tooltipPosition="bottom"
                 tooltipEvent="both"
+                [showDelay]="400"
                 life="5000"
               >
                 <app-element-icon

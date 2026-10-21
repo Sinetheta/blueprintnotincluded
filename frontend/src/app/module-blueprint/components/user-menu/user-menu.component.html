@@ -3,6 +3,7 @@
   [model]="userMenuItems"
   [popup]="true"
   [appendTo]="'body'"
+  appOverlayMotion
 ></p-menu>
 <ng-container *ngIf="authService.isLoggedIn(); else loginButton">
   <button
