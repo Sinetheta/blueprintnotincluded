@@ -1,0 +1,24 @@
+# Adds to the org's UI settings rather than replacing them.
+inheritance: true
+
+reviews:
+  # Generated game assets. An import or a thumbnail regeneration touches a
+  # thousand-odd files at once, and CodeRabbit skips a review outright past
+  # 100 changed files — PR #296 (1,402 files, 1,361 of them WebP thumbnails)
+  # got no review at all. None of these are hand-written.
+  path_filters:
+    - "!assets/ui_image/**"
+    - "!assets/connection_sprites/**"
+    - "!assets/database/**"
+    - "!assets/manual/ui_image/**"
+    - "!frontend/src/assets/ui_image/**"
+    - "!frontend/src/assets/ui_thumb/**"
+    - "!frontend/src/assets/connection_sprites/**"
+    - "!frontend/src/assets/images/**"
+    - "!frontend/src/assets/database/**"
+    - "!frontend/src/assets/strings/**"
+    - "!**/*.png"
+    - "!**/*.webp"
+    - "!**/package-lock.json"
+    - "!lib/**/*.d.ts"
+    - "!lib/**/*.d.ts.map"
