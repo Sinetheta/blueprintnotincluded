@@ -50,6 +50,7 @@ import {
 import { Overlay } from '../../../lib/src/enums/overlay';
 import { PermittedRotations } from '../../../lib/src/enums/permitted-rotations';
 import { ElementState } from '../../../lib/src/enums/element-state';
+import { syncSiteIconThumbnails } from './icon-thumbnails';
 import {
   ROOM_BOUNDARY_DOORS,
   ROOM_TAGS_USED,
@@ -596,7 +597,7 @@ function writeEnglishStrings(strings: Record<string, string>, outBase: string): 
   console.log('---', changed ? 'wrote' : 'unchanged', path.normalize(stringsTarget), '---');
 }
 
-export function convertExport2024(opts: ConvertOptions): void {
+export async function convertExport2024(opts: ConvertOptions): Promise<void> {
   const dbDir = path.join(opts.exportDir, 'database');
   const uiImageDir = path.join(opts.exportDir, 'ui_image');
   const connectionDir = path.join(opts.exportDir, 'connection_sprites');
@@ -1407,6 +1408,9 @@ export function convertExport2024(opts: ConvertOptions): void {
     'ui_image',
     pinnedIconFiles
   );
+  // The <img>-sized renditions of the frontend's ui_image set, kept in step
+  // with it (icon-thumbnails.ts).
+  await syncSiteIconThumbnails();
   syncAssetDir(
     connectionDir,
     [
@@ -1963,5 +1967,8 @@ function buildingRecord(
 }
 
 if (require.main === module) {
-  convertExport2024(parseArgs(process.argv.slice(2)));
+  convertExport2024(parseArgs(process.argv.slice(2))).catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }

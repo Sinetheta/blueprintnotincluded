@@ -42,6 +42,13 @@ export function terrainIconUrl(feature: BniTerrainFeature): string {
   return known != null ? known.iconUrl : PLACEHOLDER_URL;
 }
 
+// The palette and panel <img> equivalent of terrainIconUrl. The placeholder
+// is a small PNG already, so it needs no thumbnail.
+export function terrainThumbUrl(feature: BniTerrainFeature): string {
+  const known = TerrainFeature.getFeature(feature.id);
+  return known != null ? known.thumbUrl : PLACEHOLDER_URL;
+}
+
 export function terrainDisplayName(feature: BniTerrainFeature): string {
   const known = TerrainFeature.getFeature(feature.id);
   return known != null ? known.name : feature.id;

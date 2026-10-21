@@ -31,6 +31,7 @@ export declare class OniItem {
     get rocketAttachPoint(): BuildingAttachPoint | undefined;
     imageId: string;
     iconUrl: string;
+    thumbUrl: string;
     flatIconId: string;
     spriteModifierId: string;
     isWire: boolean;

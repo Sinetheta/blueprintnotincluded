@@ -5,6 +5,7 @@ export declare const OUTLINE_ALPHA = 0.9;
 export declare const FILL_ALPHA = 0.12;
 export declare const FALLBACK_ICON_INSET = 0.86;
 export declare function terrainIconUrl(feature: BniTerrainFeature): string;
+export declare function terrainThumbUrl(feature: BniTerrainFeature): string;
 export declare function terrainDisplayName(feature: BniTerrainFeature): string;
 export interface TerrainIconRect {
     x: number;

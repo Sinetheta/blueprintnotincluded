@@ -17,7 +17,7 @@
     <div class="mod-buildings">
       <img
         *ngFor="let building of mod.buildings"
-        [src]="'assets/ui_image/' + building + '.png'"
+        [src]="thumbUrl(building)"
         [title]="building"
         height="40"
       />

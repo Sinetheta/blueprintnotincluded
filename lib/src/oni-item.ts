@@ -65,6 +65,9 @@ export class OniItem {
   // imageId here is used for some stuff (generating white background textures)
   imageId: string = '';
   iconUrl: string = '';
+  // Menu-sized rendition of iconUrl for <img> tags; equals iconUrl when the
+  // building has no flat icon to thumbnail.
+  thumbUrl: string = '';
   flatIconId: string = '';
   spriteModifierId: string = '';
   isWire: boolean = false;
@@ -182,12 +185,14 @@ export class OniItem {
 
     this.spriteModifierId = original.kanimPrefix;
     if (original.uiImage) {
-      const flatUrl = 'assets/ui_image/' + original.uiImage + '.png';
+      const flatUrl = StringHelpers.flatIconUrl(original.uiImage);
       this.iconUrl = flatUrl;
+      this.thumbUrl = StringHelpers.iconThumbUrl(original.uiImage);
       this.flatIconId = original.uiImage;
       ImageSource.AddImagePixi(original.uiImage, flatUrl);
     } else {
       this.iconUrl = StringHelpers.createUrl(original.kanimPrefix + 'ui_0', true);
+      this.thumbUrl = this.iconUrl;
       this.flatIconId = '';
     }
 

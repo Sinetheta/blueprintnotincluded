@@ -19,6 +19,7 @@ export declare class BuildableElement {
     lowTemp: number;
     highTemp: number;
     iconUrl: string;
+    thumbUrl: string;
     importFrom(original: BuildableElement): void;
     get isGas(): boolean;
     get isLiquid(): boolean;

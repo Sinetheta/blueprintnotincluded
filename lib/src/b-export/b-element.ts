@@ -1,3 +1,4 @@
+import { StringHelpers } from '../string-helpers';
 import { ElementState } from '../enums/element-state';
 import { Overlay } from '../enums/overlay';
 
@@ -47,6 +48,8 @@ export class BuildableElement {
 
   // Generated
   iconUrl: string = '';
+  // Menu-sized rendition for <img> tags (see StringHelpers.iconThumbUrl).
+  thumbUrl: string = '';
 
   public importFrom(original: BuildableElement) {
     this.id = original.id;
@@ -57,7 +60,8 @@ export class BuildableElement {
     if (original.oreTags != null) for (let s of original.oreTags) this.oreTags.push(s);
 
     this.icon = original.icon;
-    this.iconUrl = this.icon ? 'assets/ui_image/' + this.icon + '.png' : '';
+    this.iconUrl = this.icon ? StringHelpers.flatIconUrl(this.icon) : '';
+    this.thumbUrl = this.icon ? StringHelpers.iconThumbUrl(this.icon) : '';
 
     this.buildMenuSort = original.buildMenuSort;
     this.state = original.state ?? ElementState.Vacuum;

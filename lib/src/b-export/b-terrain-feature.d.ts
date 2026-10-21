@@ -32,6 +32,7 @@ export declare class TerrainFeature implements BTerrainFeature {
         h: number;
     };
     iconUrl: string;
+    thumbUrl: string;
     importFrom(original: BTerrainFeature): void;
     static features: TerrainFeature[];
     private static featuresMap;

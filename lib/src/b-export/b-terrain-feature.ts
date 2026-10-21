@@ -1,3 +1,4 @@
+import { StringHelpers } from '../string-helpers';
 // Natural terrain features — geysers, vents, volcanoes, fissures, oil
 // reservoirs. Dupes cannot build these: they are *annotations* that record what
 // the surrounding map already contains ("this pump array sits on a chlorine
@@ -61,6 +62,8 @@ export class TerrainFeature implements BTerrainFeature {
   // Generated: the export ships one flat icon per feature prefab, named after
   // the prefab id, synced into both asset roots by the importer.
   iconUrl: string = '';
+  // Menu-sized rendition for <img> tags (see StringHelpers.iconThumbUrl).
+  thumbUrl: string = '';
 
   public importFrom(original: BTerrainFeature) {
     this.id = original.id;
@@ -88,7 +91,8 @@ export class TerrainFeature implements BTerrainFeature {
       original.uiImageRect.h > 0
         ? { ...original.uiImageRect }
         : undefined;
-    this.iconUrl = 'assets/ui_image/' + this.id + '.png';
+    this.iconUrl = StringHelpers.flatIconUrl(this.id);
+    this.thumbUrl = StringHelpers.iconThumbUrl(this.id);
   }
 
   // static
