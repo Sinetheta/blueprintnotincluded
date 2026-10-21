@@ -7,8 +7,6 @@ reviews:
   # 100 changed files — PR #296 (1,402 files, 1,361 of them WebP thumbnails)
   # got no review at all. None of these are hand-written.
   path_filters:
-    - "!assets/ui_image/**"
-    - "!assets/connection_sprites/**"
     - "!assets/database/**"
     - "!assets/manual/ui_image/**"
     - "!frontend/src/assets/ui_image/**"

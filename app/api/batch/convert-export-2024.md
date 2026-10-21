@@ -25,9 +25,16 @@ Steps:
 3. Detect connectables (a `connection_sprites/<prefabId>/` dir exists) and take each
    one's render scale from the cell the export declares for it in
    `connection_sprite_cells.json` (canvas ÷ cell, see "Connection-sprite scale" below).
-4. Mirror `ui_image/` and `connection_sprites/` into both asset roots **content-aware**:
-   a file is rewritten only when it actually changed, only removed files are pruned, so
-   unchanged icons keep their mtime (no churn). The export is **not byte-deterministic**
+4. Mirror `ui_image/` and `connection_sprites/` into the frontend asset root
+   (`frontend/src/assets/`) **content-aware**: a file is rewritten only when it actually
+   changed, only removed files are pruned, so unchanged icons keep their mtime (no churn).
+   That root is the only copy of the art — the editor fetches it over HTTP and the server
+   preview worker resolves it from the built frontend (`resolveAssetBaseDir`), so the
+   backend `assets/` carries no sprites. Every PNG written is first **losslessly
+   recompressed** (`png-optimize.ts`: zlib 9, adaptive filtering, no palette), which takes
+   about 16% off the export's encoding with identical pixels; the perceptual comparison
+   below is what makes a re-import of unchanged art see the recompressed file as
+   `preserved` rather than a change. The export is **not byte-deterministic**
    across game updates — Klei re-rasterizes untouched art, spraying sub-pixel anti-aliasing
    jitter along icon edges — so a byte-different PNG is additionally compared *perceptually*
    (`pngVisuallyEqual`: alpha-premultiply → 2-pass Gaussian blur → count pixels still
@@ -219,7 +226,7 @@ override on the export side.
 How a pin works:
 
 - The pinned PNG is committed at `assets/manual/ui_image/<prefabId>.png`. The `ui_image/`
-  sync mirrors **that file** into both asset roots in place of the export's.
+  sync mirrors **that file** into the frontend asset root in place of the export's.
 - The pinned `rect` replaces the export's `uiImageRect` on the building. Image and rect are
   pinned together because a rect is a claim about one specific image (the aspect invariant
   above) — pinning either alone draws the icon at the wrong size and offset. The uiSprite
@@ -502,7 +509,7 @@ Rendering uses the 2024 flat-icon model, not the retired multi-sprite atlas.
 - **Import**: `convert-export-2024.ts` (`npm run import:2024`) → consolidated
   `database-2024.json` written to both asset roots (committed; the `.zip` is a gitignored
   build derivative); content-aware syncs `ui_image/` (1,361 flat PNGs) and
-  `connection_sprites/` into both asset roots.
+  `connection_sprites/` into the frontend asset root, losslessly recompressed.
 - **Render**: each building is one flat icon — `OniItem.flatIconId`, `DrawPart.flatIconId`,
   no UV slice. `uiImageRect` (when present) places overhanging art relative to the
   footprint; otherwise the icon is stretched to the footprint.

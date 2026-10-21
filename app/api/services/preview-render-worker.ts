@@ -74,8 +74,8 @@ const REPO_ROOT = path.resolve(__dirname, '../../..');
 
 // The renderer resolves the relative asset urls the shared lib registers
 // ('assets/ui_image/…', 'assets/images/…', 'assets/connection_sprites/…').
-// Only the frontend asset root carries the complete set (the backend
-// `assets/` root lacks `images/`): in the production container that is the
+// The frontend asset root is the only copy of the art (the backend `assets/`
+// holds the database, not sprites): in the production container that is the
 // built frontend at app/public, in a dev checkout it is frontend/src.
 function resolveAssetBaseDir(): string {
   const candidates = [path.join(REPO_ROOT, 'app/public'), path.join(REPO_ROOT, 'frontend/src')];

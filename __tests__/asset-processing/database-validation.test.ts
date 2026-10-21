@@ -24,7 +24,9 @@ describe('Database Asset Validation', () => {
   // a gitignored build derivative, so tests read the JSON.
   const databaseJsonPath = path.join(assetPath, 'database-2024.json');
   const readDatabase = () => JSON.parse(fs.readFileSync(databaseJsonPath, 'utf8'));
-  const uiImagePath = path.join(__dirname, '../../assets/ui_image');
+  // The one served copy of the flat art: the editor fetches it, the preview worker
+  // reads it from the built frontend, the import syncs into it.
+  const uiImagePath = path.join(__dirname, '../../frontend/src/assets/ui_image');
 
   // The game hides a building from its build menu when either flag applies:
   //   !Deprecated && (!DebugOnly || Game.Instance.DebugOnlyBuildingsAllowed)
@@ -516,27 +518,6 @@ describe('Database Asset Validation', () => {
   });
 
   describe('Flat Icon Assets', () => {
-    // The import syncs ui_image/ into both roots: the server preview renderer
-    // draws from assets/ui_image, the editor from the frontend copy. An icon
-    // added, removed or redrawn in one root only renders differently in the two,
-    // which a matching file count cannot see.
-    it('should ship the same ui_image files in the backend and frontend roots', () => {
-      const frontendUiImagePath = path.join(__dirname, '../../frontend/src/assets/ui_image');
-      const backendFiles = fs.readdirSync(uiImagePath).sort();
-      const frontendFiles = fs.readdirSync(frontendUiImagePath).sort();
-      expect(backendFiles, 'backend ui_image').to.not.be.empty;
-      expect(frontendFiles, 'frontend ui_image file names').to.deep.equal(backendFiles);
-
-      const differing = backendFiles.filter(
-        file =>
-          !fs
-            .readFileSync(path.join(uiImagePath, file))
-            .equals(fs.readFileSync(path.join(frontendUiImagePath, file)))
-      );
-      expect(differing, `ui_image files that differ between roots: ${differing.join(', ')}`).to.be
-        .empty;
-    });
-
     it('should have a ui_image PNG for every building', () => {
       const database = readDatabase();
       const missingIcons: string[] = [];

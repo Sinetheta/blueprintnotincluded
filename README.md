@@ -210,7 +210,7 @@ ever consumes the results. Drop a fresh OniExtract2024 export into `export/`, th
 
 ```bash
 npm run import:2024:dry-run   # validate + report only
-npm run import:2024           # regenerate database-2024.json + sync sprites into both asset roots
+npm run import:2024           # regenerate database-2024.json + sync sprites into frontend/src/assets
 ```
 
 Contract and converter details: `app/api/batch/convert-export-2024.md`. The legacy
