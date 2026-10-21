@@ -157,7 +157,11 @@
             "tsConfig": "tsconfig.admin.json",
             "aot": true,
             "assets": [
-              { "glob": "**/*", "input": "src/assets", "output": "/assets" }
+              {
+                "glob": "favicon-32x32.png",
+                "input": "src/assets",
+                "output": "/assets"
+              }
             ],
             "styles": [
               "src/styles.css",

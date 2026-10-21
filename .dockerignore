@@ -57,3 +57,12 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# Build outputs and local caches: the image builds its own, and a stale
+# frontend/dist (vitest's test-out alone is ~500 MB) otherwise rides along in
+# the build context and the build-frontend layer.
+/build
+/frontend/dist
+/preview-cache
+/export
+/prod-dump
