@@ -10,6 +10,31 @@
   padding: 5px;
 }
 
+/* The choices wrap into a grid that fits the screen and scrolls past that:
+   the Tempshift Plate takes any of ~70 solids, and in one row they ran
+   thousands of pixels off the edge. */
+.element-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 50px);
+  gap: 2px;
+  width: min(530px, calc(100vw - 48px));
+  max-height: min(320px, 60vh);
+  overflow-y: auto;
+}
+
+.element-choice {
+  width: 50px;
+  height: 50px;
+  padding: 5px;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+}
+
+/* What the building is made of now, so it can be found among the rest. */
+.element-choice--current {
+  border-color: var(--p-primary-color);
+}
+
 .left {
   flex: 1;
 }

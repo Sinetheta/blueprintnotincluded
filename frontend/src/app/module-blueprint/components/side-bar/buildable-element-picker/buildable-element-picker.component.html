@@ -38,14 +38,17 @@
         </div>
 
         <p-popover [appendTo]="'body'">
-          <div *ngIf="!isGasLiquid" class="element-panel-content">
+          <div *ngIf="!isGasLiquid" class="element-choices">
             <div
               *ngFor="
                 let buildableElement of buildableElementsArray[indexElement]
               "
             >
               <div
-                class="ui-clickable-icon element-button"
+                class="ui-clickable-icon element-choice"
+                [class.element-choice--current]="
+                  buildableElement === currentElement[indexElement]
+                "
                 (click)="chooseElement(buildableElement, indexElement)"
                 [pTooltip]="tooltipFor(buildableElement)"
                 tooltipPosition="bottom"
