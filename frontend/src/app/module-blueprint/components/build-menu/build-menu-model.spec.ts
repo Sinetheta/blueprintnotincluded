@@ -143,6 +143,13 @@ const MENU: BuildMenuEntry[] = [
     subcategory: "producers",
     subcategoryTitle: "Producers",
   }),
+  entry({
+    prefabId: "Electrolyzer",
+    name: "Electrolyzer",
+    effect: "Converts Water into Oxygen and Hydrogen Gas.",
+    subcategory: "producers",
+    subcategoryTitle: "Producers",
+  }),
 ];
 
 const INDEX = prepareSearch(MENU);
@@ -213,7 +220,7 @@ describe("searchBuildMenu", () => {
     expect(search("-")).toEqual([]);
   });
 
-  it("lists the pumps first for 'pump', not everything that mentions pumping", () => {
+  it("lists the pumps for 'pump', not everything that mentions pumping", () => {
     const results = search("pump");
     const pumps = [
       "Pitcher Pump",
@@ -225,9 +232,18 @@ describe("searchBuildMenu", () => {
     ];
     expect(results.slice(0, pumps.length)).toEqual(pumps);
     // The Gas Vent says "pump" only in its description and the Bottle Emptier
-    // only "pumping" there: both still show, after every pump.
-    expect(results.indexOf("Gas Vent")).toBeGreaterThan(pumps.length - 1);
-    expect(results.indexOf("Bottle Emptier")).toBeGreaterThan(pumps.length - 1);
+    // only "pumping" there: with pumps to show, neither does.
+    expect(results).not.toContain("Gas Vent");
+    expect(results).not.toContain("Bottle Emptier");
+  });
+
+  // Each step of typing a name: the prose that mentions oxygen dropped out
+  // as soon as there were buildings called it.
+  it("keeps to the buildings a query names, word by word", () => {
+    for (const query of ["oxygen", "oxygen d", "oxygen diff"])
+      expect(search(query)).toEqual(["Oxygen Diffuser"]);
+    // Nothing is called hydrogen: the effect line is all there is.
+    expect(search("hydrogen")).toEqual(["Electrolyzer"]);
   });
 
   it("ranks a description-only match below every name match", () => {
@@ -238,7 +254,7 @@ describe("searchBuildMenu", () => {
     expect(names).not.toContain("Drywall");
   });
 
-  it("puts a description-only match after a name match even when it comes first in the menu", () => {
+  it("falls back to the prose only when no building is named", () => {
     const index = prepareSearch([
       entry({
         name: "Cot",
@@ -246,13 +262,13 @@ describe("searchBuildMenu", () => {
       }),
       entry({ name: "Sick Bay" }),
     ]);
-    expect(searchBuildMenu(index, "sick").map((r) => r.entry.name)).toEqual([
-      "Sick Bay",
-      "Cot",
-    ]);
+    const names = (query: string) =>
+      searchBuildMenu(index, query).map((r) => r.entry.name);
+    expect(names("sick")).toEqual(["Sick Bay"]);
+    expect(names("rest")).toEqual(["Cot"]);
   });
 
-  it("ranks name words, then name substrings, then the subcategory, then the effect", () => {
+  it("ranks name words, then name substrings, then the subcategory; the effect only when nothing else", () => {
     const index = prepareSearch([
       entry({ name: "Effect Only", effect: "Moves ore along a rail." }),
       entry({ name: "Subcategory Only", subcategoryTitle: "Ore Handling" }),
@@ -263,6 +279,8 @@ describe("searchBuildMenu", () => {
       "Ore Scrubber",
       "Store Bin",
       "Subcategory Only",
+    ]);
+    expect(searchBuildMenu(index, "rail").map((r) => r.entry.name)).toEqual([
       "Effect Only",
     ]);
   });
@@ -281,10 +299,10 @@ describe("searchBuildMenu", () => {
     expect(search("refrigarator")).toEqual(["Refrigerator"]);
   });
 
-  it("ranks a typo below a real match, so it never buries one", () => {
-    // "tile" is one edit from "time(r)", so Timer Sensor matches, but after
-    // the Tile and after everything in Tiles and Drywall.
-    expect(search("tile")).toEqual(["Tile", "Drywall", "Timer Sensor"]);
+  it("drops a typo match when there is a real one", () => {
+    // "tile" is one edit from "time(r)", but the Tile and everything in
+    // Tiles are what was meant.
+    expect(search("tile")).toEqual(["Tile", "Drywall"]);
   });
 
   it("does not guess at short words", () => {
