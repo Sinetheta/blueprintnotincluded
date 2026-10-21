@@ -28,6 +28,41 @@ const label = (id: string) => LABEL_OVERRIDES[id] ?? humanize(id);
 const plural = (n: number, word: string) =>
   `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`;
 
+// Cache-Control for a file express.static serves out of app/public, or null for
+// the default (`max-age=0`, revalidated with the ETag on every visit — which is
+// what everything got before, and what Cloudflare passes through uncached).
+//
+// Two kinds of file can be told apart by their path alone:
+//   - Angular's hashed bundles (main-ABC12345.js, styles-….css, chunk-….js): the
+//     name changes with the content, so the file never changes under its name.
+//   - The game art under assets/: a thousand-odd icons that change only on an
+//     `import:2024`, and a connection-sprite set of ~500. Before this, a visit
+//     that opened the build menu re-requested every icon it showed and got a
+//     304 back from the origin for each; a day's TTL turns those into cache hits
+//     here and at the edge. The cost is that a redrawn icon can show stale for
+//     up to a day after a deploy that changes it (new names are unaffected).
+// The database, the string map and index.html stay on the default: a cached
+// stale database under a new bundle is not something to risk for one request.
+const HASHED_BUNDLE = /[-.][0-9A-Za-z]{8,}\.(?:js|css|woff2?)$/;
+const LONG_LIVED_ASSET_DIRS = [
+  'assets/ui_image/',
+  'assets/ui_thumb/',
+  'assets/connection_sprites/',
+  'assets/images/',
+  'assets/fonts/',
+];
+export const ONE_DAY_SECONDS = 86400;
+export const ONE_YEAR_SECONDS = 31536000;
+
+export function staticCacheControl(filePath: string): string | null {
+  const relative = filePath.split(path.sep).join('/');
+  if (LONG_LIVED_ASSET_DIRS.some((dir) => relative.includes('/' + dir)))
+    return `public, max-age=${ONE_DAY_SECONDS}`;
+  if (HASHED_BUNDLE.test(path.basename(relative)) && !relative.includes('/assets/'))
+    return `public, max-age=${ONE_YEAR_SECONDS}, immutable`;
+  return null;
+}
+
 export class StaticController {
   constructor() {
     this.getBlueprint = this.getBlueprint.bind(this);
