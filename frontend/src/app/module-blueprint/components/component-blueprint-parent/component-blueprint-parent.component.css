@@ -1,16 +1,22 @@
-.side-panel {
+.side-panels {
   position: absolute;
-  width: 310px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   max-width: calc(100vw - 20px);
+}
+
+.side-panel {
+  width: 310px;
+  max-width: 100%;
   padding: 10px;
   box-sizing: border-box;
 }
 
-.side-panel-right {
-  position: absolute;
-  right: 0;
-  max-width: calc(100vw - 20px);
-  padding: 10px;
+.side-panel-reports {
+  max-width: 100%;
+  padding: 0 10px 10px;
   box-sizing: border-box;
 }
 .outer {

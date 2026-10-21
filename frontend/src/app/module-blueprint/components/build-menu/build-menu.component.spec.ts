@@ -141,6 +141,18 @@ describe("BuildMenuComponent", () => {
       );
     });
 
+    // Hung from the top, a panel that shrinks as a search narrows keeps its
+    // search box under the cursor; hung from the bottom, the box ran away.
+    it("hangs the column and its panel from just under the nav", () => {
+      (el().querySelectorAll(".build-menu-category")[2] as HTMLElement).click();
+      fixture.detectChanges();
+      const column = el().querySelector<HTMLElement>(".build-menu-column")!;
+      const panel = el().querySelector<HTMLElement>(".build-menu-panel")!;
+      expect(column.style.top).toBe("58px");
+      expect(panel.style.top).toBe("58px");
+      expect(panel.style.bottom).toBe("");
+    });
+
     it("paints an element from its first button", () => {
       const paint = vi
         .spyOn(service, "paintElement")

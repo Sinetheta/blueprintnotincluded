@@ -97,33 +97,33 @@
   </app-component-menu>
   <app-build-menu></app-build-menu>
   <div>
-    <div
-      #sidePanelLeft
-      class="side-panel"
-      [style.left.px]="buildMenuService.layout.columnWidth"
-    >
-      <app-selection-tool
-        #selectionTool
-        [hidden]="
-          !toolService.selectTool.visible || !toolService.selectTool.showTool
-        "
-      >
-      </app-selection-tool>
-      <app-build-tool #buildTool [hidden]="!toolService.buildTool.visible">
-      </app-build-tool>
-      <app-planning-tool
-        [hidden]="!toolService.planningTool.visible"
-      ></app-planning-tool>
-      <app-terrain-tool
-        [hidden]="!toolService.terrainTool.visible"
-      ></app-terrain-tool>
-      <app-dig-tool [hidden]="!toolService.digTool.visible"></app-dig-tool>
-    </div>
-    <div class="side-panel-right">
-      <app-element-report-tool *ngIf="showElementReport" #elementReportTool>
-      </app-element-report-tool>
-      <app-temperature-scale *ngIf="showTemperatureScale" #temperatureScale>
-      </app-temperature-scale>
+    <!-- Top-right, clear of the build menu on the left: the tool's own panel,
+         then the overlay's legend under it. -->
+    <div class="side-panels">
+      <div #sidePanel class="side-panel">
+        <app-selection-tool
+          #selectionTool
+          [hidden]="
+            !toolService.selectTool.visible || !toolService.selectTool.showTool
+          "
+        >
+        </app-selection-tool>
+        <app-build-tool #buildTool [hidden]="!toolService.buildTool.visible">
+        </app-build-tool>
+        <app-planning-tool
+          [hidden]="!toolService.planningTool.visible"
+        ></app-planning-tool>
+        <app-terrain-tool
+          [hidden]="!toolService.terrainTool.visible"
+        ></app-terrain-tool>
+        <app-dig-tool [hidden]="!toolService.digTool.visible"></app-dig-tool>
+      </div>
+      <div class="side-panel-reports">
+        <app-element-report-tool *ngIf="showElementReport" #elementReportTool>
+        </app-element-report-tool>
+        <app-temperature-scale *ngIf="showTemperatureScale" #temperatureScale>
+        </app-temperature-scale>
+      </div>
     </div>
     <app-dialog-about #aboutDialog></app-dialog-about>
   </div>

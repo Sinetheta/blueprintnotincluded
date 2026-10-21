@@ -201,6 +201,7 @@
 <ng-container *ngIf="!layout.compact; else compactLayout">
   <nav
     class="build-menu-column"
+    [style.top.px]="top"
     [style.--build-menu-slot]="layout.slot + 'px'"
     aria-label="Build menu"
     i18n-aria-label="build menu"
@@ -211,6 +212,7 @@
     #panel
     *ngIf="isOpen"
     class="build-menu-panel"
+    [style.top.px]="top"
     [style.left.px]="panelLeft"
     [style.width.px]="panelWidth"
     [style.max-height.px]="panelMaxHeight"
