@@ -175,7 +175,8 @@ describe("BlueprintCardComponent", () => {
     component.item = makeItem({ category: "power" });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain("Untagged");
-    expect(fixture.nativeElement.textContent).toContain("power");
+    // The id is a query param; the chip says what people read.
+    expect(fixture.nativeElement.textContent).toContain("Power");
   });
 
   it("shows a modded chip only when the blueprint is modded", () => {
@@ -199,7 +200,7 @@ describe("BlueprintCardComponent", () => {
     const category = fixture.debugElement.query(By.css(".bni-chip--cat"));
     expect(category.properties["routerLink"]).toEqual(["/discover"]);
     expect(category.properties["queryParams"]).toEqual({ category: "power" });
-    expect(category.properties["title"]).toContain("power");
+    expect(category.properties["title"]).toBe("Browse Power blueprints");
 
     const dlc = fixture.debugElement.query(By.css("a.bni-chip--dlc"));
     expect(dlc.properties["routerLink"]).toEqual(["/discover"]);

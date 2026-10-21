@@ -16,6 +16,7 @@ import {
   dlcLabel,
 } from "../../../../../../lib/index";
 import { ROOM_TYPE_LABELS, roomTypeLabel } from "../../utils/room-labels";
+import { categoryLabel, subcategoryLabel } from "../../utils/category-labels";
 import {
   BlueprintService,
   BlueprintSort,
@@ -158,8 +159,8 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
     .map((id) => ({ label: dlcLabel(id), value: id }))
     .sort((a, b) => a.label.localeCompare(b.label));
   readonly categoryOptions = [
-    { label: "All categories", value: null },
-    ...CATEGORIES.map((c) => ({ label: c, value: c })),
+    { label: $localize`:browse.allCategories:All categories`, value: null },
+    ...CATEGORIES.map((c) => ({ label: categoryLabel(c), value: c })),
   ];
   readonly roomOptions: { label: string; value: string | null }[] = [
     { label: $localize`:browse.allRooms:All rooms`, value: null },
@@ -174,8 +175,11 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
     const subs =
       SUBCATEGORIES[this.filterCategory as keyof typeof SUBCATEGORIES] ?? [];
     return [
-      { label: "All", value: null },
-      ...(subs as readonly string[]).map((s) => ({ label: s, value: s })),
+      { label: $localize`:browse.allSubcategories:All`, value: null },
+      ...(subs as readonly string[]).map((s) => ({
+        label: subcategoryLabel(s),
+        value: s,
+      })),
     ];
   }
 
@@ -625,13 +629,13 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
       );
     if (this.filterCategory)
       chips.push(
-        this.chip("category", this.filterCategory, () =>
+        this.chip("category", categoryLabel(this.filterCategory), () =>
           this.selectCategory(null),
         ),
       );
     if (this.filterSubcategory)
       chips.push(
-        this.chip("subcategory", this.filterSubcategory, () =>
+        this.chip("subcategory", subcategoryLabel(this.filterSubcategory), () =>
           this.selectSubcategory(null),
         ),
       );

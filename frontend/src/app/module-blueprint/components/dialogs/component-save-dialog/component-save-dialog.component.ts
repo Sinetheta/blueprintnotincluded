@@ -24,6 +24,10 @@ import {
   ROCKET_INTERIOR_MODULES,
 } from "../../../../../../../lib/index";
 import { rocketInteriorLabel } from "../../../common/rocket-interior-label";
+import {
+  categoryLabel,
+  subcategoryLabel,
+} from "../../../utils/category-labels";
 
 @Component({
   selector: "app-component-save-dialog",
@@ -36,7 +40,10 @@ export class ComponentSaveDialogComponent {
 
   @Output() updateThumbnail = new EventEmitter();
 
-  readonly categoryOptions = CATEGORIES.map((c) => ({ label: c, value: c }));
+  readonly categoryOptions = CATEGORIES.map((c) => ({
+    label: categoryLabel(c),
+    value: c,
+  }));
 
   // "None" is a real option, not a cleared select: the stored value is null
   // either way, but the author should see that no interior is a choice.
@@ -58,7 +65,10 @@ export class ComponentSaveDialogComponent {
     const cat = this.saveBlueprintForm.value.category;
     if (!cat) return [];
     const subs = SUBCATEGORIES[cat as keyof typeof SUBCATEGORIES] ?? [];
-    return (subs as readonly string[]).map((s) => ({ label: s, value: s }));
+    return (subs as readonly string[]).map((s) => ({
+      label: subcategoryLabel(s),
+      value: s,
+    }));
   }
 
   onCategoryChange() {

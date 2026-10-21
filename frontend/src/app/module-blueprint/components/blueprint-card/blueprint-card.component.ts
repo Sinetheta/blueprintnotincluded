@@ -10,6 +10,7 @@ import {
 } from "../../utils/chip-tooltip";
 import { dlcLabel } from "../../../../../../lib/index";
 import { roomTypeLabel } from "../../utils/room-labels";
+import { categoryLabel } from "../../utils/category-labels";
 import { ContentLocaleService } from "../../services/content-locale.service";
 
 const MAX_ROOM_CHIPS = 3;
@@ -53,6 +54,7 @@ export class BlueprintCardComponent {
   @Input() linkState: Record<string, unknown> | undefined = undefined;
 
   readonly categoryTooltip = categoryTooltip;
+  readonly categoryLabel = categoryLabel;
   readonly dlcTooltip = dlcTooltip;
   readonly baseGameTooltip = baseGameTooltip;
   readonly dlcLabel = dlcLabel;

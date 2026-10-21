@@ -1127,7 +1127,7 @@ describe("BrowsePageComponent", () => {
       expect(component.activeFilterChips).toEqual([]);
     });
 
-    it("builds one chip per active facet, using human labels for rooms and modded", () => {
+    it("builds one chip per active facet, using human labels for categories, rooms and modded", () => {
       component.filterName = "spom";
       component.filterCategory = "ranching";
       component.filterSubcategory = "critter";
@@ -1138,8 +1138,8 @@ describe("BrowsePageComponent", () => {
 
       expect(labels).toEqual([
         'Search: "spom"',
-        "ranching",
-        "critter",
+        "Ranching",
+        "Critters",
         "Modded",
         "Latrine",
         "Kitchen",
