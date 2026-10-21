@@ -7,6 +7,8 @@ export declare class CameraService {
     targetCameraOffset: Vector2;
     cameraOffset: Vector2;
     currentZoom: number;
+    viewportSize: Vector2 | null;
+    isCellRectVisible(topLeft: Vector2, bottomRight: Vector2, margin: number): boolean;
     private overlay_;
     get overlay(): Overlay;
     set overlay(value: Overlay);

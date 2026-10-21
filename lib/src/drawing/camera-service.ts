@@ -15,6 +15,29 @@ export class CameraService {
   // Zoom is the number of pixels between cells
   currentZoom: number;
 
+  // The canvas this camera draws into, in pixels, set by the canvas each frame.
+  // Null for a camera that has no screen (the server preview, an export
+  // camera before its first frame): every item then counts as on screen.
+  viewportSize: Vector2 | null = null;
+
+  // Does a cell rectangle (y-up, inclusive cell indices, as BlueprintItem.topLeft /
+  // bottomRight) overlap the viewport, allowing `margin` cells on every side for
+  // art that overhangs its footprint? True when the viewport is unknown.
+  isCellRectVisible(topLeft: Vector2, bottomRight: Vector2, margin: number): boolean {
+    const viewport = this.viewportSize;
+    if (viewport == null) return true;
+    const left = -this.cameraOffset.x;
+    const right = left + viewport.x / this.currentZoom;
+    const top = this.cameraOffset.y;
+    const bottom = top - viewport.y / this.currentZoom;
+    return (
+      topLeft.x - margin <= right &&
+      bottomRight.x + 1 + margin >= left &&
+      topLeft.y + 1 + margin >= bottom &&
+      bottomRight.y - margin <= top
+    );
+  }
+
   private overlay_: Overlay = Overlay.None;
   get overlay() {
     return this.overlay_;

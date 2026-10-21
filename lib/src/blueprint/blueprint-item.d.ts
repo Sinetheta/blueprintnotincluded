@@ -89,6 +89,7 @@ export declare class BlueprintItem {
     containerCreated: boolean;
     reloadCamera: boolean;
     drawPixi(camera: CameraService, pixiUtil: PixiUtil): void;
+    static offscreenMarginCells: number;
     private drawPixiUtility;
     sortChildren(): void;
     destroyed: boolean;
