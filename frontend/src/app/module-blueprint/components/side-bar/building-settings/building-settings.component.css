@@ -31,6 +31,17 @@
   width: 140px;
 }
 
+/* A stored value shown but not offered for edit (a planter's seed tag). */
+.building-setting-readonly {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
 /* A choice among named states (a door's Auto / Open / Locked). */
 .building-setting-select {
   max-width: 140px;

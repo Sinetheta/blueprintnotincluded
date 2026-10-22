@@ -50,23 +50,125 @@ describe('building-settings catalogue', function () {
       'Automatable',
       'Filterable',
       'TreeFilterable',
+      // The per-building toggles and sliders (mod 6.x), catalogued 2026-10.
+      'Repairable',
+      'AutoDisinfectable',
+      'FoodStorage',
+      'EnergyGenerator',
+      'SpaceHeater',
+      'Clinic',
+      'DirectionControl',
+      'HighEnergyParticleRedirector',
+      'SingleEntityReceptacle',
     ];
     for (const key of expectedKeys) expect(isKnownSettingsKey(key)).to.equal(true);
   });
 
   it('does not know keys outside the curated set', () => {
-    // HighEnergyParticleRedirector is a real mod Key (the Radbolt Reflector's
-    // direction) with no catalogue entry. ISingleSliderControl is the game-side
-    // interface behind the radbolt sliders, which the mod never registers, so
-    // it is not a Key at all.
+    // LogicClusterLocationSensor is a real mod Key (the Starmap Location
+    // Sensor's asteroid list) with no catalogue entry: its value is specific to
+    // one save's cluster. ISingleSliderControl is the game-side interface behind
+    // the radbolt sliders, which the mod never registers, so it is not a Key at
+    // all.
     for (const key of [
       'PixelPack',
       'AccessControl',
       'FlatTagFilterable',
-      'HighEnergyParticleRedirector',
+      'LogicClusterLocationSensor',
+      'BuildingFacade',
+      'Artable',
       'ISingleSliderControl',
     ])
       expect(isKnownSettingsKey(key)).to.equal(false);
+  });
+
+  describe('per-building toggles and sliders (mod 6.x)', () => {
+    // Shapes from DataTransferHelpers.cs; every handler copies its field as is.
+    it('formats the boolean toggles the mod writes only when non-default', () => {
+      expect(
+        formatBuildingDataEntry({ Key: 'Repairable', Value: { ForbiddenRepair: true } })
+      ).to.deep.equal([{ field: 'ForbiddenRepair', label: 'Forbid repairs', text: 'On' }]);
+      expect(
+        formatBuildingDataEntry({
+          Key: 'AutoDisinfectable',
+          Value: { enableAutoDisinfect: false },
+        })
+      ).to.deep.equal([{ field: 'enableAutoDisinfect', label: 'Auto-disinfect', text: 'Off' }]);
+      expect(
+        formatBuildingDataEntry({ Key: 'FoodStorage', Value: { SpicedFoodOnly: true } })
+      ).to.deep.equal([{ field: 'SpicedFoodOnly', label: 'Spiced food only', text: 'On' }]);
+    });
+
+    it('shows the generator refill fraction as the side screen percentage', () => {
+      expect(
+        formatBuildingDataEntry({
+          Key: 'EnergyGenerator',
+          Value: { batteryRefillPercent: 0.5 },
+        })
+      ).to.deep.equal([{ field: 'batteryRefillPercent', label: 'Battery refill threshold', text: '50%' }]);
+      const d = SETTINGS_CATALOG.EnergyGenerator[0];
+      expect(toDisplayValue(d, 0.25)).to.equal(25);
+      expect(toStoredValue(d, 80)).to.be.closeTo(0.8, 1e-9);
+    });
+
+    it('shows heater wattage and the cot health threshold unconverted', () => {
+      expect(
+        formatBuildingDataEntry({
+          Key: 'SpaceHeater',
+          Value: { CurrentPowerConsumption: 240 },
+        })
+      ).to.deep.equal([{ field: 'CurrentPowerConsumption', label: 'Power', text: '240 W' }]);
+      expect(
+        formatBuildingDataEntry({ Key: 'Clinic', Value: { sicknessSliderValue: 70 } })
+      ).to.deep.equal([{ field: 'sicknessSliderValue', label: 'Health threshold', text: '70%' }]);
+    });
+
+    it('labels the direction enums in the game\'s own order', () => {
+      expect(
+        formatBuildingDataEntry({ Key: 'DirectionControl', Value: { allowedDirection: 2 } })
+      ).to.deep.equal([{ field: 'allowedDirection', label: 'Direction', text: 'Right only' }]);
+      expect(
+        formatBuildingDataEntry({
+          Key: 'HighEnergyParticleRedirector',
+          Value: { Direction: 6 },
+        })
+      ).to.deep.equal([{ field: 'Direction', label: 'Direction', text: 'W' }]);
+      // The generator now shows both of its fields, Direction first.
+      expect(
+        formatBuildingDataEntry({
+          Key: 'HighEnergyParticleSpawner',
+          Value: { Direction: 0, particleThreshold: 100 },
+        })
+      ).to.deep.equal([
+        { field: 'Direction', label: 'Direction', text: 'N' },
+        { field: 'particleThreshold', label: 'Radbolt threshold', text: '100 radbolts' },
+      ]);
+    });
+
+    it('shows a planter\'s seed tag read-only, with the toggle editable', () => {
+      const descriptors = SETTINGS_CATALOG.SingleEntityReceptacle;
+      expect(descriptors.find(d => d.field == 'requestedEntityTag')!.readOnly).to.equal(true);
+      expect(descriptors.find(d => d.field == 'autoReplaceEntity')!.readOnly).to.equal(undefined);
+      expect(
+        formatBuildingDataEntry({
+          Key: 'SingleEntityReceptacle',
+          Value: {
+            requestedEntityTag: 'PrickleFlowerSeed',
+            requestedEntityAdditionalFilterTag: '',
+            autoReplaceEntity: true,
+          },
+        })
+      ).to.deep.equal([
+        { field: 'requestedEntityTag', label: 'Planted', text: 'PrickleFlowerSeed' },
+        { field: 'requestedEntityAdditionalFilterTag', label: 'Mutation', text: '—' },
+        { field: 'autoReplaceEntity', label: 'Auto-replant', text: 'On' },
+      ]);
+    });
+
+    it('none of the new keys is creatable from scratch', () => {
+      for (const key of ['Repairable', 'EnergyGenerator', 'SingleEntityReceptacle'])
+        expect(getCreatableSettingDefaults('StorageLocker', key)).to.equal(undefined);
+    });
   });
 
   it('marks LogicTimerSensor.timeElapsedInCurrentState hidden', () => {
@@ -1496,13 +1598,14 @@ describe('Storage Tile and radbolt threshold settings (#254, #268)', function ()
       ).to.deep.equal([
         { field: 'particleThreshold', label: 'Radbolt threshold', text: '47 radbolts' },
       ]);
-      // Direction is in the Value but not the catalogue: no row for it.
+      // Direction (EightDirection, 2 = E in the fixture) is a row since 2026-10.
       expect(
         formatBuildingDataEntry(
           settingOf(buildings, 'HighEnergyParticleSpawner'),
           'HighEnergyParticleSpawner'
         )
       ).to.deep.equal([
+        { field: 'Direction', label: 'Direction', text: 'E' },
         { field: 'particleThreshold', label: 'Radbolt threshold', text: '83 radbolts' },
       ]);
     });

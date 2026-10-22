@@ -49,6 +49,8 @@ interface EditableSettingRow {
   // above/below direction), which renders as a pair of options rather than a
   // checkbox. Absent means an ordinary on/off checkbox.
   booleanLabels?: { whenTrue: string; whenFalse: string };
+  // Rendered as text, never as a control (the catalogue's readOnly).
+  readOnly?: boolean;
   // type: 'element' only. The picker's phase filter (from the descriptor) and
   // the resolved element for the current value (undefined = none / unknown id).
   elementForceTag?: string;
@@ -267,6 +269,7 @@ export class BuildingSettingsComponent {
           step,
           stepAttr: stepAttrFor(step, displayMin),
           booleanLabels: descriptor.booleanLabels,
+          readOnly: descriptor.readOnly,
           elementForceTag: descriptor.elementForceTag,
           // NONE_TAG ('Void') is "nothing selected" — the game ships a real
           // element with that id, so it must not be resolved as one.

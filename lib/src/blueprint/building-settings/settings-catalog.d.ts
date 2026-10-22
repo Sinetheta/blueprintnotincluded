@@ -9,6 +9,7 @@ export interface SettingFieldDescriptor {
     max?: number;
     enumLabels?: Record<number, string>;
     hidden?: boolean;
+    readOnly?: boolean;
     displayScale?: number;
     displayOffset?: number;
     unitSuffix?: string;

@@ -6,8 +6,9 @@ import { BuildingSettingsInfo } from '../../b-export/b-building';
 // know how to display (and, from phase 3, edit) — spec/building-settings-plan.md
 // "Automation keys in scope" table, verified against
 // spec/blueprintsv2-import-spec.md §3. Every other `Key` a file may carry
-// (`AccessControl`, `PixelPack`, `FlatTagFilterable`, skins, ...) is preserved
-// opaquely and never reaches this table.
+// (`AccessControl`, `PixelPack`, `FlatTagFilterable`, `LogicClusterLocationSensor`,
+// the `BuildingFacade`/`Artable` skins, ...) is preserved opaquely and never
+// reaches this table.
 
 // 'cycleFraction': a 0-1 fraction of a 600s in-game cycle (LogicTimeOfDaySensor),
 // displayed as a percentage. 's': seconds, with a cycle count appended for long
@@ -40,6 +41,11 @@ export interface SettingFieldDescriptor {
   // `LogicTimerSensor.timeElapsedInCurrentState` today — a runtime value the
   // mod's TryApplyData still requires present in a written Value object.
   hidden?: boolean;
+  // Shown but never offered for edit. For a value the editor has no sensible
+  // control for (a prefab tag the mod resolves through TagManager -- any typo
+  // becomes an order for a thing that does not exist) and which a reader still
+  // wants to see.
+  readOnly?: boolean;
 
   // Affine stored <-> display conversion, for fields whose stored value is a
   // raw sim number rather than what the game showed the player:
@@ -201,6 +207,29 @@ function suppressesStowawaySwitch(prefabId: string): boolean {
 
 // Keyed by the component `Key` (nameof the ONI component class — the mod's
 // own registry, API_Methods.cs RegisterVanillaBuildings()).
+// EightDirection, the game's own enum order (Up, UpRight, Right, DownRight,
+// Down, DownLeft, Left, UpLeft), labelled the way the Radbolt direction side
+// screen labels them (UI.UISIDESCREENS.HIGHENERGYPARTICLEDIRECTIONSIDESCREEN
+// .DIRECTION_N ... .DIRECTION_NW in strings.json).
+const EIGHT_DIRECTION_LABELS: Record<number, string> = {
+  0: 'N',
+  1: 'NE',
+  2: 'E',
+  3: 'SE',
+  4: 'S',
+  5: 'SW',
+  6: 'W',
+  7: 'NW',
+};
+
+// WorkableReactable.AllowedDirection, the game's own enum order: Any, Left,
+// Right. The Duplicant Checkpoint's (and one-way doors') side screen.
+const ALLOWED_DIRECTION_LABELS: Record<number, string> = {
+  0: 'Both',
+  1: 'Left only',
+  2: 'Right only',
+};
+
 export const SETTINGS_CATALOG: Record<string, SettingFieldDescriptor[]> = {
   Switch: [{ field: 'switchedOn', labelKey: 'On', type: 'bool' }],
 
@@ -342,6 +371,106 @@ export const SETTINGS_CATALOG: Record<string, SettingFieldDescriptor[]> = {
 
   BuildingEnabledButton: [{ field: 'IsEnabled', labelKey: 'Enabled', type: 'bool' }],
 
+  // --- Per-building toggles and sliders the mod has carried since its 6.x
+  // "stores more building settings" releases (Steam change notes 6.0-6.2,
+  // 2026-06/07) and which were preserved here only as "other stored settings".
+  // Shapes read off DataTransferHelpers.cs at Sgt_Imalas-Oni-Mods@12fed6b6 and
+  // confirmed unchanged in the 7.7.0 build (the registered Key list in the
+  // shipped DLL is the same 37 names). Each handler copies the component field
+  // as is, so no scaling anywhere below unless the comment says so. ---
+
+  // Written only when repairs are forbidden (the handler returns null for the
+  // default), so a stored entry is always `true`; applied by CancelRepair.
+  Repairable: [{ field: 'ForbiddenRepair', labelKey: 'Forbid repairs', type: 'bool' }],
+
+  // Likewise written only when auto-disinfect is OFF; the apply side honours
+  // both values, so an edit back to true is still meaningful.
+  AutoDisinfectable: [
+    { field: 'enableAutoDisinfect', labelKey: 'Auto-disinfect', type: 'bool' },
+  ],
+
+  // Refrigerator / Ration Box "spiced food only" toggle; written only when on.
+  FoodStorage: [{ field: 'SpicedFoodOnly', labelKey: 'Spiced food only', type: 'bool' }],
+
+  // Generators with a battery-refill slider (the handler skips the ones with
+  // ignoreBatteryRefillPercent). Stored as the component's 0-1 fraction, shown
+  // as the percentage the side screen shows. NOT verified in a sandbox game
+  // yet -- if a capture shows 50 where the game said 50 %, drop displayScale.
+  EnergyGenerator: [
+    {
+      field: 'batteryRefillPercent',
+      labelKey: 'Battery refill threshold',
+      type: 'float',
+      unitSuffix: '%',
+      displayScale: 100,
+      min: 0,
+      max: 1,
+      step: 1,
+      decimals: 0,
+    },
+  ],
+
+  // Space Heater / Liquid Tepidizer target wattage (the handler only stores it
+  // for a heater that produceHeat); SetUserSpecifiedPowerConsumptionValue.
+  SpaceHeater: [
+    {
+      field: 'CurrentPowerConsumption',
+      labelKey: 'Power',
+      type: 'float',
+      unitSuffix: 'W',
+      min: 0,
+      step: 1,
+      decimals: 0,
+    },
+  ],
+
+  // Triage Cot: the health slider below which a Duplicant is sent to the cot.
+  // Stored as the slider's own 0-100 number (ISliderControl.SetSliderValue).
+  Clinic: [
+    {
+      field: 'sicknessSliderValue',
+      labelKey: 'Health threshold',
+      type: 'float',
+      unitSuffix: '%',
+      min: 0,
+      max: 100,
+      step: 1,
+      decimals: 0,
+    },
+  ],
+
+  DirectionControl: [
+    {
+      field: 'allowedDirection',
+      labelKey: 'Direction',
+      type: 'enum',
+      enumLabels: ALLOWED_DIRECTION_LABELS,
+    },
+  ],
+
+  // Radbolt Reflector. The generator's own Direction is on
+  // HighEnergyParticleSpawner below.
+  HighEnergyParticleRedirector: [
+    { field: 'Direction', labelKey: 'Direction', type: 'enum', enumLabels: EIGHT_DIRECTION_LABELS },
+  ],
+
+  // Planter boxes, farm tiles, hydroponic farms, incubators, pedestals: what
+  // was planted (or ordered) there, as the prefab tag the mod resolves with
+  // TagManager.Create -- a plant's seed id (PrickleFlowerSeed), an egg, an item.
+  // The handler reads all three fields and bails if any is missing, so the
+  // empty filter tag must survive an edit of the toggle. Read-only: the editor
+  // has no seed picker, and a mistyped tag silently orders nothing.
+  SingleEntityReceptacle: [
+    { field: 'requestedEntityTag', labelKey: 'Planted', type: 'string', readOnly: true },
+    {
+      field: 'requestedEntityAdditionalFilterTag',
+      labelKey: 'Mutation',
+      type: 'string',
+      readOnly: true,
+    },
+    { field: 'autoReplaceEntity', labelKey: 'Auto-replant', type: 'bool' },
+  ],
+
   // --- Keys whose bounds and units depend on the building. The entries below are
   // the unbounded fallback; resolveSettingDescriptors fills in the range the export
   // records for the prefab (OniItem.settings). ---
@@ -436,9 +565,9 @@ export const SETTINGS_CATALOG: Record<string, SettingFieldDescriptor[]> = {
   // values the export does not carry, and a wrong bound would pull a legitimate
   // stored value down on the first edit.
   //
-  // The generator's `Direction` (an EightDirection int) is not catalogued. It
-  // round-trips because an edit replaces one field and keeps the rest -- which
-  // matters, since the handler reads Direction first and returns without it.
+  // The generator's `Direction` (an EightDirection int) is catalogued with the
+  // reflector's labels; the handler reads Direction first and returns without
+  // it, so an edit of either row must keep the other (setBuildingSetting does).
   HEPBattery: [
     {
       field: 'particleThreshold',
@@ -450,6 +579,7 @@ export const SETTINGS_CATALOG: Record<string, SettingFieldDescriptor[]> = {
     },
   ],
   HighEnergyParticleSpawner: [
+    { field: 'Direction', labelKey: 'Direction', type: 'enum', enumLabels: EIGHT_DIRECTION_LABELS },
     {
       field: 'particleThreshold',
       labelKey: 'Radbolt threshold',

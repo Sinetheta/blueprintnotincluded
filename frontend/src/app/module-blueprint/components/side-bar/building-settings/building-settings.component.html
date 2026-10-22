@@ -108,8 +108,14 @@
         </option>
       </select>
 
+      <span
+        *ngIf="row.type === 'string' && row.readOnly"
+        class="building-setting-readonly"
+        >{{ row.displayValue || "—" }}</span
+      >
+
       <input
-        *ngIf="row.type === 'string'"
+        *ngIf="row.type === 'string' && !row.readOnly"
         #textInput
         type="text"
         class="building-setting-text"
