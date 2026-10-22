@@ -66,14 +66,16 @@ tool() {
   ' -- "$@"
 }
 
-# mongosh as root inside the project's mongo container; the password goes in
+# mongosh as root inside the project's mongo container. The password goes in
 # through the environment (`-e MONGO_PW`, copied from this process's
-# environment, never an argument on the host) and is expanded in there.
+# environment, never an argument on the host) and the script authenticates
+# with process.env.MONGO_PW itself, so it is in no argument list in the
+# container either. `db` is then the project database.
 mongosh_root() {
   local pw
   pw=$(root_pw)
-  MONGO_PW="$pw" "$compose" "$project" exec -T -e MONGO_PW mongo sh -c \
-    'exec mongosh --quiet "mongodb://root:$MONGO_PW@127.0.0.1:27017/'"$db"'?authSource=admin" --eval "$1"' -- "$1"
+  MONGO_PW="$pw" "$compose" "$project" exec -T -e MONGO_PW mongo mongosh --quiet --eval \
+    'db.getSiblingDB("admin").auth("root", process.env.MONGO_PW); db = db.getSiblingDB("'"$db"'"); '"$1"
 }
 
 source_uri() {
