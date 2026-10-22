@@ -31,13 +31,13 @@
   width: 140px;
 }
 
-/* A stored value shown but not offered for edit (a planter's seed tag). */
+/* A stored value shown but not offered for edit (a planter's seed tag). It
+   wraps rather than clips: there is no control to reveal a hidden tail, and
+   the identifier is the whole point of the row. */
 .building-setting-readonly {
   display: inline-block;
   max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   vertical-align: middle;
   opacity: 0.85;
 }
