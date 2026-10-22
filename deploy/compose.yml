@@ -1,0 +1,160 @@
+# Production / staging stack for blueprintnotincluded.org on one Hetzner box.
+#
+# One file serves both compose projects. Everything that differs between them
+# comes from the project directory's .env (compose interpolation: image tag,
+# memory knobs, tunnel token, database passwords, R2 credentials) and app.env
+# (the application's own environment). Run it through bin/compose.sh, which
+# sets --project-directory to /srv/bpni/<production|staging> so each project
+# reads its own files and owns its own volumes:
+#
+#   /srv/bpni/deploy/bin/compose.sh production ps
+#   /srv/bpni/deploy/bin/compose.sh staging logs -f app
+#
+# Nothing publishes a host port. The only way in is the Cloudflare Tunnel
+# (cloudflared dials out to Cloudflare), so the Hetzner firewall allows SSH
+# alone and MongoDB is reachable from the compose network only.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  app:
+    image: ghcr.io/blueprintnotincluded/blueprintnotincluded:${IMAGE_TAG:?set IMAGE_TAG (latest for staging, prod for production)}
+    restart: unless-stopped
+    # Node forks the preview render worker; an init process reaps whatever a
+    # recycled worker leaves behind.
+    init: true
+    stop_grace_period: 30s
+    env_file:
+      - app.env
+    environment:
+      # Built here rather than written into app.env so the password lives in
+      # exactly one place (.env), next to the mongo service that creates it.
+      DB_URI: mongodb://bpni:${MONGO_APP_PASSWORD:?set MONGO_APP_PASSWORD}@mongo:27017/blueprintnotincluded?authSource=blueprintnotincluded
+      PORT: "3000"
+      # L1 preview cache on a named volume so it survives a redeploy (the app
+      # defaults to a path inside the container's writable layer).
+      PREVIEW_CACHE_DIR: /bpni/preview-cache
+    volumes:
+      - preview_cache:/bpni/preview-cache
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      # node:20-slim ships neither curl nor wget; Node 20 has fetch. /api/health
+      # answers 503 until mongoose is connected, so this doubles as a database
+      # check from the app's point of view.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          # The preview render worker sizes its own RSS cap from this cgroup
+          # limit (app/api/services/render-memory.ts): at 1024m it lands on
+          # the 384 MB ceiling with ~320 MB of headroom for the API parent.
+          memory: ${APP_MEM_LIMIT:-1024m}
+    logging: *logging
+
+  mongo:
+    # 8.0 line (the dev container runs 8.0.23 for the same reason: 8.2 is only
+    # needed on kernels >= 6.19, and Ubuntu 24.04 LTS ships 6.8).
+    image: mongo:8.0
+    restart: unless-stopped
+    # WiredTiger's default cache is half of (RAM - 1 GB), measured against the
+    # host, not the container: on a 4 GB box that is 1.5 GB for each of two
+    # mongos. Pin it under the container limit instead.
+    command: ["mongod", "--wiredTigerCacheSizeGB", "${MONGO_CACHE_GB:-1}"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: blueprintnotincluded
+      # Read by mongo/init-users.sh on the volume's first start only.
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?set MONGO_APP_PASSWORD}
+      MONGO_BACKUP_PASSWORD: ${MONGO_BACKUP_PASSWORD:?set MONGO_BACKUP_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+      - ${DEPLOY_DIR:-/srv/bpni/deploy}/mongo/init-users.sh:/docker-entrypoint-initdb.d/10-init-users.sh:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok ? quit(0) : quit(1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${MONGO_MEM_LIMIT:-1792m}
+    logging: *logging
+    # Deliberately no `ports:`. Reach it with
+    #   bin/compose.sh production exec mongo mongosh -u root -p "$MONGO_ROOT_PASSWORD"
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN (Cloudflare Zero Trust > Networks > Tunnels)}
+    depends_on:
+      app:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    logging: *logging
+    # The tunnel's public hostname routes to http://app:3000 — "app" resolves
+    # on this project's compose network, which is why each project runs its
+    # own tunnel.
+
+  backup:
+    # Nightly mongodump -> Cloudflare R2. Only started when COMPOSE_PROFILES
+    # includes "backup" (production's .env does; staging's does not), but the
+    # same image serves one-off `compose run --rm backup ...` invocations in
+    # every project: bin/seed-from-dump.sh and backup/restore-drill.sh use it
+    # for its mongodump/mongorestore/rclone.
+    build: ${DEPLOY_DIR:-/srv/bpni/deploy}/backup
+    image: bpni-backup:local
+    profiles: ["backup"]
+    restart: unless-stopped
+    environment:
+      BACKUP_MONGO_URI: mongodb://backup:${MONGO_BACKUP_PASSWORD:?set MONGO_BACKUP_PASSWORD}@mongo:27017/blueprintnotincluded?authSource=admin
+      BACKUP_DB: blueprintnotincluded
+      BACKUP_EXCLUDE_COLLECTIONS: ${BACKUP_EXCLUDE_COLLECTIONS:-previewimages}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-30 3 * * *}
+      BACKUP_KEEP_DAILY_DAYS: ${BACKUP_KEEP_DAILY_DAYS:-14}
+      BACKUP_KEEP_WEEKLY_DAYS: ${BACKUP_KEEP_WEEKLY_DAYS:-56}
+      BACKUP_REMOTE: r2:${R2_BUCKET:-bpni-backups}/${COMPOSE_PROJECT_NAME:-bpni}
+      # rclone reads its remote from the environment: no config file to write.
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      RCLONE_CONFIG_R2_ENDPOINT: ${R2_ENDPOINT:-}
+      RCLONE_CONFIG_R2_ACL: private
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
+    volumes:
+      - /srv/bpni/dumps:/dumps
+    depends_on:
+      mongo:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *logging
+
+volumes:
+  mongo_data:
+  preview_cache:

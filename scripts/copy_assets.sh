@@ -9,7 +9,7 @@ fi
 # Copy package.json for version info
 cp package.json build/
 
-# npm tasks in the deploy console run from /bpni/build via the copied
+# npm tasks in the deploy container run from /bpni/build via the copied
 # package.json; ship the batch dispatcher they resolve (./scripts/batch.sh).
 mkdir -p build/scripts
 cp scripts/batch.sh build/scripts/

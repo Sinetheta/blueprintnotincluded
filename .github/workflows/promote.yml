@@ -1,20 +1,19 @@
 # Promote staging's image to production, or roll production back.
 #
 # Staging deploys :latest on every push to master (publish.yml). Production
-# runs the :prod tag with autodeploy on, so pointing :prod at a manifest IS
-# the production deploy. Promotion is a server-side retag of the manifest
-# :latest resolves to: nothing is rebuilt or re-uploaded, so production gets
-# byte-for-byte what was tested on staging, in seconds.
+# runs the :prod tag, so pointing :prod at a manifest and re-running the
+# production compose project IS the production deploy. Promotion is a
+# server-side retag of the manifest :latest resolves to: nothing is rebuilt
+# or re-uploaded, so production gets byte-for-byte what was tested on
+# staging, in seconds.
 #
 # The old :prod moves to :prod-previous first, so "rollback" is the same
-# button swapping the two. The registry therefore never holds more than
-# three named manifests, and the daily registry-gc.yml removes the rest.
+# button swapping the two. ghcr.io keeps every :sha-<short> tag as well, so
+# an older build can always be put back by hand (deploy/README.md).
 #
 # Gated by the "production" GitHub Environment, which requires an approving
-# reviewer before the job runs. It uses the same registry token as the
-# staging deploy: minting the short-lived docker credential that the deploy
-# already relies on needs registry write access, and a retag needs nothing
-# more than that.
+# reviewer before the job runs. The retag needs packages: write on
+# GITHUB_TOKEN; the deploy needs the same SSH secrets as publish.yml.
 name: Promote to production
 
 on:
@@ -31,61 +30,34 @@ on:
 # One promotion at a time: two overlapping runs could cross their retags.
 concurrency: promote-to-production
 
-# Nothing here talks to GitHub: the only credential this job needs is the
-# registry token.
 permissions: {}
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
   promote:
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
+      url: https://blueprintnotincluded.org
+    permissions:
+      contents: read # checkout, for deploy/
+      packages: write # the retag
 
     steps:
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      # The registry is read-only while a garbage collection runs (the daily
-      # registry-gc.yml, at a quiet hour), and a collection first waits up to
-      # 15 minutes for outstanding write credentials to expire before it does
-      # its (quick) work. Wait rather than fail. This only needs the API
-      # token, so it comes before the registry login: the docker credential
-      # is minted right before the retag that uses it, because one minted
-      # before a 15-minute wait is expired by the end of it (run
-      # 38175116486), and is itself one more credential for the collection
-      # to wait on.
-      - name: Wait for any running garbage collection
-        run: |
-          # The API answers 404 when nothing is running, which doctl reports
-          # as an error, so only that error means idle. Any other failure is
-          # not an idle registry: keep polling, and give up only when the
-          # window closes.
-          for _ in $(seq 1 80); do
-            if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1); then
-              if [ -z "$active" ]; then
-                exit 0
-              fi
-              echo "Garbage collection in progress, waiting..."
-            elif echo "$active" | grep -qiE '404|not found'; then
-              exit 0
-            else
-              echo "::warning::Could not query garbage collection: $active"
-            fi
-            sleep 15
-          done
-          echo "::error::Could not confirm the registry is writable after 20 minutes; try again later."
-          exit 1
-
-      - name: Log in to DO Container Registry
-        run: doctl registry login --expiry-seconds 900
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v3
 
       - name: ${{ inputs.action == 'rollback' && 'Roll production back' || 'Promote staging to production' }}
         env:
-          IMAGE: ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}
           ACTION: ${{ inputs.action }}
         run: |
           set -euo pipefail
@@ -123,46 +95,76 @@ jobs:
               exit 1
             fi
             if [ "$latest" = "$prod" ]; then
-              echo "Production already runs staging's image. Nothing to do."
-              echo "Production already runs staging's image ($latest). Nothing changed." >> "$GITHUB_STEP_SUMMARY"
-              exit 0
+              echo "Production already runs staging's image. Redeploying it anyway."
+              echo "Production already runs staging's image ($latest); the tags did not change." >> "$GITHUB_STEP_SUMMARY"
+            else
+              if [ -n "$prod" ]; then
+                retag prod-previous "$IMAGE@$prod"
+              fi
+              retag prod "$IMAGE@$latest"
+              {
+                echo "## Promoted to production"
+                echo
+                echo "| tag | before | after |"
+                echo "|---|---|---|"
+                echo "| prod | ${prod:-<none>} | $latest |"
+                echo "| prod-previous | ${previous:-<none>} | ${prod:-<none>} |"
+              } >> "$GITHUB_STEP_SUMMARY"
             fi
-            if [ -n "$prod" ]; then
-              retag prod-previous "$IMAGE@$prod"
-            fi
-            retag prod "$IMAGE@$latest"
-            {
-              echo "## Promoted to production"
-              echo
-              echo "| tag | before | after |"
-              echo "|---|---|---|"
-              echo "| prod | ${prod:-<none>} | $latest |"
-              echo "| prod-previous | ${previous:-<none>} | ${prod:-<none>} |"
-              echo
-              echo "Production autodeploys from :prod; watch the app in DigitalOcean for the new deployment."
-            } >> "$GITHUB_STEP_SUMMARY"
           else
             if [ -z "$previous" ]; then
               echo "::error::There is no :prod-previous image to roll back to."
               exit 1
             fi
             if [ "$previous" = "$prod" ]; then
-              echo "Production already runs the previous image. Nothing to do."
-              exit 0
+              echo "Production already runs the previous image. Redeploying it anyway."
+            else
+              # Swap, so that a second rollback goes forward again
+              retag prod "$IMAGE@$previous"
+              if [ -n "$prod" ]; then
+                retag prod-previous "$IMAGE@$prod"
+              fi
+              {
+                echo "## Rolled production back"
+                echo
+                echo "| tag | before | after |"
+                echo "|---|---|---|"
+                echo "| prod | ${prod:-<none>} | $previous |"
+                echo "| prod-previous | $previous | ${prod:-<none>} |"
+              } >> "$GITHUB_STEP_SUMMARY"
             fi
-            # Swap, so that a second rollback goes forward again
-            retag prod "$IMAGE@$previous"
-            if [ -n "$prod" ]; then
-              retag prod-previous "$IMAGE@$prod"
-            fi
-            {
-              echo "## Rolled production back"
-              echo
-              echo "| tag | before | after |"
-              echo "|---|---|---|"
-              echo "| prod | ${prod:-<none>} | $previous |"
-              echo "| prod-previous | $previous | ${prod:-<none>} |"
-              echo
-              echo "Production autodeploys from :prod; watch the app in DigitalOcean for the new deployment."
-            } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # The retag alone changes nothing on the box: the production compose
+      # project pulls :prod and restarts the app only when told to. Same
+      # mechanism as the staging deploy in publish.yml, with the deploy/
+      # directory from the commit being promoted — the workflow runs on the
+      # ref it was dispatched from, normally master.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Sync deploy/ to the server
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o BatchMode=yes" \
+            deploy/ "deploy@$DEPLOY_HOST:/srv/bpni/deploy/"
+
+      - name: Deploy production
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "deploy@$DEPLOY_HOST" \
+            /srv/bpni/deploy/bin/deploy.sh production
+          echo "Production redeployed from \`$IMAGE:prod\`." >> "$GITHUB_STEP_SUMMARY"

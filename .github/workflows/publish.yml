@@ -5,9 +5,13 @@ on:
     branches:
       - "master"
 
-# checkout needs to read the repo; nothing else here uses GITHUB_TOKEN
+# checkout reads the repo; the build job also pushes the image to ghcr.io
+# with GITHUB_TOKEN (packages: write is granted on that job alone).
 permissions:
   contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
   quick-check:
@@ -30,9 +34,12 @@ jobs:
       - name: Compile TypeScript
         run: npm run tsc
 
-  deploy:
+  build:
     runs-on: ubuntu-latest
     needs: quick-check
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -63,6 +70,11 @@ jobs:
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Links the ghcr.io package to this repository (it then inherits the
+          # repo's access permissions; visibility is set once by hand).
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ env.GIT_COMMIT }}
           build-args: |
             BUILD_DATE=${{ env.BUILD_DATE }}
             GIT_COMMIT=${{ env.GIT_COMMIT }}
@@ -108,53 +120,66 @@ jobs:
             }
           "
         
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # :latest is staging's image. Production is promoted from it by the
       # "Promote to production" workflow, which names the manifest :prod.
-      - name: Tag image
-        run: docker tag bni-deploy ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
-
-      # The registry is read-only while a garbage collection runs (the daily
-      # registry-gc.yml, at a quiet hour), and a collection first waits up to
-      # 15 minutes for outstanding write credentials to expire before it does
-      # its (quick) work. A push into that window fails, so wait it out
-      # rather than fail the deploy. This only needs the API token, so it
-      # comes before the registry login: a write credential minted now would
-      # be one more for the collection to wait on, and could expire before
-      # the push.
-      - name: Wait for any running garbage collection
+      # :sha-<short> keeps every build addressable for a manual rollback or
+      # a bisect; ghcr.io charges nothing for a public repository's packages,
+      # so nothing garbage-collects them.
+      - name: Push image to ghcr.io
         run: |
-          # The API answers 404 when nothing is running, which doctl reports
-          # as an error, so only that error means idle. Any other failure is
-          # not an idle registry: keep polling, and give up only when the
-          # window closes.
-          for _ in $(seq 1 80); do
-            if active=$(doctl registry garbage-collection get-active --format UUID --no-header 2>&1); then
-              if [ -z "$active" ]; then
-                exit 0
-              fi
-              echo "Garbage collection in progress, waiting..."
-            elif echo "$active" | grep -qiE '404|not found'; then
-              exit 0
-            else
-              echo "::warning::Could not query garbage collection: $active"
-            fi
-            sleep 15
-          done
-          echo "::error::Could not confirm the registry is writable after 20 minutes; re-run this workflow later."
-          exit 1
+          short=${GIT_COMMIT::7}
+          docker tag bni-deploy "$IMAGE:latest"
+          docker tag bni-deploy "$IMAGE:sha-$short"
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:sha-$short"
+          echo "Pushed \`$IMAGE:latest\` and \`$IMAGE:sha-$short\`" >> "$GITHUB_STEP_SUMMARY"
 
-      # The push takes a few minutes; the token's lifetime is also how long a
-      # garbage collection started afterwards waits before it can run (capped
-      # at 15 minutes), which is why the collection is scheduled for hours
-      # later and not started here. Untagged manifests this push leaves
-      # behind are collected by registry-gc.yml.
-      - name: Log in to DO Container Registry
-        run: doctl registry login --expiry-seconds 3600
+  # Staging follows :latest on the Hetzner box. The box only accepts SSH, so
+  # the deploy is a copy of deploy/ plus one script run; deploy/README.md
+  # describes the layout it lands in and the secrets/variables it needs
+  # (DEPLOY_SSH_KEY, DEPLOY_HOST, DEPLOY_KNOWN_HOSTS).
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: staging
+      url: https://staging.blueprintnotincluded.org
+    # One deploy at a time per project: two overlapping `compose up`s could
+    # race each other's pull.
+    concurrency: deploy-staging
 
-      - name: Push image to DO Container Registry
-        run: docker push ${{ vars.DIGITALOCEAN_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Sync deploy/ to the server
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o BatchMode=yes" \
+            deploy/ "deploy@$DEPLOY_HOST:/srv/bpni/deploy/"
+
+      - name: Deploy staging
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "deploy@$DEPLOY_HOST" \
+            /srv/bpni/deploy/bin/deploy.sh staging

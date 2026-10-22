@@ -1,0 +1,122 @@
+#cloud-config
+# Hetzner Cloud user data for the blueprintnotincluded.org box.
+#
+# Paste this into "Cloud config" when creating the server (Ubuntu 24.04 LTS,
+# CX23, fsn1 or nbg1) after filling in the two ssh_authorized_keys lines.
+# Pair it with a Hetzner Cloud Firewall that allows inbound TCP 22 only (and
+# ICMP if you like): everything else is outbound — cloudflared dials out to
+# Cloudflare, Docker pulls from ghcr.io, backups push to R2.
+#
+# Idempotent by construction (cloud-init runs once per instance); to repeat a
+# step on an existing box run the equivalent command from runcmd by hand.
+#
+# What it sets up:
+#   - user `deploy` (docker group, passwordless sudo, key-only SSH) for the
+#     workflows and for you; root login and password auth off
+#   - Docker Engine + Compose v2 from Ubuntu's own archive (docker.io,
+#     docker-compose-v2: 26.x / 2.27 on noble, everything compose.yml needs,
+#     and unattended-upgrades keeps them patched with no extra apt origin)
+#   - unattended-upgrades, automatic reboot at 05:17 UTC when a kernel needs
+#     it (containers return via their restart policy)
+#   - fail2ban with the sshd jail
+#   - journald capped at 200 MB; Docker json-file logs 10 MB x 3 per container
+#   - a 2 GB swapfile (swappiness 10): four containers with memory limits on a
+#     4 GB box, with headroom so an overshoot pages instead of OOM-killing mongo
+#   - /srv/bpni/{deploy,production,staging,dumps} owned by deploy
+
+hostname: bpni
+timezone: Etc/UTC
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+users:
+  - name: deploy
+    groups: [docker, sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAA... kevin@laptop"
+      - "ssh-ed25519 AAAA... github-actions-deploy"
+
+ssh_pwauth: false
+disable_root: true
+
+packages:
+  - docker.io
+  - docker-compose-v2
+  - docker-buildx
+  - fail2ban
+  - unattended-upgrades
+  - curl
+  - rsync
+
+swap:
+  filename: /swapfile
+  size: 2G
+  maxsize: 2G
+
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "10m", "max-file": "3" },
+        "live-restore": true
+      }
+  - path: /etc/sysctl.d/90-bpni.conf
+    permissions: "0644"
+    content: |
+      vm.swappiness = 10
+  - path: /etc/systemd/journald.conf.d/size.conf
+    permissions: "0644"
+    content: |
+      [Journal]
+      SystemMaxUse=200M
+  - path: /etc/fail2ban/jail.d/sshd.local
+    permissions: "0644"
+    content: |
+      [sshd]
+      enabled = true
+      mode = aggressive
+      maxretry = 5
+      findtime = 10m
+      bantime = 1h
+  - path: /etc/apt/apt.conf.d/52unattended-upgrades-local
+    permissions: "0644"
+    content: |
+      Unattended-Upgrade::Origins-Pattern {
+        "origin=Ubuntu,archive=${distro_codename}-security";
+        "origin=Ubuntu,archive=${distro_codename}-updates";
+      };
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "05:17";
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  - path: /etc/ssh/sshd_config.d/90-bpni.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+
+runcmd:
+  - sysctl --system
+  - systemctl restart systemd-journald
+  - mkdir -p /srv/bpni/deploy /srv/bpni/production /srv/bpni/staging /srv/bpni/dumps
+  - chown -R deploy:deploy /srv/bpni
+  - chmod 750 /srv/bpni/production /srv/bpni/staging
+  - systemctl enable --now docker
+  - systemctl restart docker
+  - systemctl enable --now fail2ban
+  - systemctl restart ssh
+  - docker --version
+  - docker compose version
+
+final_message: "bpni box ready after $UPTIME s: copy deploy/env/*.example into /srv/bpni/<project>/ and fill them in (deploy/README.md, First install)."

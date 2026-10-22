@@ -125,8 +125,8 @@ function facetsEnabled(): boolean {
   return process.env.BLUEPRINT_FACETS_ENABLED !== 'false';
 }
 
-// Cheap greppable signal for prod ops (`doctl apps logs <app> --type run |
-// grep facets-slow`) until real APM exists — see agent/SESSION_NOTES.md /
+// Cheap greppable signal for prod ops (`deploy/bin/compose.sh production logs
+// app | grep facets-slow`) until real APM exists — see agent/SESSION_NOTES.md /
 // project_feed_query_perf memory: New Relic was recommended but never wired
 // up, so this is the fastest lever available today.
 const FACETS_SLOW_THRESHOLD_MS = 200;
