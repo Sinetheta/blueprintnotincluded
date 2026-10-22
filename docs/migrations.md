@@ -33,7 +33,11 @@ The GitHub repo is at https://github.com/blueprintnotincluded/blueprintnotinclud
   request to `master` (the `paths` filter only applies to the `push` trigger)
 - `frontend-test.yml` — runs on push to master when frontend paths change, and on every pull
   request to `master` (same path-filter caveat)
-- `publish.yml` — deploys to DigitalOcean on push to master only
+- `publish.yml` — on push to master only: builds the deploy image, pushes it to ghcr.io as
+  `:latest` and deploys it to staging over SSH
+- `promote.yml` — manual: retags `:latest` → `:prod` on ghcr.io (or rolls back) and deploys
+  production over SSH; gated by the `production` environment. Hosting runbook:
+  `deploy/README.md`
 
 ## Database Migrations
 
@@ -76,14 +80,21 @@ Rules:
 
 ### Credential rules
 
-- Admin URI (`doadmin`) — DO app console env only. Never on local machine.
-- `doctl` — installed; use it freely for reads (app logs, specs, deployments). The API
-  token is normally **read-only**; writes (`doctl apps update` etc.) fail by design. For
-  rare write tasks Kevin temporarily swaps in a full-access token and removes it after —
-  if a write fails on permissions, ask, don't work around it.
-- Read-only URI — `/.env.migration` (gitignored). Safe to store; cannot write to DB.
+- Production and staging secrets (Mongo passwords, tunnel tokens, R2 keys, the app's
+  env) live only in `/srv/bpni/<project>/.env` and `app.env` on the Hetzner server, mode
+  600, owner `deploy`. The repo ships `deploy/env/*.example`; never a filled-in copy.
+- The database is the `mongo` service of each compose project, reachable from that
+  project's network only (no host port, no public URI). Root in mongosh:
+  `deploy/bin/compose.sh production exec mongo mongosh -u root -p … --authenticationDatabase admin`.
+- Server access is key-only SSH as `deploy`; the workflows use the `DEPLOY_SSH_KEY`
+  repository secret. Nothing on the box is reachable from this dev container.
+- Dumps for a local rehearsal come from R2 (`rclone copy r2:bpni-backups/bpni-production/daily/<archive>`
+  with the scoped R2 token) or from the box's `/srv/bpni/dumps/`.
 - `/.env` — local dev only. Never put prod or staging credentials here.
 - `/prod-dump/` — gitignored. Real prod data; never commit.
+- Until the DigitalOcean cut-over is complete: the read-only DO URI stays in
+  `/.env.migration` (gitignored, cannot write), `doctl` stays read-only, and nothing on DO
+  is changed from here.
 
 ### Pre-merge process for every migration
 
@@ -95,12 +106,12 @@ npm run test
 npm run migrate:status
 npm run migrate:up
 
-# 3. Dump prod using read-only credentials
-source .env.migration
-mongodump --uri="$PROD_READONLY_URI" --out=./prod-dump
+# 3. Fetch last night's production archive from R2 (previewimages excluded — fine for a rehearsal)
+rclone copy r2:bpni-backups/bpni-production/daily/<newest>.archive.gz ./prod-dump/
+#    (until the DO cut-over: source .env.migration && mongodump --uri="$PROD_READONLY_URI" --gzip --archive=./prod-dump/do.archive.gz)
 
-# 4. Restore prod dump locally under a separate DB name
-mongorestore --uri="mongodb://localhost:27017" --db="bpni-prod" --drop ./prod-dump/blueprintnotincluded
+# 4. Restore it locally under a separate DB name
+mongorestore --uri="mongodb://localhost:27017" --nsFrom='blueprintnotincluded.*' --nsTo='bpni-prod.*' --drop --gzip --archive=./prod-dump/<archive>
 
 # 5. Run against real prod data — this is where you catch actual problems
 DB_URI=mongodb://localhost:27017/bpni-prod npm run migrate:status
@@ -108,20 +119,34 @@ DB_URI=mongodb://localhost:27017/bpni-prod npm run migrate:up
 # Inspect results before proceeding
 ```
 
-### Post-deploy execution (DO app console)
+### Post-deploy execution (on the server)
+
+Rehearse on staging first — it has its own database, a copy of production:
 
 ```bash
-# DO dashboard → prod cluster → Backups → Create backup now  (wait for completion)
-npm run migrate:status   # confirm which migrations are pending
-npm run migrate:up
+cd /srv/bpni/deploy
+bin/compose.sh staging exec app npm run migrate:status
+bin/compose.sh staging exec app npm run migrate:up
 ```
 
-**First deploy with migrate-mongo:** prod has no `migrations` tracking collection yet.
-`migrate:up` will run all migrations from the beginning. The ported Migration 1
-(`20260403000000_blueprint-deleted-to-deletedAt`) is idempotent — it filters on
-`{ deletedAt: { $exists: false } }` so it safely no-ops on already-migrated documents.
+Then production, after an ad-hoc dump:
+
+```bash
+bin/compose.sh production exec backup backup.sh          # dump to R2 now (wait for "done")
+bin/compose.sh production exec app npm run migrate:status   # confirm which migrations are pending
+bin/compose.sh production exec app npm run migrate:up
+```
+
+**A freshly seeded server** (`deploy/bin/seed-from-dump.sh`) carries the `migrations`
+tracking collection from the dump, so `migrate:status` reports everything applied and
+`migrate:up` has nothing to do. If the collection is ever missing, `migrate:up` re-runs
+every migration from the beginning; they are written to be idempotent for that reason
+(the ported Migration 1, `20260403000000_blueprint-deleted-to-deletedAt`, filters on
+`{ deletedAt: { $exists: false } }` so it no-ops on already-migrated documents).
 
 ### Rollback
 
-`npm run migrate:down` rolls back the last migration via its `down` method.
-For a full restore: DO dashboard → Backups → restore the pre-deploy snapshot to a new cluster → update `DB_URI` env var in App Platform.
+`npm run migrate:down` rolls back the last migration via its `down` method (inside the
+app container: `bin/compose.sh production exec app npm run migrate:down`).
+For a full restore from the pre-migration archive: `deploy/README.md` → Database → Restore
+(`bin/seed-from-dump.sh production restore <archive>`; previews re-render afterwards).

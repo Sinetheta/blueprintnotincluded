@@ -10,15 +10,20 @@ membership. This file keeps only the operational knowledge that is not derivable
 ## Environment mapping
 
 WorkOS has two isolated environments (Staging / Production) with separate user databases.
-Because the staging and production **websites share one MongoDB database**, the split is on
-the DB boundary, not the deployment boundary — otherwise `workosUserId` links written by one
-environment would be invalid in the other:
+The split is on the DB boundary, not the deployment boundary — `workosUserId` links written
+by one environment are invalid in the other. The staging website's database is a **copy of
+production** (restored from a dump, `deploy/README.md` "Seed from a dump"), so its users
+carry Production ids and it must keep using the Production environment:
 
 | Deployment | Database | WorkOS Environment |
 |---|---|---|
 | Local dev | Local dev DB | **Staging** (or `AUTH_MODE=local`, the devcontainer default) |
-| Staging website | Shared prod DB | **Production** |
-| Production website | Shared prod DB | **Production** |
+| Staging website | Own DB, a restored copy of production | **Production** |
+| Production website | Prod DB | **Production** |
+
+Both hostnames (`staging.blueprintnotincluded.org`, the apex, and during the Hetzner trial
+`hetzner.blueprintnotincluded.org`) have to be allowed in the Production environment's
+redirect / sign-in URL settings.
 
 **Local dev defaults to `AUTH_MODE=local`** (`specs/local-auth-mode-plan.md`), not the Staging
 mapping above: no checkout ships real WorkOS keys, and with several local databases the Staging

@@ -1,3 +1,32 @@
+# Session Notes - 2026-10-21
+
+## Hosting: DigitalOcean → Hetzner (branch `hetzner-hosting`)
+
+Built the replacement hosting as code, to be trialled next to DO before the DNS switch:
+`deploy/` holds one `compose.yml` for two projects on a Hetzner CX23 (production follows
+`:prod`, staging `:latest`; each with its own `mongo:8.0`, Cloudflare Tunnel and memory
+limits; production also runs a nightly `mongodump` → R2 sidecar that excludes
+`previewimages`), `cloud-init.yaml` for the box, `bin/` scripts (`compose.sh`, `deploy.sh`,
+`seed-from-dump.sh`, `restore-drill.sh`) and the runbook `deploy/README.md` with the trial
+plan and the cut-over checklist. `publish.yml` pushes to ghcr.io and deploys staging over
+SSH; `promote.yml` retags on ghcr.io and deploys production; `registry-gc.yml` is gone with
+the DO registry. Nothing on DO was touched; the DNS switch is Kevin's, after the trial.
+
+## Status snapshot (2026-10-21)
+
+- **Hosting**: DO App Platform + Managed Mongo 7.0.34 still serve production. The Hetzner
+  stack (self-hosted Mongo 8.0, ~$8.50/mo vs ~$45–50) is built and awaits the trial on
+  `hetzner.blueprintnotincluded.org`; staging moves to `staging.blueprintnotincluded.org`
+  with its own database (today's DO staging shares prod's).
+- **Images**: `ghcr.io/blueprintnotincluded/blueprintnotincluded` (`latest`, `prod`,
+  `prod-previous`, `sha-<short>`); the package must be made public once by hand.
+- **Backups**: nightly R2 archives (14 daily + 8 weekly, previewimages excluded) + Hetzner
+  weekly server backups; `bin/restore-drill.sh` proves a restore. Previews-to-R2 is a
+  separate follow-up.
+- Everything else as in the 2026-08-28 snapshot below.
+
+---
+
 # Session Notes - 2026-08-28
 
 ## Docs + code review (branch `docs-review`)

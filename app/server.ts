@@ -52,9 +52,9 @@ const server = app.listen(PORT, () => {
   // deploy doesn't pay the ~10s cold start (no-op when rendering is disabled).
   PreviewImageService.instance.warmUp();
 });
-// Best-effort flush of pending view/download counters on shutdown (DO sends
-// SIGTERM on every deploy) — without this each restart drops up to one flush
-// interval of counts.
+// Best-effort flush of pending view/download counters on shutdown (every
+// deploy is a `compose up` that stops the container with SIGTERM) — without
+// this each restart drops up to one flush interval of counts.
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
     server.close();

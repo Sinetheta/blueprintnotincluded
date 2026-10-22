@@ -13,7 +13,8 @@ Operational reference for the duplicant-style avatar pipeline
    "Set up billing" link; it routes to the Cloud console billing page for the
    key's project.
 4. Put the key in `.env` as `GEMINI_API_KEY` (never in `.env.sample` or any
-   committed file). Prod: DO App Platform env var.
+   committed file). Prod: `/srv/bpni/production/app.env` on the Hetzner server
+   (the DO App Platform env var until the cut-over).
 5. Verify: `npm run avatars:smoke` — one real grid generation (~$0.09 → four
    avatars), stores them in the pool and writes `avatar-smoke-test.png` (the
    grid) plus `avatar-smoke-test-{0..3}.png` (tiles, all gitignored) for
@@ -107,7 +108,8 @@ npm run avatars:backfill                   # assign pool avatars to all users la
 npm run migrate:up                         # avatar-init migration (indexes only)
 ```
 
-All of these work unchanged in the DO deploy console from `/bpni/build` (batch tasks
+All of these work unchanged inside the production app container, whose working directory
+is `/bpni/build` (`deploy/bin/compose.sh production exec app npm run …`; batch tasks
 dispatch via `scripts/batch.sh` to the compiled JS; see README "Running batch tasks in
 production"). The reference sheets must be present at
 `/bpni/build/assets/avatar-reference/` — shipped by deploy.Dockerfile + copy_assets.sh —

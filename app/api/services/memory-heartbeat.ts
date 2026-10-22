@@ -1,9 +1,10 @@
-// Periodic per-process memory logging for leak triage. The container-level
-// memory graph on DO App Platform cannot say *which* process is growing (API
-// parent vs. preview render worker) or whether growth is heap, native
-// (external/arrayBuffers — sharp, canvas, IPC buffers) or allocator
-// fragmentation (rss climbing while heapUsed stays flat). One greppable line
-// per process every few minutes answers that from `doctl apps logs`.
+// Periodic per-process memory logging for leak triage. A container-level
+// memory graph (`docker stats`, or DO App Platform's before the move) cannot
+// say *which* process is growing (API parent vs. preview render worker) or
+// whether growth is heap, native (external/arrayBuffers — sharp, canvas, IPC
+// buffers) or allocator fragmentation (rss climbing while heapUsed stays
+// flat). One greppable line per process every few minutes answers that from
+// the container log (`deploy/bin/compose.sh production logs app`).
 export const MEMORY_HEARTBEAT_INTERVAL_MS = 5 * 60_000;
 
 const mb = (bytes: number) => Math.round(bytes / (1024 * 1024));

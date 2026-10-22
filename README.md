@@ -86,24 +86,28 @@ docker compose up
 Visit http://localhost:3000
 To check incoming emails visit: http://localhost:8025
 
-## Running batch tasks in production (DigitalOcean console)
+## Running batch tasks in production
 
-The deploy image (`deploy.Dockerfile`) ships only compiled output under `/bpni/build`:
-compiled JS, `assets/`, `package.json`, `migrations/`, and `scripts/batch.sh`. There are
-**no TypeScript sources and no devDependencies** (`npm ci --omit=dev`), so anything that
-needs `ts-node` cannot run there.
+Production and staging are two Docker Compose projects on one Hetzner server; the
+runbook is `deploy/README.md` (until its cut-over checklist is done, the DigitalOcean
+deployment still serves `blueprintnotincluded.org` and these commands apply to the
+Hetzner trial). The deploy image (`deploy.Dockerfile`) ships only compiled
+output under `/bpni/build`: compiled JS, `assets/`, `package.json`, `migrations/`, and
+`scripts/batch.sh`. There are **no TypeScript sources and no devDependencies**
+(`npm ci --omit=dev`), so anything that needs `ts-node` cannot run there.
 
-Run npm tasks by name from the build directory — same task names as local dev:
+Run npm tasks by name inside the app container, whose working directory is already
+`/bpni/build` — same task names as local dev:
 
 ```bash
-cd /bpni/build
-npm run migrate:status
-npm run migrate:up
-npm run derive-search:dry-run
-npm run avatars:smoke
-npm run avatars:seed-batch -- --count 10
-npm run derive-metadata:dry-run
-npm run backfill-previews
+cd /srv/bpni/deploy
+bin/compose.sh production exec app npm run migrate:status
+bin/compose.sh production exec app npm run migrate:up
+bin/compose.sh production exec app npm run derive-search:dry-run
+bin/compose.sh production exec app npm run avatars:smoke
+bin/compose.sh production exec app npm run avatars:seed-batch -- --count 10
+bin/compose.sh production exec app npm run derive-metadata:dry-run
+bin/compose.sh production run --rm --no-deps app npm run backfill-previews   # own container, own memory limit
 ```
 
 Batch tasks dispatch through `scripts/batch.sh`, which runs the compiled
@@ -119,7 +123,9 @@ no more than 12 titles / 720 source characters, concurrency 1, and zero retries.
 
 For the Vietnamese-title rollout, deploy with
 `GEMINI_VI_TITLE_TRANSLATION_ENABLED=false` and
-`GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD=0`, then:
+`GEMINI_VI_TITLE_MONTHLY_BUDGET_MICRO_USD=0` (the app's environment is
+`/srv/bpni/<project>/app.env` on the server; "restart the API" below is
+`bin/compose.sh <project> up -d app`), then:
 
 1. Run `npm run migrate:up` **before the new code serves traffic**. The
    translation cache now filters on `mode`, so against un-migrated rows a
@@ -140,19 +146,14 @@ For the Vietnamese-title rollout, deploy with
    all three conditions are met, and `[vi-title] DISABLED (...)` otherwise —
    check that line before running the backfill.
 
-**Staging and production share one database.** Two consequences worth knowing
-before running any migration:
+**Staging and production have separate databases** (each compose project runs its own
+MongoDB; staging's is a copy of production restored from a dump, see `deploy/README.md`
+"Seed from a dump"). A migration can therefore be rehearsed on staging against real data
+before it is run on production, on top of the local rehearsal against a prod restore
+("Pre-merge process for every migration" in `docs/migrations.md`).
 
-- migrate-mongo's `migrations` tracking collection is shared too, so whichever
-  environment runs `migrate:up` first applies it for both. The second one
-  reports nothing pending — that is correct, not a skipped step.
-- There is therefore no safe rehearsal on staging. Migrating staging has
-  already migrated production. Rehearse locally against a prod restore instead
-  (see "Pre-merge process for every migration" in CLAUDE.md).
-
-Because every migration is effectively run twice against the same data, each
-must be idempotent, and must match indexes by **key pattern rather than by
-name**. Mongoose's `autoIndex` races migrations on deploy: whichever creates an
+Each migration must still be idempotent, and must match indexes by **key pattern rather
+than by name**. Mongoose's `autoIndex` races migrations on deploy: whichever creates an
 index first wins, and if the two disagree about its name the loser fails with
 `Index already exists with a different name`. Either pin the same explicit
 name in both the schema and the migration, or match on the key pattern — the

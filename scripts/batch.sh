@@ -6,7 +6,7 @@
 #
 # Usage: ./scripts/batch.sh <basename-under-app/api/batch> [args...]
 # Must run from a directory containing app/api/batch/ — the repo root in dev,
-# /bpni/build in the deploy console. npm run sets that cwd automatically.
+# /bpni/build in the deploy container. npm run sets that cwd automatically.
 set -e
 name="$1"
 shift
