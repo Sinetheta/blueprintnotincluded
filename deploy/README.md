@@ -92,9 +92,11 @@ chmod 600 /srv/bpni/*/.env /srv/bpni/*/app.env
 
 Fill them in by hand. `.env` wants fresh random passwords (`openssl rand -hex 24` three
 times per project), the tunnel token and the R2 credentials. `app.env` takes the values
-from the DigitalOcean app's environment (**same `JWT_SECRET`**, Mailjet, WorkOS, Gemini,
-Translate), with `HOST`/`SITE_URL` set to that project's hostname. Never copy `DB_URI`
-or `AUTH_MODE` across; compose sets the first and the second must stay unset.
+from the DigitalOcean app's environment (Mailjet, WorkOS, Gemini, Translate), with
+`HOST`/`SITE_URL` set to that project's hostname. `JWT_SECRET`: production keeps the DO
+value so existing sessions survive the cut-over; staging gets its own fresh one. Never
+copy `DB_URI` or `AUTH_MODE` across; compose sets the first and the second must stay
+unset.
 
 The deploy directory has not been synced yet at this point, so for the very first run
 copy it by hand from a checkout: `rsync -az deploy/ deploy@<ip>:/srv/bpni/deploy/`.
@@ -189,7 +191,7 @@ env files you kept), then the steps above.
 bin/restore-drill.sh            # production; exit 0 = pass
 ```
 
-Fetches the newest daily archive, restores it into a throwaway `mongo:8.0` container on
+Fetches the newest daily archive, restores it into a throwaway `mongo:8.0.23` container on
 the project's network, prints live → restored counts per collection (excluded collections
 must be absent, every other count within 5 % of live), and removes the container. Run it
 after the first nightly backup and whenever the backup image, exclusions or retention
@@ -197,19 +199,23 @@ change.
 
 ### Seed from a dump
 
-`bin/seed-from-dump.sh <project> <dump|restore|all> <uri|archive>` runs mongodump /
-mongorestore inside the backup image. Dumps include **every** collection (previewimages
-too) so a seeded site has warm previews.
+`bin/seed-from-dump.sh <project> <dump|restore|all> <uri|env|local|archive>` runs
+mongodump / mongorestore inside the backup image, with credentials passed through a
+0600 config file rather than arguments. Dumps include **every** collection (previewimages
+too) so a seeded site has warm previews. A restore first drops every collection of the
+project's `blueprintnotincluded` database (users are kept), so nothing stale survives it.
 
 ```bash
-# From DigitalOcean's read-only URI (the PROD_READONLY_URI in /.env.migration on the dev box).
-# Several GB; run it in tmux. If it cannot connect, the cluster's "Trusted sources"
-# need the server's IPv4 added in the DO console.
-bin/seed-from-dump.sh production all 'mongodb+srv://readonly:…'
+# From DigitalOcean's read-only URI (the PROD_READONLY_URI in /.env.migration on the dev
+# box). Type it into the environment rather than the command line; several GB, so run
+# it in tmux. If it cannot connect, the cluster's "Trusted sources" need the server's
+# IPv4 added in the DO console.
+read -rs SEED_SOURCE_URI && export SEED_SOURCE_URI
+bin/seed-from-dump.sh production all env
 
-# Refresh staging from production on the same box
-SEED_RUN_ARGS='--network bpni-production_default' \
-  bin/seed-from-dump.sh staging all "mongodb://root:<prod root pw>@bpni-production-mongo-1:27017/?authSource=admin"
+# Refresh staging from production on the same box, through /srv/bpni/dumps
+bin/seed-from-dump.sh production dump local      # prints the archive name
+bin/seed-from-dump.sh staging restore <archive>
 ```
 
 Then `migrate:status` / `migrate:up` in that project.
@@ -244,11 +250,12 @@ on `hetzner.blueprintnotincluded.org` with a copy of the data; anything written 
 throwaway, because the cut-over does a fresh dump/restore.
 
 1. First install above, through the first deploy of both projects.
-2. Seed production from the DO read-only URI (`seed-from-dump.sh production all …`), then
+2. Seed production from the DO read-only URI (`seed-from-dump.sh production all env`), then
    `migrate:status` (everything applied, since the dump carries the `migrations`
    collection) and compare collection counts with the DO cluster
    (`db.blueprints.estimatedDocumentCount()` etc. on both).
-3. Seed staging from production (`SEED_RUN_ARGS=… seed-from-dump.sh staging all …`).
+3. Seed staging from production (`seed-from-dump.sh production dump local`, then
+   `seed-from-dump.sh staging restore <archive>`).
 4. Wait for the first nightly backup, then `bin/restore-drill.sh` end to end. Check the
    bucket size in the R2 console.
 5. Better Stack: add HTTP monitors from several regions (at least Singapore, US West or
@@ -278,8 +285,8 @@ final dump and the DNS change are lost, so keep the window short.
    in `.env` set `PUBLIC_HOSTNAME=blueprintnotincluded.org`. Everything else was copied
    from DO already; `diff` the two environments one last time.
 3. **Final dump/restore**: `bin/compose.sh production stop app`, then
-   `bin/seed-from-dump.sh production all '<DO read-only URI>'`, then `migrate:status`.
-   Do not start the app yet.
+   `bin/seed-from-dump.sh production all env` with the DO read-only URI in
+   `SEED_SOURCE_URI`, then `migrate:status`. Do not start the app yet.
 4. **Tunnel**: in the `bpni-production` tunnel add public hostnames
    `blueprintnotincluded.org` and `www.blueprintnotincluded.org` → `http://app:3000`.
    Cloudflare refuses to add a hostname whose DNS record already exists, so for each:
