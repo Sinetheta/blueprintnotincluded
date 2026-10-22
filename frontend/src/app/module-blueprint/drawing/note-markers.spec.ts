@@ -16,10 +16,13 @@ describe("note symbols", () => {
       "note_info",
       "note_warn",
       "note_question",
+      "note_arrow_u",
+      "note_arrow_ul",
       "note_num_0",
       "note_num_9",
     ]);
-    expect(NOTE_SYMBOLS).to.have.length(13);
+    // 3 meanings + 8 arrows (mod 6.1) + 10 digits.
+    expect(NOTE_SYMBOLS).to.have.length(21);
   });
 
   it("maps an id to the asset shipped under that same name", () => {

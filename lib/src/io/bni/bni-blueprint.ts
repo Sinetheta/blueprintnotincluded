@@ -12,7 +12,8 @@ export interface BniWorldNote {
   tinthex?: string;
   // Text notes only. The mod's `BlueprintNoteData.Symbol` — the *name* of a
   // sprite in its `textnote_icons` asset folder (`note_info`, `note_warn`,
-  // `note_question`, `note_num_0`…`note_num_9`), keyed exactly as the file is.
+  // `note_question`, `note_arrow_u`/`ur`/`r`/`dr`/`d`/`dl`/`l`/`ul`,
+  // `note_num_0`…`note_num_9`), keyed exactly as the file is.
   // Empty, absent or unrecognised means the default note sprite, which is what
   // the mod itself falls back to (BlueprintNoteData.GetNoteSprite).
   symbol?: string;

@@ -34,11 +34,21 @@ export const NOTE_ICON_TILE_FRACTION = 0.9;
 // mod stores in `BlueprintNoteData.Symbol` and matches back on load — so these
 // strings are wire values, not display keys, and must not be renamed.
 //
-// Ordered for the picker (meaning first, then digits), not by filename.
+// Ordered for the picker (meaning, then the eight arrows clockwise from up,
+// then digits), not by filename. The arrows arrived with mod 6.1 (July 2026);
+// a note carrying one used to fall back to the "i" here.
 export const NOTE_SYMBOLS: string[] = [
   'note_info',
   'note_warn',
   'note_question',
+  'note_arrow_u',
+  'note_arrow_ur',
+  'note_arrow_r',
+  'note_arrow_dr',
+  'note_arrow_d',
+  'note_arrow_dl',
+  'note_arrow_l',
+  'note_arrow_ul',
   'note_num_0',
   'note_num_1',
   'note_num_2',
