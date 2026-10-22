@@ -1326,6 +1326,42 @@ describe("BuildingSettingsComponent", () => {
     });
   });
 
+  describe("read-only rows (SingleEntityReceptacle)", () => {
+    it("renders the seed tag as text and only the toggle as a control", () => {
+      setItem("PlanterBox", [
+        {
+          Key: "SingleEntityReceptacle",
+          Value: {
+            requestedEntityTag: "PrickleFlowerSeed",
+            requestedEntityAdditionalFilterTag: "",
+            autoReplaceEntity: true,
+          },
+        },
+      ]);
+
+      const readonly = Array.from(
+        fixture.nativeElement.querySelectorAll(".building-setting-readonly"),
+      ) as HTMLElement[];
+      expect(readonly.map((e) => e.textContent?.trim())).toEqual([
+        "PrickleFlowerSeed",
+        "—",
+      ]);
+      expect(
+        fixture.nativeElement.querySelector("input.building-setting-text"),
+      ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length,
+      ).toBe(1);
+
+      component.onFieldInput(component.rows[2], false);
+      expect(component.blueprintItem.setBuildingSetting).toHaveBeenCalledWith(
+        "SingleEntityReceptacle",
+        "autoReplaceEntity",
+        false,
+      );
+    });
+  });
+
   // Issues #254 and #268. Shapes from the mod source (DataTransferHelpers.cs);
   // bounds from the export are covered in the lib suite.
   describe("Storage Tile and radbolt thresholds", () => {
@@ -1423,7 +1459,7 @@ describe("BuildingSettingsComponent", () => {
       );
     });
 
-    it("edits a Radbolt Generator's threshold, keeps Direction, and offers no row for it", () => {
+    it("edits a Radbolt Generator's threshold and keeps Direction, which has its own row", () => {
       setItem("HighEnergyParticleSpawner", [
         {
           Key: "HighEnergyParticleSpawner",
@@ -1432,9 +1468,20 @@ describe("BuildingSettingsComponent", () => {
       ]);
 
       expect(component.rows.map((r: any) => r.field)).toEqual([
+        "Direction",
         "particleThreshold",
       ]);
-      component.onFieldInput(component.rows[0], "150");
+      expect(component.rows[0].options?.map((o) => o.label)).toEqual([
+        "N",
+        "NE",
+        "E",
+        "SE",
+        "S",
+        "SW",
+        "W",
+        "NW",
+      ]);
+      component.onFieldInput(component.rows[1], "150");
       expect(component.blueprintItem.buildingData).toEqual([
         {
           Key: "HighEnergyParticleSpawner",

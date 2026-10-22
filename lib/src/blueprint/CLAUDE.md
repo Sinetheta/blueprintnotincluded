@@ -143,6 +143,11 @@ on download. `Info` now survives as an _input_ format only.
   the two models' defaults differ. `frontColor` is dropped — a marker is one colour.
   Stored documents were converted by `migrations/20260730000000_info-items-to-world-notes.js`;
   converting on read means a document is correct either way, and any re-save converges it.
+- **Symbols** — `NOTE_SYMBOLS` in `note-markers.ts` mirrors the mod's `textnote_icons`
+  folder, file names unchanged because the name is the wire value: info, warn, question, the
+  eight arrows (mod 6.1, July 2026 — `note_arrow_u`/`ur`/`r`/`dr`/`d`/`dl`/`l`/`ul`, copied
+  byte-for-byte from the shipped mod build) and the ten digits. An unknown name renders as
+  the default "i", which is the mod's own fallback.
 - **Rendering** — which sprite, what colour, how big: `lib/src/drawing/note-markers.ts`, shared
   by the editor overlay (`drawing/draw-notes-overlay.ts`), the client-side export/thumbnail
   snapshots, and the server preview worker. The overlay keeps only the per-frame concerns
@@ -798,6 +803,41 @@ the bare float a meaning; conversion is affine both ways
   `IUserControlledCapacity` instead, and the Radbolt Chamber its own `HEPBattery`
   `particleThreshold` — both now catalogued (range-carrying settings; Storage Tile and radbolt
   thresholds).
+
+### Per-building toggles and sliders (Repairable, AutoDisinfectable, FoodStorage, EnergyGenerator, SpaceHeater, Clinic, DirectionControl, HighEnergyParticleRedirector, SingleEntityReceptacle)
+
+The mod's 6.0–6.2 releases (June/July 2026, "stores more building settings") added one-field
+handlers that the site preserved opaquely as "other stored settings". Catalogued 2026-10 from
+`DataTransferHelpers.cs` at `Sgt_Imalas-Oni-Mods@12fed6b6`, and checked against the 7.7.0
+build shipped on GitHub (`AllMods_Automated_Build_FullRelease`, 2026-10-16): the registered
+Key list in the DLL is the same 37 names as the September source, so nothing was added after
+the mod went private. Every handler copies its field as is.
+
+| Key | Value | row |
+|---|---|---|
+| `Repairable` | `{ ForbiddenRepair: bool }` | Forbid repairs. Written only when true (default omitted). |
+| `AutoDisinfectable` | `{ enableAutoDisinfect: bool }` | Auto-disinfect. Written only when false. |
+| `FoodStorage` | `{ SpicedFoodOnly: bool }` | Spiced food only. Written only when true. |
+| `EnergyGenerator` | `{ batteryRefillPercent: float }` | Battery refill threshold, shown ×100 as a percent — the one scaled row; **unverified in game** (if a capture reads 50 for "50 %", drop `displayScale`). Skipped by the handler on generators with `ignoreBatteryRefillPercent`. |
+| `SpaceHeater` | `{ CurrentPowerConsumption: float }` | Power, W. Only heaters that `produceHeat`. |
+| `Clinic` | `{ sicknessSliderValue: float }` | Health threshold, the slider's own 0–100. |
+| `DirectionControl` | `{ allowedDirection: int }` | Both / Left only / Right only — `WorkableReactable.AllowedDirection` order. |
+| `HighEnergyParticleRedirector` | `{ Direction: int }` | N…NW — `EightDirection` order, labelled as the radbolt direction side screen does. The generator's own `Direction` (same enum) is now a row on `HighEnergyParticleSpawner` too. |
+| `SingleEntityReceptacle` | `{ requestedEntityTag, requestedEntityAdditionalFilterTag: string, autoReplaceEntity: bool }` | Planted / Mutation **read-only**, Auto-replant editable. |
+
+- **`readOnly`** is a new descriptor flag: shown as text, never a control. The planter's tag
+  is a prefab name the mod resolves with `TagManager.Create` (a plant's _seed_ id, an egg, an
+  item on a pedestal), so a typo becomes an order for nothing; the editor has no seed picker,
+  and the raw id is still what a reader wants to see ("PrickleFlowerSeed"). Resolving it to a
+  display name would need the export's `entities.json` plant/seed names, which the converter
+  reads only for terrain today.
+- **Still opaque on purpose**: `LogicClusterLocationSensor` (a list of asteroid coordinates
+  that only means something in one save), `AccessControl`, `PixelPack` (four colours as a
+  serialized string — could be drawn on the canvas one day), `FlatTagFilterable`, and the two
+  skin Keys `BuildingFacade { CurrentFacade }` / `Artable { CurrentStage }`, which need facade
+  and sculpture-stage data the export does not carry (`agent/TODO.md`, "Mod features not yet
+  supported").
+- **None is creatable from scratch** — same rule as before: no verified in-game defaults.
 
 ### Storage Tile and radbolt thresholds (StorageTile, HEPBattery, HighEnergyParticleSpawner)
 

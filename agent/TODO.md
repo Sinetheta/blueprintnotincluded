@@ -49,6 +49,54 @@ stored blueprints (`npm run derive-rocket-interiors`) — `lib/src/blueprint/CLA
 - **Interior wall panelling** — the game draws a patterned panel texture inside the hull; it
   is not in the handoff, so the room shows the star field.
 
+## Blueprints Expanded (BlueprintsV2) — mod features not yet supported
+
+Audit of 2026-10-21 against the last public mod source (`Sgt_Imalas-Oni-Mods@12fed6b6`,
+2026-09-24, after which BlueprintsV2 became a private submodule), the 7.7.0 build shipped in
+the monorepo's `AllMods_Automated_Build_FullRelease` (2026-10-16) and the Steam change notes
+through 7.7.1. The file format is unchanged since 6.2 (`metadata`) and the 37 registered
+`buildingData` Keys in the 7.7 DLL are the September set; the 7.3–7.7 work (snap-to-grid,
+clipboard paste, note opacity, rockets/gantries blueprintable) is all in-game UX with no file
+impact. Shipped from this audit: the eight `note_arrow_*` symbols, and catalogue rows for the
+nine one-field Keys (`lib/src/blueprint/CLAUDE.md` → "Per-building toggles and sliders").
+Remaining, by what they need:
+
+**Need new export information (OniExtract2024):**
+
+- **Building skins** — `BuildingFacade { CurrentFacade }` (any skinnable building) and
+  `Artable { CurrentStage }` (sculptures, paintings: the chosen artwork). The mod's own Steam
+  page names this as the thing "bpni does not support". The export's `ui_image_facade/`
+  (988 PNGs, currently skipped) has the art but nothing maps it: needed are
+  `Db.GetBuildingFacades()` → `{id, prefabId, name, dlcId/permit, uiSprite file}` and
+  `Db.GetArtableStages()` → `{id, prefabId, name, quality (Bad/Okay/Great), anim+file}`,
+  one JSON each, plus a flat render per stage for artables (the facade PNGs may already be
+  per facade id — confirm the naming). Site side then: render the skinned art on the canvas
+  and in previews, show "Skin: X" in the settings panel, and (later) a picker. Mod-added
+  skins (`DecorPackA_MoodLamp`, `Backwalls_Backwall`, True Tiles) stay opaque.
+- **What is planted** — `SingleEntityReceptacle.requestedEntityTag` now shows as the raw
+  seed/egg id. Showing "Prickle Flower" and drawing the crop in the farm tile needs the
+  plant/seed names and a flat icon per plant: `entities.json` already carries the entities
+  (only the geyser subset is read today) but no plant art is exported.
+- **Blueprint list icon** — the mod's top-level `icon`/`icontint` is a building prefab id
+  (`BuildingDef.GetUISprite`) _or_ any name in `Assets.Sprites`. The site parses and
+  round-trips it but never shows it. Prefab-id icons need nothing new (we have `ui_image/`);
+  arbitrary game sprites would need an `Assets.Sprites` export. Low value: the site has
+  real thumbnails.
+
+**Site-side only:**
+
+- **Planning Tool shapes** in the client thumbnail, image export and server preview (known
+  gap, `lib/src/blueprint/CLAUDE.md` → terrain "Known gap"); only the live canvas draws them.
+- **Pixel Pack colours** — `PixelPack { colorSettings }` (serialized colour list) could be
+  drawn on the canvas instead of counted as "other stored settings".
+- **Third-party mod Keys** seen in the monorepo, all `Assembly_Type`-named and opaque today:
+  `PaintYourPipes_ColorableConduit { colorHex, secondaryColorHex, useGreyscaleAnim }` (pipe
+  tint — renderable), `AkiTrueTiles_SkinSelectorAddon_TrueTiles_OverrideStorage
+  { OverrideElement }`, `SettingsSyncGroups_SyncGroupCarrier { GroupName }`,
+  `ComplexFabricatorRibbonController_… { selectedRecipeIds }`, `RotatableRadboltStorage_…`.
+- **`EnergyGenerator.batteryRefillPercent` display scale** is unverified in game (see the
+  catalogue section) — one capture of a generator set to a known percentage settles it.
+
 ## OniExtract2024 follow-ups
 
 Done (see `app/api/batch/convert-export-2024.md`): the import pipeline, the flat-icon
