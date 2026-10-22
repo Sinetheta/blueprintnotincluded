@@ -62,12 +62,13 @@ run bash -c "rclone copyto '$remote/daily/$newest' /dumps/drill.archive.gz \
   && rm -f /dumps/drill.archive.gz"
 
 # Collection counts from a mongo container. The live one needs the root
-# password: it travels in the exec environment and is expanded inside the
-# container, so it is in no argument list on the host.
+# password: `-e MONGO_PW` with no value copies it from this process's
+# environment into the exec, and it is expanded inside the container, so it
+# is in no argument list on the host.
 counts() {
   # $1: container, $2: "root" for the authenticated live mongo, "" for the drill
   if [ "$2" = root ]; then
-    docker exec -e "MONGO_PW=$root_pw" "$1" sh -c \
+    MONGO_PW="$root_pw" docker exec -e MONGO_PW "$1" sh -c \
       'exec mongosh --quiet "mongodb://root:$MONGO_PW@127.0.0.1:27017/'"$db"'?authSource=admin" --eval "$1"' -- \
       'db.getCollectionNames().sort().forEach(c => print(c + " " + db.getCollection(c).estimatedDocumentCount()))'
   else

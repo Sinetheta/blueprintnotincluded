@@ -50,12 +50,13 @@ root_pw() {
 }
 
 # A mongodump/mongorestore run inside the backup image. The connection URI
-# travels in the TOOL_URI environment variable and is written to a 0600
-# `--config` file inside the container, so it is in no process's arguments
-# on the host or in the container.
+# travels in the TOOL_URI environment variable (`-e TOOL_URI` with no value
+# copies it from this process's environment, so it is never an argument on
+# the host) and is written to a 0600 `--config` file inside the container, so
+# it is in no process's arguments there either.
 tool() {
   local uri=$1; shift
-  "$compose" "$project" --profile backup run --rm --no-deps -T -e "TOOL_URI=$uri" backup bash -c '
+  TOOL_URI="$uri" "$compose" "$project" --profile backup run --rm --no-deps -T -e TOOL_URI backup bash -c '
     set -euo pipefail
     cfg=$(mktemp /tmp/tool.XXXXXX)
     trap "rm -f $cfg" EXIT
@@ -66,11 +67,12 @@ tool() {
 }
 
 # mongosh as root inside the project's mongo container; the password goes in
-# through the environment and is expanded there.
+# through the environment (`-e MONGO_PW`, copied from this process's
+# environment, never an argument on the host) and is expanded in there.
 mongosh_root() {
   local pw
   pw=$(root_pw)
-  "$compose" "$project" exec -T -e "MONGO_PW=$pw" mongo sh -c \
+  MONGO_PW="$pw" "$compose" "$project" exec -T -e MONGO_PW mongo sh -c \
     'exec mongosh --quiet "mongodb://root:$MONGO_PW@127.0.0.1:27017/'"$db"'?authSource=admin" --eval "$1"' -- "$1"
 }
 
