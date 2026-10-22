@@ -29,6 +29,12 @@ work=$(mktemp -d /dumps/backup.XXXXXX)
 trap 'rm -rf "$work"' EXIT
 archive="$work/$name"
 
+# The connection URI (with the backup user's password) goes to mongodump
+# through a 0600 config file rather than an argument, so it never shows in
+# the process list. Removed with $work by the trap.
+cfg="$work/tools.yaml"
+( umask 077 && printf 'uri: "%s"\n' "$BACKUP_MONGO_URI" > "$cfg" )
+
 exclude=()
 IFS=',' read -r -a excluded <<< "${BACKUP_EXCLUDE_COLLECTIONS:-}"
 for c in "${excluded[@]}"; do
@@ -37,7 +43,7 @@ for c in "${excluded[@]}"; do
 done
 
 echo "backup: dumping $BACKUP_DB (excluding: ${BACKUP_EXCLUDE_COLLECTIONS:-nothing})"
-mongodump --uri="$BACKUP_MONGO_URI" --db="$BACKUP_DB" "${exclude[@]}" \
+mongodump --config="$cfg" --db="$BACKUP_DB" "${exclude[@]}" \
   --gzip --archive="$archive" --quiet
 size=$(du -h "$archive" | cut -f1)
 

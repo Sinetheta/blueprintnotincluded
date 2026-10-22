@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prove last night's backup restores: fetch the newest daily archive from R2,
-# restore it into a throwaway mongo:8.0 container, compare collection counts
+# restore it into a throwaway mongo:8.0.23 container, compare collection counts
 # with the live database, tear it all down. Exit status is the verdict.
 #
 #   restore-drill.sh [production]
@@ -50,7 +50,7 @@ echo "   $newest"
 
 echo "== starting throwaway mongo ($drill on $network)"
 docker run -d --rm --name "$drill" --network "$network" --memory 768m \
-  mongo:8.0 mongod --wiredTigerCacheSizeGB 0.25 >/dev/null
+  mongo:8.0.23 mongod --wiredTigerCacheSizeGB 0.25 >/dev/null
 for _ in $(seq 1 30); do
   if docker exec "$drill" mongosh --quiet --eval "db.adminCommand('ping').ok" 2>/dev/null | grep -q 1; then break; fi
   sleep 2
@@ -61,15 +61,22 @@ run bash -c "rclone copyto '$remote/daily/$newest' /dumps/drill.archive.gz \
   && mongorestore --uri='mongodb://$drill:27017' --nsInclude='$db.*' --drop --gzip --archive=/dumps/drill.archive.gz --quiet \
   && rm -f /dumps/drill.archive.gz"
 
+# Collection counts from a mongo container. The live one needs the root
+# password: it travels in the exec environment and is expanded inside the
+# container, so it is in no argument list on the host.
 counts() {
-  # $1: container, $2: extra mongosh args
-  # shellcheck disable=SC2086
-  docker exec "$1" mongosh --quiet $2 "$db" --eval '
-    db.getCollectionNames().sort().forEach(c => print(c + " " + db.getCollection(c).estimatedDocumentCount()));
-  '
+  # $1: container, $2: "root" for the authenticated live mongo, "" for the drill
+  if [ "$2" = root ]; then
+    docker exec -e "MONGO_PW=$root_pw" "$1" sh -c \
+      'exec mongosh --quiet "mongodb://root:$MONGO_PW@127.0.0.1:27017/'"$db"'?authSource=admin" --eval "$1"' -- \
+      'db.getCollectionNames().sort().forEach(c => print(c + " " + db.getCollection(c).estimatedDocumentCount()))'
+  else
+    docker exec "$1" mongosh --quiet "$db" --eval \
+      'db.getCollectionNames().sort().forEach(c => print(c + " " + db.getCollection(c).estimatedDocumentCount()))'
+  fi
 }
 live_container="$("$compose" "$project" ps -q mongo)"
-live=$(counts "$live_container" "-u root -p $root_pw --authenticationDatabase admin")
+live=$(counts "$live_container" root)
 restored=$(counts "$drill" "")
 
 echo "== collection counts (live -> restored)"

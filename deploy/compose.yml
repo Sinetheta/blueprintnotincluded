@@ -68,9 +68,10 @@ services:
     logging: *logging
 
   mongo:
-    # 8.0 line (the dev container runs 8.0.23 for the same reason: 8.2 is only
-    # needed on kernels >= 6.19, and Ubuntu 24.04 LTS ships 6.8).
-    image: mongo:8.0
+    # Pinned to the patch the dev container and CI scripts run, so a deploy's
+    # `compose pull` never upgrades the database by accident: moving it is an
+    # edit here. 8.2 is only needed on kernels >= 6.19; Ubuntu 24.04 LTS ships 6.8.
+    image: mongo:8.0.23
     restart: unless-stopped
     # WiredTiger's default cache is half of (RAM - 1 GB), measured against the
     # host, not the container: on a 4 GB box that is 1.5 GB for each of two
