@@ -850,7 +850,7 @@ private submodule (`1e1c757b`).
 |---|---|---|---|
 | `StorageTile` | `{ TargetTag: string, UserMaxCapacity: float }` | Storage Tile | Filter, Max capacity |
 | `HEPBattery` | `{ particleThreshold: float }` | Radbolt Chamber | Radbolt threshold |
-| `HighEnergyParticleSpawner` | `{ Direction: int, particleThreshold: float }` | Radbolt Generator | Radbolt threshold |
+| `HighEnergyParticleSpawner` | `{ Direction: int, particleThreshold: float }` | Radbolt Generator | Direction (N…NW, since 2026-10), Radbolt threshold |
 
 - **The radbolt settings are two Keys.** The mod registers a handler under each class name;
   `ISingleSliderControl`, the game-side interface both sliders implement, is never registered
@@ -870,8 +870,9 @@ private submodule (`1e1c757b`).
 - **Every field must survive an edit.** Each handler returns on its first missing field —
   `StorageTile` before it reads the capacity, the generator before it reads the threshold — so
   `setBuildingSetting` replacing one field and keeping the rest is load-bearing. `Direction`
-  (an `EightDirection` int whose value order is unverified) is deliberately uncatalogued and
-  rides along.
+  (an `EightDirection` int) was left uncatalogued at first and rode along; it has its own row
+  since 2026-10 ("Per-building toggles and sliders"), and an edit of either row still keeps
+  the other.
 - **`{}` is nothing.** Both `StorageTile` and `HEPBattery` write an empty Value for a building
   whose state machine had not started; the panel neither shows it nor counts it as preserved.
 - **None is creatable from scratch** — no in-game defaults have been read.
