@@ -237,8 +237,21 @@ have been removed entirely (steps 1–4 of the DLC-requirements plan all shipped
 - **Save dialog** — the DLC requirement set and `modded` are read-only, derived from blueprint
   content on open. `researchTier` is hidden (no tech-tree data in current export; field kept
   in schema for future use).
+- **Category context** — `deriveCategory(prefabIds, lookup, context?)` scores the signature
+  prefabs first and then two signals the building list cannot carry (`CategoryContext`): any
+  terrain annotation votes `tamer`, and the title is matched against `TITLE_SIGNATURES`
+  (tamer / boiler / water / storage keywords, English, word-bounded; "vent" deliberately
+  absent because the gas vent is a building). Both are `CONTEXT_WEIGHT` (6) for tamer and
+  boiler so they beat the aquatuner + steam turbine every one of them also contains, and a tie
+  breaks by `CATEGORIES` order, where tamer, boiler, water and storage precede cooling. Before
+  this, "cooling" held nearly a quarter of the corpus. A translated-title pass (matching the
+  English search row rather than the authored title) is a follow-up; `derive-metadata` passes
+  `doc.name` and the stored `terrainFeatures`, the save dialog the form's name and the
+  editor's annotations.
 - **Backfill** — `npm run derive-metadata` re-derives `requiredDlcs`, `mods` and `modded`
-  for all existing blueprints. Prod backfill ran 2026-07-25 (5,252 processed).
+  for all existing blueprints. Prod backfill ran 2026-07-25 (5,252 processed). The category
+  rules changed again with the tamer/boiler/water/storage split (2026-10-24), so the next
+  production run needs `--recategorize` to move existing documents out of cooling.
 
 ### Building settings (buildingData)
 

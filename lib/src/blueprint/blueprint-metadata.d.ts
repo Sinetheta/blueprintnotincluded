@@ -1,4 +1,4 @@
-export declare const CATEGORIES: readonly ["oxygenGen", "power", "cooling", "food", "ranching", "automation", "transit", "refining", "rooms", "decor", "rocketInterior"];
+export declare const CATEGORIES: readonly ["oxygenGen", "power", "tamer", "boiler", "water", "storage", "cooling", "food", "ranching", "automation", "transit", "refining", "rooms", "decor", "rocketInterior"];
 export type Category = typeof CATEGORIES[number];
 export declare const SUBCATEGORIES: Record<Category, readonly string[]>;
 export type Subcategory = string;

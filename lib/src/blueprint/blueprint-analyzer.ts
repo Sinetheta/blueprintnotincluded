@@ -222,6 +222,19 @@ export const SIGNATURE_PREFABS: Record<string, SignatureVote[]> = {
   TravelTube: [{ category: 'transit', weight: 3 }],
   TravelTubeEntrance: [{ category: 'transit', weight: 3 }],
 
+  // water: purification is its own function, not cooling — a sieve loop
+  // with an aquatuner on it is still a sieve loop.
+  WaterPurifier: [{ category: 'water', weight: 3 }],
+  Desalinator: [{ category: 'water', weight: 3 }],
+
+  // storage. Reservoirs appear in cooling loops too (weight 2, so a loop's
+  // aquatuner + turbine still wins); a bare infinite-storage build of
+  // reservoirs, valves and doors has nothing else to score on.
+  LiquidReservoir: [{ category: 'storage', weight: 2 }],
+  GasReservoir: [{ category: 'storage', weight: 2 }],
+  StorageLockerSmart: [{ category: 'storage', weight: 2 }],
+  StorageLocker: [{ category: 'storage', weight: 1 }],
+
   // refining
   MetalRefinery: [{ category: 'refining', weight: 3 }],
   GlassForge: [{ category: 'refining', weight: 3 }],
@@ -287,10 +300,94 @@ const MAX_FALLBACK_SCORE = MIN_CATEGORY_SCORE;
 // it, so this module stays free of the Blueprint model.
 export const ROCKET_CONTROL_STATION_ID = 'RocketControlStation';
 
+// --- Context signals: what the buildings alone cannot say ------------------
+//
+// Nearly a quarter of the corpus landed in "cooling", because a volcano
+// tamer, a petroleum boiler and a cooling loop are the same appliances —
+// aquatuner, steam turbine, metal tiles — arranged to a different end. The
+// end is stated in two places the building list is not: the terrain
+// annotation a build is anchored on (a tamer, by definition, sits on a
+// geyser or volcano) and the author's own title ("Petroleum boiler", "Cool
+// steam vent tamer"). Both are content, derived the same way as the rest;
+// neither is a hand-asserted tag.
+//
+// The weights are set so a context vote beats the appliances it is always
+// found with: aquatuner (3) + steam turbine (3) = 6 on cooling, so a tamer or
+// boiler signal scores CONTEXT_WEIGHT and a tie breaks by CATEGORIES order,
+// where both sit ahead of cooling. A title alone can carry a category that
+// has no signature building at all (there is no "boiler" prefab).
+
+export interface CategoryContext {
+  // The blueprint's title, in whatever language the author wrote it.
+  // Keyword rules are English today; a translated-title pass is a follow-up.
+  title?: string | null;
+  // Terrain annotation ids ("GeyserGeneric_steam", "OilWell"): any one of
+  // them is the tamer signal, whatever it is.
+  terrainFeatureIds?: readonly string[] | null;
+}
+
+export const CONTEXT_WEIGHT = 6;
+
+interface TitleSignature {
+  category: Category;
+  pattern: RegExp;
+  weight: number;
+}
+
+// Word-bounded, case-insensitive. "vent" is deliberately absent: the gas vent
+// is a building, and "vent" titles name it as often as a geyser.
+export const TITLE_SIGNATURES: readonly TitleSignature[] = [
+  {
+    category: 'tamer',
+    pattern: /\b(?:tamers?|taming|tamed|volcano(?:es|s)?|geysers?|fissures?)\b/i,
+    weight: CONTEXT_WEIGHT,
+  },
+  {
+    category: 'boiler',
+    pattern: /\b(?:boilers?|boiling)\b|\bsour\s*gas\b/i,
+    weight: CONTEXT_WEIGHT,
+  },
+  // Water purification has signature buildings of its own; the title only
+  // confirms what a sieve already says, so it carries a building's weight.
+  {
+    category: 'water',
+    pattern: /\b(?:sieves?|desalinat\w*|purif\w*)\b/i,
+    weight: 3,
+  },
+  // "Storage" names the function outright; "infinite liquid/gas" is the
+  // community's name for the reservoir-and-door trick.
+  {
+    category: 'storage',
+    pattern: /\b(?:storage|stockpiles?)\b|\binfinite\s+(?:liquid|gas|fluid)s?\b/i,
+    weight: 4,
+  },
+];
+
+function contextVotes(context: CategoryContext | undefined): SignatureVote[] {
+  if (context == null) return [];
+  const votes: SignatureVote[] = [];
+  if ((context.terrainFeatureIds?.length ?? 0) > 0) {
+    votes.push({ category: 'tamer', weight: CONTEXT_WEIGHT });
+  }
+  const title = context.title ?? '';
+  if (title.length > 0) {
+    for (const signature of TITLE_SIGNATURES) {
+      if (signature.pattern.test(title)) {
+        votes.push({ category: signature.category, weight: signature.weight });
+      }
+    }
+  }
+  return votes;
+}
+
 // Returns the best-scoring function category for a blueprint's buildings, or
 // null ("Untagged") when there isn't enough signal. Duplicate prefabs count
 // once — a SPOM with 4 electrolyzers isn't 4x more oxygen-y than one with 1.
-export function deriveCategory(prefabIds: string[], lookup: CategoryLookup): Category | null {
+export function deriveCategory(
+  prefabIds: string[],
+  lookup: CategoryLookup,
+  context?: CategoryContext
+): Category | null {
   const uniqueIds = new Set(prefabIds);
   // A rocket interior is a place, not a function, and it is the one thing the
   // file says outright: the game captures the control station with every
@@ -301,6 +398,10 @@ export function deriveCategory(prefabIds: string[], lookup: CategoryLookup): Cat
   const fallbackScores = new Map<Category, number>();
   const addScore = (target: Map<Category, number>, category: Category, weight: number) =>
     target.set(category, (target.get(category) ?? 0) + weight);
+
+  // Context votes score like curated signatures: uncapped, and never
+  // outweighed by incidental fallback infrastructure.
+  for (const vote of contextVotes(context)) addScore(signatureScores, vote.category, vote.weight);
 
   for (const id of uniqueIds) {
     const signature = SIGNATURE_PREFABS[id];

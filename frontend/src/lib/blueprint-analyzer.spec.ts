@@ -8,6 +8,7 @@ import {
   CATEGORIES,
   CategoryLookup,
   SIGNATURE_PREFABS,
+  CategoryContext,
 } from "../../../lib/index";
 
 describe("deriveModded", () => {
@@ -86,21 +87,39 @@ describe("deriveCategory", () => {
   );
 
   // Fixture: one signature building per category that has a signature entry,
-  // and two fallback-game-category buildings for the categories that don't
-  // (automation, decor — "fallback only" per the spec).
-  const FIXTURE_BY_CATEGORY: Record<(typeof CATEGORIES)[number], string[]> = {
-    oxygenGen: ["Electrolyzer"],
-    power: ["Generator"],
-    cooling: ["AirConditioner"],
-    food: ["CookingStation"],
-    ranching: ["RanchStation"],
-    automation: ["LogicSwitch", "LogicDuplicantSensor"],
-    transit: ["TravelTube"],
-    refining: ["MetalRefinery"],
-    rooms: ["Bed"],
-    decor: ["FloorLamp", "CeilingLight"],
+  // two fallback-game-category buildings for the categories that don't
+  // (automation, decor — "fallback only" per the spec), and the context
+  // signal for the two categories no building can name (tamer, boiler).
+  const FIXTURE_BY_CATEGORY: Record<
+    (typeof CATEGORIES)[number],
+    { prefabIds: string[]; context?: CategoryContext }
+  > = {
+    oxygenGen: { prefabIds: ["Electrolyzer"] },
+    power: { prefabIds: ["Generator"] },
+    // A tamer is a cooling loop on a geyser: the annotation is the signal.
+    tamer: {
+      prefabIds: ["AirConditioner"],
+      context: { terrainFeatureIds: ["GeyserGeneric_steam"] },
+    },
+    // No boiler prefab exists; the title carries it.
+    boiler: {
+      prefabIds: ["MetalTile", "AirConditioner"],
+      context: { title: "Petroleum boiler" },
+    },
+    water: { prefabIds: ["WaterPurifier"] },
+    storage: { prefabIds: ["LiquidReservoir", "GasReservoir"] },
+    cooling: { prefabIds: ["AirConditioner"] },
+    food: { prefabIds: ["CookingStation"] },
+    ranching: { prefabIds: ["RanchStation"] },
+    automation: { prefabIds: ["LogicSwitch", "LogicDuplicantSensor"] },
+    transit: { prefabIds: ["TravelTube"] },
+    refining: { prefabIds: ["MetalRefinery"] },
+    rooms: { prefabIds: ["Bed"] },
+    decor: { prefabIds: ["FloorLamp", "CeilingLight"] },
     // The station outranks every function vote: a cabin with beds is a rocket.
-    rocketInterior: ["RocketControlStation", "Bed", "LuxuryBed"],
+    rocketInterior: {
+      prefabIds: ["RocketControlStation", "Bed", "LuxuryBed"],
+    },
   };
 
   it("the rocket control station is a real prefab", () => {
@@ -120,7 +139,8 @@ describe("deriveCategory", () => {
 
   for (const category of CATEGORIES) {
     it(`derives ${category} from its representative fixture`, () => {
-      expect(deriveCategory(FIXTURE_BY_CATEGORY[category], lookup)).toBe(
+      const fixture = FIXTURE_BY_CATEGORY[category];
+      expect(deriveCategory(fixture.prefabIds, lookup, fixture.context)).toBe(
         category,
       );
     });
