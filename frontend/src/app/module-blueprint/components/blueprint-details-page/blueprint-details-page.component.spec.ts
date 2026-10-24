@@ -144,6 +144,13 @@ describe("BlueprintDetailsPageComponent", () => {
     component = fixture.componentInstance;
   });
 
+  it("names the blueprint in the document title", () => {
+    fixture.detectChanges();
+    expect(document.title).toBe(
+      "Super Coal Generator Setup · Blueprint Not Included",
+    );
+  });
+
   it("loads details for the routed blueprint id", () => {
     fixture.detectChanges();
 

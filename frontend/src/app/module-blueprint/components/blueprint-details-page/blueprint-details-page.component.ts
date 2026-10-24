@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild } from "@angular/core";
 import { Location } from "@angular/common";
+import { Title } from "@angular/platform-browser";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ActivatedRoute, Router } from "@angular/router";
 import { EMPTY, Observable } from "rxjs";
@@ -117,6 +118,7 @@ export class BlueprintDetailsPageComponent implements OnInit {
     private translationService: TranslationService,
     public authService: AuthenticationService,
     private contentLocaleService: ContentLocaleService,
+    private titleService: Title,
   ) {}
 
   // Only shown when logged in (the translate endpoint requires auth — an
@@ -236,6 +238,10 @@ export class BlueprintDetailsPageComponent implements OnInit {
         this.details = details;
         this.blueprintId = details.id;
         this.loading = false;
+        // The tab, history and a bookmark name the blueprint, not the site.
+        this.titleService.setTitle(
+          `${this.displayTitle} · Blueprint Not Included`,
+        );
         this.loadRelatedBlueprints(details.id);
         this.loadSummary(details.id);
       });

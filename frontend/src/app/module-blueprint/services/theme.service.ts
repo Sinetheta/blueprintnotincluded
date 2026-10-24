@@ -94,6 +94,12 @@ export class ThemeService {
       note: "Warm charcoal, bone tag, china-pencil red.",
       swatch: ["#201e1a", "#e6e0d2", "#cc4126"],
     },
+    {
+      id: "paper",
+      label: "Paper",
+      note: "Light. Cream board, charcoal tag, china-pencil red.",
+      swatch: ["#f3eee3", "#2a2621", "#c43d22"],
+    },
   ];
 
   constructor(private http: HttpClient) {}

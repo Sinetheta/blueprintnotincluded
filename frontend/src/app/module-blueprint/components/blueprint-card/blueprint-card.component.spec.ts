@@ -305,6 +305,35 @@ describe("BlueprintCardComponent", () => {
     ).toContain("3");
   });
 
+  it("omits the social row on a card nobody has touched yet", () => {
+    component.item = makeItem({
+      commentCount: 0,
+      nbForks: 0,
+      nbViews: 0,
+      nbDownloads: 0,
+    });
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css(".card-social"))).toBeNull();
+  });
+
+  it("shows only the counts that are non-zero", () => {
+    component.item = makeItem({
+      commentCount: 0,
+      nbForks: 0,
+      nbViews: 12,
+      nbDownloads: 0,
+    });
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css(".card-social"))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css(".card-comments"))).toBeNull();
+    expect(fixture.debugElement.query(By.css(".card-forks"))).toBeNull();
+    expect(fixture.debugElement.query(By.css(".card-downloads"))).toBeNull();
+    expect(
+      fixture.debugElement.query(By.css(".card-views")).nativeElement
+        .textContent,
+    ).toContain("12");
+  });
+
   it("renders the view and download counts", () => {
     component.item = makeItem({ nbViews: 25, nbDownloads: 6 });
     fixture.detectChanges();

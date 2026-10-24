@@ -11,13 +11,14 @@
  * The id is the value of `data-palette` on <html>; the tokens live in
  * `frontend/src/bni-skin.css`.
  */
-export type ThemeId = 'steam' | 'sample-board' | 'film' | 'cyanotype' | 'concrete' | 'custom';
+export type ThemeId = 'steam' | 'sample-board' | 'film' | 'cyanotype' | 'concrete' | 'paper' | 'custom';
 
 export const THEME_IDS: readonly ThemeId[] = [
   'steam',
   'sample-board',
   'film',
   'cyanotype',
+  'paper',
   'concrete',
   'custom',
 ] as const;

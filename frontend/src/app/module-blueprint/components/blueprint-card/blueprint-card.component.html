@@ -114,8 +114,12 @@
         >+{{ hiddenRoomCount }}</span
       >
     </div>
-    <div class="card-social">
+    <!-- Counts only when there is something to count. A row of four zeros
+         on every card made the board read as deserted; a missing row reads
+         as "nothing yet", which is the truth and takes no space saying it. -->
+    <div *ngIf="hasSocialCounts" class="card-social">
       <a
+        *ngIf="item.commentCount > 0"
         class="card-comments bni-icon-link"
         [routerLink]="['/blueprint', item.id]"
         fragment="comments"
@@ -140,6 +144,7 @@
         {{ item.commentCount }}
       </a>
       <a
+        *ngIf="item.nbForks > 0"
         class="card-forks bni-icon-link"
         [routerLink]="['/blueprint', item.id]"
         [state]="linkState"
@@ -163,7 +168,12 @@
         </svg>
         {{ item.nbForks }}
       </a>
-      <span class="card-views bni-icon-link" i18n-title title="View count">
+      <span
+        *ngIf="item.nbViews > 0"
+        class="card-views bni-icon-link"
+        i18n-title
+        title="View count"
+      >
         <svg
           width="13"
           height="13"
@@ -182,6 +192,7 @@
         {{ item.nbViews }}
       </span>
       <span
+        *ngIf="item.nbDownloads > 0"
         class="card-downloads bni-icon-link"
         i18n-title
         title="Download count"
