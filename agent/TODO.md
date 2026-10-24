@@ -9,6 +9,26 @@
 - **Tests**: 1319 backend (Mocha + Chai, ~18 s) · 1455 frontend (Vitest, none skipped) — all green
 - **Enforcement**: zero-warning flags enabled backend, lib, and frontend (`strict` + `strictTemplates`); CI improvements all complete (mongo:8.0.23 + mongosh health check)
 
+## UX polish (2026-10-24) — shipped on `ux-polish`, follow-ups in `specs/`
+
+Shipped: the details page spec sheet ("What's inside": footprint, per-building counts,
+material totals; the same numbers in the unfurl description), the paste-and-go "Open a
+blueprint" box on Discover, bookmarks ("Save" + a Saved profile tab), the tamer / boiler /
+water / storage categories derived from terrain annotations and titles, the light "Paper"
+palette, cards that hide zero counts, per-page document titles.
+
+- **Run `npm run derive-metadata -- --recategorize` in production** after deploy: existing
+  documents keep "cooling" until it runs (the save path only derives on new saves).
+- **Translations** for the new strings (category labels, open box, save button, spec sheet)
+  are not in the xlf files: `npm run extract-i18n` rewrites all four files wholesale
+  (20k-line diff), so they need a dedicated pass. English source shows meanwhile.
+- The larger pieces are specs in the (local, gitignored) `specs/` directory, indexed in
+  `specs/README-ux-polish.md`: Blueprints Expanded folder sync, collections, "contains
+  building" + size filters, an interactive viewer on the details page, release notes per
+  version, featured/curated surfaces, editor discoverability (`?`, command palette,
+  getting-started checklist), compatibility flag + research tier, category rules over
+  translated titles.
+
 ## Search / translation — what's left
 
 Status doc: `spec/language-plan.md`. Design rationale: `spec/archive/multilingual-search-plan.md`
