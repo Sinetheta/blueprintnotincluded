@@ -21,6 +21,9 @@ export class PendingImportService {
   set(text: string): void {
     this.fallback = text;
     try {
+      // Clear first, so an older parked value cannot outlive a write that
+      // fails (quota: a very large paste) and come back on the next take.
+      sessionStorage.removeItem(STORAGE_KEY);
       sessionStorage.setItem(STORAGE_KEY, text);
     } catch {
       // storage unavailable — the in-memory copy carries it
@@ -36,7 +39,9 @@ export class PendingImportService {
     } catch {
       // fall through to the in-memory copy
     }
-    const text = stored ?? this.fallback;
+    // The in-memory copy is always this tab's latest set(); storage only
+    // outranks it after a reload, when there is no in-memory copy at all.
+    const text = this.fallback ?? stored;
     this.fallback = null;
     return text;
   }

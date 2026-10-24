@@ -302,8 +302,10 @@
   --bni-tag-ink-2: #b8ae9c;
   --bni-ink: #1b1813;
   --bni-body: #3d372f;
-  --bni-muted: #6b6457;
-  --bni-faint: #948c7c;
+  /* muted ≈ 6.2:1 and faint ≈ 4.6:1 on the board: faint carries 11–12px
+   * dates and hints, so it has to clear 4.5:1 on its own. */
+  --bni-muted: #58513f;
+  --bni-faint: #6e675a;
   --bni-mark: #c43d22;
   --bni-mark-hi: #a8321b;
   --bni-mark-dim: #e0856f;

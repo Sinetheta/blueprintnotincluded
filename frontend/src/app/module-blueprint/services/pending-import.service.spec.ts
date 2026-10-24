@@ -21,6 +21,22 @@ describe("PendingImportService", () => {
     expect(new PendingImportService().take()).toBe("share-string");
   });
 
+  it("hands over the newest paste even when storing it failed", () => {
+    service.set("older");
+    const setItem = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("quota");
+      });
+    try {
+      service.set("newest");
+      expect(service.take()).toBe("newest");
+      expect(service.take()).toBeNull();
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
   it("falls back to memory when sessionStorage is unavailable", () => {
     const setItem = vi
       .spyOn(Storage.prototype, "setItem")

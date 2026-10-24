@@ -253,6 +253,46 @@ describe("ComponentSaveDialogComponent", () => {
       expect(component.saveBlueprintForm.value.category).toBe("oxygenGen");
     });
 
+    it("follows the title while the control still holds the suggestion", () => {
+      loadFakeDatabase();
+      const blueprintService = TestBed.inject(BlueprintService);
+      blueprintService.blueprint = fakeBlueprint(["Electrolyzer"]);
+
+      component.showDialog();
+      expect(component.saveBlueprintForm.value.category).toBe("oxygenGen");
+
+      // The title outweighs the one appliance: it is a boiler now.
+      component.saveBlueprintForm.patchValue({ name: "Petroleum boiler" });
+      expect(component.saveBlueprintForm.value.category).toBe("boiler");
+
+      // And back, when the title stops saying so.
+      component.saveBlueprintForm.patchValue({ name: "My SPOM" });
+      expect(component.saveBlueprintForm.value.category).toBe("oxygenGen");
+    });
+
+    it("keeps a category the author picked when the title changes", () => {
+      loadFakeDatabase();
+      const blueprintService = TestBed.inject(BlueprintService);
+      blueprintService.blueprint = fakeBlueprint(["Electrolyzer"]);
+
+      component.showDialog();
+      component.saveBlueprintForm.patchValue({ category: "power" });
+      component.saveBlueprintForm.patchValue({ name: "Petroleum boiler" });
+      expect(component.saveBlueprintForm.value.category).toBe("power");
+    });
+
+    it("never re-derives on an update, whatever the title becomes", () => {
+      loadFakeDatabase();
+      const blueprintService = TestBed.inject(BlueprintService);
+      blueprintService.blueprint = fakeBlueprint(["Electrolyzer"]);
+      blueprintService.id = "existing-id";
+      blueprintService.metadata = { category: "power" };
+
+      component.showDialog();
+      component.saveBlueprintForm.patchValue({ name: "Petroleum boiler" });
+      expect(component.saveBlueprintForm.value.category).toBe("power");
+    });
+
     it("does not clobber a stored category on update", () => {
       loadFakeDatabase();
       const blueprintService = TestBed.inject(BlueprintService);

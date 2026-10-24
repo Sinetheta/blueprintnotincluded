@@ -80,6 +80,17 @@ describe("OpenBlueprintBoxComponent", () => {
     expect(component.error).toBeNull();
   });
 
+  it("refuses a file too large to be a blueprint without reading it", () => {
+    const file = { size: 17 * 1024 * 1024, text: vi.fn() } as unknown as File;
+    component.onDrop({
+      preventDefault: vi.fn(),
+      dataTransfer: { files: [file] },
+    } as unknown as DragEvent);
+    expect((file as any).text).not.toHaveBeenCalled();
+    expect(component.error).toContain("too large");
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
   it("reads a dropped .blueprint file and parks its text", async () => {
     const file = new File(['{"friendlyname":"dropped"}'], "x.blueprint", {
       type: "application/json",

@@ -83,11 +83,20 @@ export class OpenBlueprintBoxComponent {
     this.openFiles(event.dataTransfer?.files ?? null);
   }
 
+  // The largest file this box will read. A whole-base .blueprint is a few
+  // hundred KB; 16 MiB is far past anything the mod writes, and reading an
+  // arbitrary dropped file into memory first is what this guards against.
+  static readonly MAX_FILE_BYTES = 16 * 1024 * 1024;
+
   // The first file only. A .blueprint is JSON text; it is parked as text so
   // the editor runs it through the same tolerant import as a paste.
   private openFiles(files: FileList | null): void {
     const file = files?.[0];
     if (file == null) return;
+    if (file.size > OpenBlueprintBoxComponent.MAX_FILE_BYTES) {
+      this.error = $localize`:openBox.tooLarge:That file is too large to be a blueprint.`;
+      return;
+    }
     this.error = null;
     file.text().then(
       (content) => this.openImport(content),

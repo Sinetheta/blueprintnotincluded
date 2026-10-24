@@ -223,9 +223,10 @@ export const SIGNATURE_PREFABS: Record<string, SignatureVote[]> = {
   TravelTubeEntrance: [{ category: 'transit', weight: 3 }],
 
   // water: purification is its own function, not cooling — a sieve loop
-  // with an aquatuner on it is still a sieve loop.
-  WaterPurifier: [{ category: 'water', weight: 3 }],
-  Desalinator: [{ category: 'water', weight: 3 }],
+  // with an aquatuner AND a steam turbine on it is still a sieve loop, so
+  // the weight has to clear the two of them together (3 + 3), not tie.
+  WaterPurifier: [{ category: 'water', weight: 6 }],
+  Desalinator: [{ category: 'water', weight: 6 }],
 
   // storage. Reservoirs appear in cooling loops too (weight 2, so a loop's
   // aquatuner + turbine still wins); a bare infinite-storage build of
