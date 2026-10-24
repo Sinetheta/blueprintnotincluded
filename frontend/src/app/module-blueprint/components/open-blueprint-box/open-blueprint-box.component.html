@@ -1,0 +1,49 @@
+<form
+  class="open-box"
+  [class.open-box--dragging]="dragging"
+  (submit)="open(); $event.preventDefault()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  <label class="open-box__label" for="open-blueprint-input" i18n
+    >Open a blueprint</label
+  >
+  <div class="open-box__row">
+    <input
+      id="open-blueprint-input"
+      class="open-box__input"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      i18n-placeholder
+      placeholder="Paste a link, an id, or a share string from the game…"
+      [(ngModel)]="text"
+      name="openBlueprint"
+      (paste)="onPaste($event)"
+      (input)="error = null"
+    />
+    <button type="submit" class="bni-btn bni-btn--primary open-box__go">
+      <ng-container i18n>Open</ng-container>
+    </button>
+    <button type="button" class="bni-btn open-box__file" (click)="chooseFile()">
+      <i class="pi pi-upload" aria-hidden="true"></i>
+      <ng-container i18n>.blueprint file</ng-container>
+    </button>
+    <input
+      #fileInput
+      class="open-box__file-input"
+      type="file"
+      accept=".blueprint,.json,application/json"
+      tabindex="-1"
+      aria-hidden="true"
+      (change)="onFileChosen($event)"
+    />
+  </div>
+  <p class="open-box__hint" *ngIf="!error" i18n>
+    Or drop a .blueprint file here. Nothing to install, no account needed.
+  </p>
+  <p class="open-box__hint open-box__hint--error" *ngIf="error" role="alert">
+    {{ error }}
+  </p>
+</form>
