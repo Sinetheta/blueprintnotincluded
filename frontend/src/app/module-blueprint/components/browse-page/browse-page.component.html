@@ -20,6 +20,11 @@
       </a>
     </div>
 
+    <!-- Paste-and-go. The loop starts in the game: a player arriving with a
+         share string on the clipboard or a .blueprint in hand should be
+         looking at it before they have read anything else on this page. -->
+    <app-open-blueprint-box></app-open-blueprint-box>
+
     <div
       class="view-mode-tabs bni-seg"
       *ngIf="loggedIn && followingCount > 0"

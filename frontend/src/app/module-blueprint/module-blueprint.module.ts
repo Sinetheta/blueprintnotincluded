@@ -107,6 +107,7 @@ import { CommentService } from "./services/comment.service";
 import { TranslationService } from "./services/translation.service";
 import { BlueprintVersionService } from "./services/blueprint-version.service";
 import { BrowsePageComponent } from "./components/browse-page/browse-page.component";
+import { OpenBlueprintBoxComponent } from "./components/open-blueprint-box/open-blueprint-box.component";
 import { DialogThemeComponent } from "./components/dialogs/dialog-theme/dialog-theme.component";
 import { DialogContentLanguageComponent } from "./components/dialogs/dialog-content-language/dialog-content-language.component";
 import { ProfilePageComponent } from "./components/profile-page/profile-page.component";
@@ -174,6 +175,7 @@ import { BuildMenuComponent } from "./components/build-menu/build-menu.component
     CommentSectionComponent,
     BlueprintDetailsPageComponent,
     BrowsePageComponent,
+    OpenBlueprintBoxComponent,
     DialogThemeComponent,
     DialogContentLanguageComponent,
     ProfilePageComponent,

@@ -52,6 +52,7 @@ import {
   UnsavedWorkService,
   UnsavedWorkSnapshot,
 } from "../../services/unsaved-work.service";
+import { PendingImportService } from "../../services/pending-import.service";
 import { ComponentCanvasComponent } from "../component-canvas/component-canvas.component";
 import {
   BrowseData,
@@ -147,6 +148,7 @@ export class ComponentBlueprintParentComponent
     private shortcutService: KeyboardShortcutService,
     private userService: UserService,
     private unsavedWork: UnsavedWorkService,
+    private pendingImport: PendingImportService,
     private router: Router,
     public buildMenuService: BuildMenuService,
   ) {}
@@ -311,6 +313,7 @@ export class ComponentBlueprintParentComponent
         this.resumeUnsavedWork(snapshot);
       }
       this.openSaveDialogIfRequested();
+      this.importPendingIfAny();
       return;
     }
 
@@ -412,6 +415,20 @@ export class ComponentBlueprintParentComponent
     this.router.navigate(["/login"], {
       queryParams: { returnTo: "/editor?save=1" },
     });
+  }
+
+  // A share string or .blueprint parked by the Discover page's "Open a
+  // blueprint" box (PendingImportService). Runs after the in-memory /
+  // recovery-slot restore on purpose: the import goes through the same
+  // discard-unsaved-work confirmation as a paste in the editor, so work
+  // that was here first is never silently replaced — and a declined
+  // confirmation leaves it on the canvas.
+  private importPendingIfAny() {
+    const text = this.pendingImport.take();
+    if (text == null) return;
+    this.blueprintService
+      .openBlueprintFromShareString(text)
+      .catch((error: unknown) => this.onImportError(error));
   }
 
   private openSaveDialogIfRequested() {

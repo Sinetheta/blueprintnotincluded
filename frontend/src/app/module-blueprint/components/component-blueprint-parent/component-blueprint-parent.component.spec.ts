@@ -13,6 +13,7 @@ import { GameStringService } from "src/app/module-blueprint/services/game-string
 import { KeyboardShortcutService } from "src/app/module-blueprint/services/keyboard-shortcut.service";
 import { UserService } from "src/app/module-blueprint/services/user-service";
 import { UnsavedWorkService } from "src/app/module-blueprint/services/unsaved-work.service";
+import { PendingImportService } from "src/app/module-blueprint/services/pending-import.service";
 
 // An empty stub for every collaborator; each block replaces the ones it uses.
 async function createParent(
@@ -353,6 +354,44 @@ describe("ComponentBlueprintParentComponent unsaved work", () => {
     expect(blueprintService.resumeUnsavedWork).not.toHaveBeenCalled();
     expect(blueprintService.openBlueprintFromId).not.toHaveBeenCalled();
     expect(recoveryToast()).toBeUndefined();
+  });
+
+  it("imports a blueprint parked by the Discover open box once the editor starts", () => {
+    const pending = TestBed.inject(PendingImportService);
+    pending.set('{"friendlyname":"parked"}');
+    blueprintService.openBlueprintFromShareString = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    start(null);
+    expect(blueprintService.openBlueprintFromShareString).toHaveBeenCalledWith(
+      '{"friendlyname":"parked"}',
+    );
+    // Consumed: a reload of /editor must not import it twice.
+    expect(pending.peek()).toBe(false);
+  });
+
+  it("reports a parked import the editor cannot parse, like a bad paste", async () => {
+    TestBed.inject(PendingImportService).set("garbage");
+    blueprintService.openBlueprintFromShareString = vi
+      .fn()
+      .mockRejectedValue(new Error("nope"));
+    start(null);
+    await vi.waitFor(() =>
+      expect(toasts().some((t) => t.severity === "error")).toBe(true),
+    );
+  });
+
+  it("a saved blueprint's route is not where a parked import belongs", () => {
+    const pending = TestBed.inject(PendingImportService);
+    pending.set("parked");
+    blueprintService.openBlueprintFromShareString = vi.fn();
+    start("bp-9");
+    expect(blueprintService.openBlueprintFromId).toHaveBeenCalledWith("bp-9");
+    expect(
+      blueprintService.openBlueprintFromShareString,
+    ).not.toHaveBeenCalled();
+    expect(pending.peek()).toBe(true);
+    pending.take();
   });
 
   it("/editor resumes the slot and says so, with a Discard", () => {
