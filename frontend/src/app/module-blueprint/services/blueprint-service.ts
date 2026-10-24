@@ -41,6 +41,7 @@ import {
   BlueprintDetailsResponse,
   RelatedBlueprintsResponse,
   BlueprintSummaryResponse,
+  BookmarkResponse,
   BlueprintDelete,
   BlueprintFacetsResponse,
 } from "../../../../../lib/index";
@@ -887,6 +888,7 @@ export class BlueprintService implements IObsBlueprintChange {
     filterModded?: boolean | null;
     filterForkedFrom?: string | null;
     filterRatedBy?: string | null;
+    filterSavedBy?: string | null;
     filterRooms?: string | null;
     filterDlcs?: string | null;
     filterExcludeDlcs?: string | null;
@@ -906,6 +908,8 @@ export class BlueprintService implements IObsBlueprintChange {
       parts.push("forkedFrom=" + filters.filterForkedFrom);
     if (filters.filterRatedBy != null)
       parts.push("ratedBy=" + filters.filterRatedBy);
+    if (filters.filterSavedBy != null)
+      parts.push("savedBy=" + filters.filterSavedBy);
     if (filters.filterRooms != null) parts.push("rooms=" + filters.filterRooms);
     if (filters.filterDlcs != null) parts.push("dlc=" + filters.filterDlcs);
     if (filters.filterExcludeDlcs != null)
@@ -930,6 +934,8 @@ export class BlueprintService implements IObsBlueprintChange {
     // Duplicate collapse in search results — server default is ON, so only
     // an opt-out is sent (keeps the common URL stable for the CDN).
     collapse?: boolean,
+    // Bookmarked-by-me (profile "Saved" tab); private like ratedBy.
+    filterSavedBy?: string | null,
   ) {
     // olderthan is a cache-buster when it isn't doing real work, so send it
     // only where it is the pagination cursor: the recent sort past page 1
@@ -957,6 +963,7 @@ export class BlueprintService implements IObsBlueprintChange {
       filterModded,
       filterForkedFrom,
       filterRatedBy,
+      filterSavedBy,
       filterRooms,
       filterDlcs,
       filterExcludeDlcs,
@@ -976,7 +983,8 @@ export class BlueprintService implements IObsBlueprintChange {
     // logged-in users too. The secure endpoint is only for lists that depend
     // on who is asking: a specific user's list (own/admin view includes
     // drafts) and the private rated-by-me list.
-    const needsAuth = filterUserId != null || filterRatedBy != null;
+    const needsAuth =
+      filterUserId != null || filterRatedBy != null || filterSavedBy != null;
     const request =
       needsAuth && this.authService.isLoggedIn()
         ? this.http.get(
@@ -1312,6 +1320,17 @@ export class BlueprintService implements IObsBlueprintChange {
   nbRatings!: number;
   rating!: number;
   myRating!: number | null;
+  // Bookmark (true) or forget (false) a blueprint. Idempotent server-side.
+  setSaved(blueprintId: string, saved: boolean) {
+    const url = `/api/blueprints/${blueprintId}/bookmark`;
+    const options = {
+      headers: { Authorization: `Bearer ${this.authService.getToken()}` },
+    };
+    return saved
+      ? this.http.put<BookmarkResponse>(url, {}, options)
+      : this.http.delete<BookmarkResponse>(url, options);
+  }
+
   rateBlueprint(blueprintId: string, rating: number) {
     const body: BlueprintRate = {
       blueprintId: blueprintId,

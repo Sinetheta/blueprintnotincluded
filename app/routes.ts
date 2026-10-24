@@ -19,6 +19,7 @@ import { PreviewController } from './api/preview-controller';
 import { AvatarController } from './api/avatar-controller';
 import { ModController } from './api/mod-controller';
 import { TranslationController } from './api/translation-controller';
+import { BookmarkController } from './api/bookmark-controller';
 export class Routes {
   public staticController = new StaticController();
   public uploadBlueprintController = new BlueprintController();
@@ -35,6 +36,7 @@ export class Routes {
   public avatarController = new AvatarController();
   public modController = new ModController();
   public translationController = new TranslationController();
+  public bookmarkController = new BookmarkController();
 
   public routes(app: Application): void {
     // Admin-only middleware: requires role === 'admin' in the JWT (set from WorkOS platform org membership)
@@ -145,6 +147,8 @@ export class Routes {
     app.route('/api/comments/:id').patch(auth, this.commentController.edit);
     app.route('/api/comments/:id').delete(auth, this.commentController.remove);
     app.route('/api/blueprints/:id/fork').post(auth, this.blueprintVersionController.fork);
+    app.route('/api/blueprints/:id/bookmark').put(auth, this.bookmarkController.add);
+    app.route('/api/blueprints/:id/bookmark').delete(auth, this.bookmarkController.remove);
     app.route('/api/blueprints/:id/translate').post(auth, this.translationController.translateBlueprint);
     app
       .route('/api/blueprints/:id/comments/translate')

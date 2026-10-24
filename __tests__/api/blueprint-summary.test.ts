@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
 import { Types } from 'mongoose';
+import { Vector2 } from '../../lib';
 
 import { TestSetup } from '../setup/testSetup';
 import { BlueprintModel } from '../../app/api/models/blueprint';
@@ -45,9 +46,9 @@ describe('Blueprint summary API', function () {
         {
           data: {
             blueprintItems: [
-              { id: 'Electrolyzer', position: { x: 0, y: 0 }, elements: ['IronOre'] },
-              { id: 'Tile', position: { x: 0, y: 2 }, elements: ['SandStone'] },
-              { id: 'Tile', position: { x: 1, y: 2 }, elements: ['SandStone'] },
+              { id: 'Electrolyzer', position: new Vector2(0, 0), elements: ['IronOre'] },
+              { id: 'Tile', position: new Vector2(0, 2), elements: ['SandStone'] },
+              { id: 'Tile', position: new Vector2(1, 2), elements: ['SandStone'] },
             ],
           },
           modifiedAt: new Date(),
@@ -78,9 +79,9 @@ describe('Blueprint summary API', function () {
         {
           data: {
             blueprintItems: [
-              { id: 'Tile', position: { x: 0, y: 0 } },
-              { id: 'SomeModBuilding', position: { x: 1, y: 0 } },
-              { id: 'SomeModBuilding', position: { x: 2, y: 0 } },
+              { id: 'Tile', position: new Vector2(0, 0) },
+              { id: 'SomeModBuilding', position: new Vector2(1, 0) },
+              { id: 'SomeModBuilding', position: new Vector2(2, 0) },
             ],
           },
           modifiedAt: new Date(),
@@ -127,9 +128,9 @@ describe('Blueprint summary API', function () {
     it('writes the unfurl line from the top buildings and materials', function () {
       const summary = summarizeStoredBlueprint({
         blueprintItems: [
-          { id: 'Electrolyzer', position: { x: 0, y: 0 }, elements: ['IronOre'] },
-          { id: 'Tile', position: { x: 0, y: 2 }, elements: ['SandStone'] },
-          { id: 'Tile', position: { x: 1, y: 2 }, elements: ['SandStone'] },
+          { id: 'Electrolyzer', position: new Vector2(0, 0), elements: ['IronOre'] },
+          { id: 'Tile', position: new Vector2(0, 2), elements: ['SandStone'] },
+          { id: 'Tile', position: new Vector2(1, 2), elements: ['SandStone'] },
         ],
       });
       const text = describeSummary(summary);

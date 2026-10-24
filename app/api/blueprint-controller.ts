@@ -34,6 +34,7 @@ import { UserModel, UserJwt } from './models/user';
 import { CommentModel } from './models/comment';
 import { BlueprintRatingModel } from './models/blueprint-rating';
 import { NotificationController } from './notification-controller';
+import { BookmarkController } from './bookmark-controller';
 import { BatchUtils } from './batch/batch-utils';
 import { apiError } from './utils/apiError';
 import { optionalViewer } from './utils/optionalViewer';
@@ -1578,6 +1579,20 @@ export class BlueprintController {
         }
       }
 
+      let savedByMe: boolean | undefined;
+      if (viewerId != null) {
+        try {
+          const saved = await BookmarkController.getMySaved(
+            [blueprint._id as mongoose.Types.ObjectId],
+            viewerId
+          );
+          savedByMe = saved.has((blueprint._id as any).toString());
+        } catch (err) {
+          console.log('details saved-by-me lookup error');
+          console.log(err);
+        }
+      }
+
       const resolvedTitle = await resolveOneTitle(
         titleSourceOf(blueprint),
         BlueprintController.viewerContentLang(req)
@@ -1596,6 +1611,7 @@ export class BlueprintController {
         rating: blueprint.ratingAverage ?? 0,
         myRating: detailsMyRating,
         ownedByMe: viewerId != null && ownerId === viewerId,
+        ...(savedByMe !== undefined ? { savedByMe } : {}),
         commentCount: commentCounts.get((blueprint._id as any).toString()) ?? 0,
         requiredDlcs: blueprint.requiredDlcs ?? [],
         category: blueprint.category ?? null,

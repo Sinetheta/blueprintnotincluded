@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Blueprint, MdbBlueprint, OniItem, formatMassKg, summarizeBlueprint } from '../../lib';
+import { Blueprint, MdbBlueprint, OniItem, Vector2, formatMassKg, summarizeBlueprint } from '../../lib';
 import { loadGameDatabase } from '../helpers/roomFixtures';
 
 describe('summarizeBlueprint', function () {
@@ -28,10 +28,10 @@ describe('summarizeBlueprint', function () {
     const summary = summarizeBlueprint(
       build({
         blueprintItems: [
-          { id: 'Tile', position: { x: 0, y: 0 }, elements: ['SandStone'] },
-          { id: 'Tile', position: { x: 1, y: 0 }, elements: ['SandStone'] },
-          { id: 'Tile', position: { x: 2, y: 0 }, elements: ['SandStone'] },
-          { id: 'Electrolyzer', position: { x: 1, y: 1 }, elements: ['IronOre'] },
+          { id: 'Tile', position: new Vector2(0, 0), elements: ['SandStone'] },
+          { id: 'Tile', position: new Vector2(1, 0), elements: ['SandStone'] },
+          { id: 'Tile', position: new Vector2(2, 0), elements: ['SandStone'] },
+          { id: 'Electrolyzer', position: new Vector2(1, 1), elements: ['IronOre'] },
         ],
       })
     );
@@ -52,9 +52,9 @@ describe('summarizeBlueprint', function () {
     const summary = summarizeBlueprint(
       build({
         blueprintItems: [
-          { id: 'Electrolyzer', position: { x: 0, y: 0 }, elements: ['IronOre'] },
-          { id: 'Electrolyzer', position: { x: 4, y: 0 }, elements: ['Copper'] },
-          { id: 'Tile', position: { x: 8, y: 0 }, elements: ['SandStone'] },
+          { id: 'Electrolyzer', position: new Vector2(0, 0), elements: ['IronOre'] },
+          { id: 'Electrolyzer', position: new Vector2(4, 0), elements: ['Copper'] },
+          { id: 'Tile', position: new Vector2(8, 0), elements: ['SandStone'] },
         ],
       })
     );
@@ -69,7 +69,7 @@ describe('summarizeBlueprint', function () {
 
   it('charges a slot the default element when the file names none', () => {
     const summary = summarizeBlueprint(
-      build({ blueprintItems: [{ id: 'Electrolyzer', position: { x: 0, y: 0 } }] })
+      build({ blueprintItems: [{ id: 'Electrolyzer', position: new Vector2(0, 0) }] })
     );
     const oniItem = OniItem.getOniItem('Electrolyzer');
     expect(summary.materials).to.deep.equal([
@@ -84,7 +84,7 @@ describe('summarizeBlueprint', function () {
     expect(fiber, 'the Canvas fixture should carry a BuildingFiber cost').to.not.equal(undefined);
 
     const summary = summarizeBlueprint(
-      build({ blueprintItems: [{ id: 'Canvas', position: { x: 0, y: 0 } }] })
+      build({ blueprintItems: [{ id: 'Canvas', position: new Vector2(0, 0) }] })
     );
     const byId = new Map(summary.materials.map(m => [m.id, m.mass]));
     expect(byId.get('BuildingFiber')).to.equal(fiber!.mass);
@@ -94,8 +94,8 @@ describe('summarizeBlueprint', function () {
     const summary = summarizeBlueprint(
       build({
         blueprintItems: [
-          { id: 'Tile', position: { x: 0, y: 0 }, elements: ['SandStone'] },
-          { id: OniItem.elementId, position: { x: 5, y: 5 }, elements: ['Water'] },
+          { id: 'Tile', position: new Vector2(0, 0), elements: ['SandStone'] },
+          { id: OniItem.elementId, position: new Vector2(5, 5), elements: ['Water'] },
         ],
       })
     );

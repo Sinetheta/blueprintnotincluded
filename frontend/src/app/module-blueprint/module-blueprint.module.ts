@@ -69,6 +69,7 @@ import { OverlayMotionDirective } from "./directives/overlay-motion.directive";
 import { StarRatingComponent } from "./components/star-rating/star-rating.component";
 import { RatingWidgetComponent } from "./components/rating-widget/rating-widget.component";
 import { ForkButtonComponent } from "./components/fork-button/fork-button.component";
+import { SaveButtonComponent } from "./components/save-button/save-button.component";
 import { BlueprintCardComponent } from "./components/blueprint-card/blueprint-card.component";
 import { VersionHistoryDialogComponent } from "./components/dialogs/version-history-dialog/version-history-dialog.component";
 import { BuildableElementPickerComponent } from "./components/side-bar/buildable-element-picker/buildable-element-picker.component";
@@ -142,6 +143,7 @@ import { BuildMenuComponent } from "./components/build-menu/build-menu.component
     StarRatingComponent,
     RatingWidgetComponent,
     ForkButtonComponent,
+    SaveButtonComponent,
     BlueprintCardComponent,
     VersionHistoryDialogComponent,
     BuildableElementPickerComponent,

@@ -117,6 +117,15 @@ export interface BlueprintDetailsResponse extends BlueprintListItem {
   // gate every "Translate" affordance on this — with no API key in prod the
   // endpoints 503, and a button that renders only to fail is worse than none.
   translationEnabled?: boolean;
+  // Whether the viewer has bookmarked this blueprint. Absent for anonymous
+  // viewers (there is no one to have saved it).
+  savedByMe?: boolean;
+}
+
+// PUT / DELETE /api/blueprints/:id/bookmark
+export interface BookmarkResponse {
+  blueprintId: string;
+  saved: boolean;
 }
 
 // GET /api/blueprints/:id/summary — the spec sheet (lib blueprint-summary),
