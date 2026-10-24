@@ -96,6 +96,28 @@ describe('Blueprint summary API', function () {
         count: 2,
         icon: null,
       });
+      // One cell each for the unknowns, merged with the tile at the origin.
+      expect(response.body.width).to.equal(3);
+      expect(response.body.height).to.equal(1);
+    });
+
+    it('gives a mod-only blueprint a footprint instead of 0×0', async function () {
+      await BlueprintModel.model.updateOne(
+        { _id: blueprintId },
+        {
+          data: {
+            blueprintItems: [
+              { id: 'SomeModBuilding', position: new Vector2(2, 5) },
+              { id: 'SomeModBuilding', position: new Vector2(4, 7) },
+            ],
+          },
+          modifiedAt: new Date(),
+        }
+      );
+      const response = await TestSetup.request().get(`/api/blueprints/${blueprintId}/summary`);
+      expect(response.body.buildingCount).to.equal(2);
+      expect(response.body.width).to.equal(3);
+      expect(response.body.height).to.equal(3);
     });
 
     it('hides a draft from everyone but its owner, like the details page', async function () {

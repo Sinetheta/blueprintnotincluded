@@ -72,13 +72,22 @@ export function summarizeStoredBlueprint(
 
   // importFromMdb drops ids the database does not know (mod buildings); the
   // file still places them, so they are counted back in by raw id — without
-  // a footprint or a cost, which nothing here can know.
+  // a cost, which nothing here can know, and as a single cell each for the
+  // footprint, so a mod-only blueprint is not described as 0×0.
   const unknownCounts = new Map<string, number>();
+  const unknownBounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
   for (const raw of rawItems) {
     const id = raw?.id != null ? String(raw.id) : null;
     if (id == null || id === OniItem.elementId || id === OniItem.infoId) continue;
     if (OniItem.oniItemsMap?.has(id)) continue;
     unknownCounts.set(id, (unknownCounts.get(id) ?? 0) + 1);
+    const position = raw.position as { x?: unknown; y?: unknown } | undefined;
+    const x = typeof position?.x === 'number' && Number.isFinite(position.x) ? position.x : 0;
+    const y = typeof position?.y === 'number' && Number.isFinite(position.y) ? position.y : 0;
+    unknownBounds.minX = Math.min(unknownBounds.minX, x);
+    unknownBounds.maxX = Math.max(unknownBounds.maxX, x);
+    unknownBounds.minY = Math.min(unknownBounds.minY, y);
+    unknownBounds.maxY = Math.max(unknownBounds.maxY, y);
   }
 
   const buildings = summary.buildings.map(b => ({ ...b, ...buildingName(b.id) }));
@@ -89,9 +98,28 @@ export function summarizeStoredBlueprint(
   }
   buildings.sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
 
+  let { width, height } = summary;
+  if (unknownCounts.size > 0) {
+    // Merge the unknown cells into the known footprint: the known box, when
+    // there is one, is [topLeft, bottomRight] inclusive in the same cell space.
+    let minX = unknownBounds.minX;
+    let maxX = unknownBounds.maxX;
+    let minY = unknownBounds.minY;
+    let maxY = unknownBounds.maxY;
+    if (summary.buildingCount > 0) {
+      const [topLeft, bottomRight] = blueprint.getBoundingBox();
+      minX = Math.min(minX, topLeft.x);
+      maxX = Math.max(maxX, bottomRight.x);
+      minY = Math.min(minY, topLeft.y);
+      maxY = Math.max(maxY, bottomRight.y);
+    }
+    width = maxX - minX + 1;
+    height = maxY - minY + 1;
+  }
+
   const response: BlueprintSummaryResponse = {
-    width: summary.width,
-    height: summary.height,
+    width,
+    height,
     buildingCount,
     buildings,
     materials: summary.materials.map(m => ({ ...m, ...materialName(m.id) })),

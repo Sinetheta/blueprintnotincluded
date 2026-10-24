@@ -65,6 +65,8 @@ describe('deriveCategory: context signals', function () {
       'water'
     );
     expect(deriveCategory(['Desalinator', 'LiquidConditioner'], lookup)).to.equal('water');
+    // Even with a full cooling loop on it, the sieve is what the build is for.
+    expect(deriveCategory(['WaterPurifier', ...COOLING_LOOP], lookup)).to.equal('water');
     expect(
       deriveCategory(['LiquidPump', 'LiquidConduit'], lookup, { title: 'Water sieve setup' })
     ).to.equal('water');

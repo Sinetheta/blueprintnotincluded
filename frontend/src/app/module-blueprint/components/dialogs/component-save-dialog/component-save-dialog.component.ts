@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from "@angular/core";
+import { Component, Output, EventEmitter, OnDestroy } from "@angular/core";
 import {
   UntypedFormGroup,
   UntypedFormControl,
@@ -23,6 +23,7 @@ import {
   CategoryLookup,
   ROCKET_INTERIOR_MODULES,
 } from "../../../../../../../lib/index";
+import type { Category } from "../../../../../../../lib/index";
 import { rocketInteriorLabel } from "../../../common/rocket-interior-label";
 import {
   categoryLabel,
@@ -35,7 +36,7 @@ import {
   styleUrls: ["./component-save-dialog.component.css"],
   standalone: false,
 })
-export class ComponentSaveDialogComponent {
+export class ComponentSaveDialogComponent implements OnDestroy {
   visible: boolean = false;
 
   @Output() updateThumbnail = new EventEmitter();
@@ -83,6 +84,17 @@ export class ComponentSaveDialogComponent {
     );
   }
 
+  // The category the dialog last suggested on its own, and the content it
+  // derived it from. The suggestion follows the title while the control
+  // still holds it: a cooling loop reads as cooling until the author types
+  // "Petroleum boiler", and then it is a boiler. A category the author
+  // picked themselves (anything other than the live suggestion) stays.
+  private suggestedCategory: Category | null = null;
+  private suggestionInputs: {
+    prefabIds: string[];
+    terrainFeatureIds: string[];
+  } | null = null;
+
   saveBlueprintForm = new UntypedFormGroup({
     thumbnailType: new UntypedFormControl("Color", [Validators.required]),
     name: new UntypedFormControl("", [
@@ -95,6 +107,56 @@ export class ComponentSaveDialogComponent {
     rocketInterior: new UntypedFormControl(null),
     modded: new UntypedFormControl({ value: null, disabled: true }),
   });
+
+  private readonly nameChanges =
+    this.saveBlueprintForm.controls.name.valueChanges.subscribe(() =>
+      this.resuggestCategory(),
+    );
+
+  ngOnDestroy() {
+    this.nameChanges.unsubscribe();
+    this.tryClearInterval();
+  }
+
+  private deriveSuggestion(): Category | null {
+    if (
+      this.suggestionInputs == null ||
+      BuildMenuCategory.buildMenuCategories == null ||
+      BuildMenuItem.buildMenuItems == null
+    )
+      return null;
+    this._categoryLookup ??= buildCategoryLookup(
+      BuildMenuCategory.buildMenuCategories,
+      BuildMenuItem.buildMenuItems,
+    );
+    return deriveCategory(
+      this.suggestionInputs.prefabIds,
+      this._categoryLookup,
+      {
+        // The control's own value, not the group's: a control's valueChanges
+        // fires before its parent group has recomputed `.value`, so reading
+        // the group here would derive from the previous title.
+        title:
+          this.saveBlueprintForm.controls.name.value ??
+          this.blueprintService.name,
+        terrainFeatureIds: this.suggestionInputs.terrainFeatureIds,
+      },
+    );
+  }
+
+  // On a fresh save the title is typed after the dialog opens, so the
+  // suggestion is recomputed as it changes — only while the control holds
+  // the suggestion (or nothing); an update restores the stored category and
+  // never re-derives it here.
+  private resuggestCategory() {
+    if (!this.visible || this.isUpdate || this.suggestionInputs == null) return;
+    const current = this.saveBlueprintForm.value.category ?? null;
+    if (current != null && current !== this.suggestedCategory) return;
+    const next = this.deriveSuggestion();
+    if (next === this.suggestedCategory) return;
+    this.suggestedCategory = next;
+    this.saveBlueprintForm.patchValue({ category: next, subcategory: null });
+  }
 
   get f() {
     return this.saveBlueprintForm.controls;
@@ -241,21 +303,17 @@ export class ComponentSaveDialogComponent {
     // Pre-fill category only when the control is empty: a fresh save gets
     // the suggestion, but the update flow in showDialog() restores the
     // blueprint's stored category first and must not be clobbered here.
-    if (
-      !this.saveBlueprintForm.value.category &&
-      BuildMenuCategory.buildMenuCategories != null &&
-      BuildMenuItem.buildMenuItems != null
-    ) {
-      this._categoryLookup ??= buildCategoryLookup(
-        BuildMenuCategory.buildMenuCategories,
-        BuildMenuItem.buildMenuItems,
-      );
-      const category = deriveCategory(prefabIds, this._categoryLookup, {
-        title: this.saveBlueprintForm.value.name ?? this.blueprintService.name,
-        terrainFeatureIds: (blueprint.terrainFeatures ?? []).map(
-          (feature) => feature.id,
-        ),
-      });
+    // The inputs are kept so the suggestion can follow the title
+    // (resuggestCategory) without re-exporting the blueprint per keystroke.
+    this.suggestionInputs = {
+      prefabIds,
+      terrainFeatureIds: (blueprint.terrainFeatures ?? []).map(
+        (feature) => feature.id,
+      ),
+    };
+    if (!this.saveBlueprintForm.value.category) {
+      const category = this.deriveSuggestion();
+      this.suggestedCategory = category;
       if (category != null) this.saveBlueprintForm.patchValue({ category });
     }
   }
@@ -383,6 +441,8 @@ export class ComponentSaveDialogComponent {
 
   reset() {
     this.working = false;
+    this.suggestedCategory = null;
+    this.suggestionInputs = null;
     this.thumbnailReady = false;
     this.requiredDlcs = null;
     this.overwrite = false;
