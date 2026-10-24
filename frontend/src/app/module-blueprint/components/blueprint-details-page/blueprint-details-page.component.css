@@ -278,8 +278,17 @@
   gap: 8px 32px;
 }
 
-.details-spec-col h3 {
+/* Column labels in the sidebar's facet-label voice (the body face, small
+ * caps tracking), set explicitly rather than borrowed: an <h3> brings its
+ * own size and weight that the facet class does not reset. */
+.details-spec-label {
   margin: 0 0 4px;
+  font-family: var(--p-font-family);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bni-muted);
 }
 
 .details-spec-list {

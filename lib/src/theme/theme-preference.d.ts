@@ -11,7 +11,7 @@
  * The id is the value of `data-palette` on <html>; the tokens live in
  * `frontend/src/bni-skin.css`.
  */
-export type ThemeId = 'steam' | 'sample-board' | 'film' | 'cyanotype' | 'concrete' | 'custom';
+export type ThemeId = 'steam' | 'sample-board' | 'film' | 'cyanotype' | 'concrete' | 'paper' | 'custom';
 export declare const THEME_IDS: readonly ThemeId[];
 /**
  * The palette a user builds by hand. Its id lives in the shared list so the
