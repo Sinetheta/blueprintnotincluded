@@ -193,6 +193,32 @@ describe("ProfilePageComponent", () => {
       );
     });
 
+    it("switching to Saved requests the savedBy list, which is mine alone", () => {
+      fixture.detectChanges();
+      blueprintService.getBlueprints.mockClear();
+
+      component.setTab("saved");
+
+      expect(component.activeTab).toBe("saved");
+      expect(blueprintService.getBlueprints).toHaveBeenCalledWith(
+        null,
+        null,
+        null,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "owner-1",
+      );
+    });
+
     it("switching back to Blueprints requests owner-filtered blueprints", () => {
       fixture.detectChanges();
       component.setTab("rated");

@@ -63,7 +63,7 @@ export class ProfilePageComponent implements OnInit {
   // null = first page ("older than now" server-side); keeps page-1 URLs stable
   oldestDate: Date | null = null;
   remaining = 0;
-  activeTab: "blueprints" | "rated" = "blueprints";
+  activeTab: "blueprints" | "rated" | "saved" = "blueprints";
 
   loadingBlueprintItem: BlueprintListItem;
   nothingBlueprintItem: BlueprintListItem;
@@ -360,7 +360,7 @@ export class ProfilePageComponent implements OnInit {
     }
   }
 
-  setTab(tab: "blueprints" | "rated") {
+  setTab(tab: "blueprints" | "rated" | "saved") {
     if (this.activeTab === tab) return;
     this.activeTab = tab;
     this.blueprintListItems = [];
@@ -388,11 +388,29 @@ export class ProfilePageComponent implements OnInit {
             undefined,
             this.profile.id,
           )
-        : this.blueprintService.getBlueprints(
-            this.oldestDate,
-            this.profile.id,
-            null,
-          );
+        : this.activeTab === "saved"
+          ? this.blueprintService.getBlueprints(
+              this.oldestDate,
+              null,
+              null,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              this.profile.id,
+            )
+          : this.blueprintService.getBlueprints(
+              this.oldestDate,
+              this.profile.id,
+              null,
+            );
 
     request$.subscribe({
       next: (r: any) => this.handleGetBlueprints(r),

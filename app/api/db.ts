@@ -9,6 +9,7 @@ import { NotificationModel } from './models/notification';
 import { PreviewImageModel } from './models/preview-image';
 import { BlueprintEventModel } from './models/blueprint-event';
 import { BlueprintRatingModel } from './models/blueprint-rating';
+import { BlueprintBookmarkModel } from './models/blueprint-bookmark';
 import { AvatarModel } from './models/avatar';
 import { AvatarSeedUploadModel } from './models/avatar-seed-upload';
 import { AvatarBatchModel } from './models/avatar-batch';
@@ -43,6 +44,7 @@ export class Database {
       PreviewImageModel.init();
       BlueprintEventModel.init();
       BlueprintRatingModel.init();
+      BlueprintBookmarkModel.init();
       AvatarModel.init();
       AvatarSeedUploadModel.init();
       AvatarBatchModel.init();

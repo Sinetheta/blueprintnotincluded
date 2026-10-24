@@ -682,9 +682,16 @@ describe("BlueprintService", () => {
       { loggedIn: true, userId: "user123", ratedBy: null, secure: true },
       { loggedIn: true, userId: null, ratedBy: "user123", secure: true },
       { loggedIn: false, userId: "user123", ratedBy: null, secure: false },
+      {
+        loggedIn: true,
+        userId: null,
+        ratedBy: null,
+        savedBy: "user123",
+        secure: true,
+      },
     ])(
       "loggedIn=$loggedIn userId=$userId ratedBy=$ratedBy uses the secure endpoint: $secure",
-      ({ loggedIn, userId, ratedBy, secure }) => {
+      ({ loggedIn, userId, ratedBy, savedBy, secure }: any) => {
         mockAuth.isLoggedIn.mockReturnValue(loggedIn);
         mockAuth.getToken.mockReturnValue("tok");
         service.getBlueprints(
@@ -698,8 +705,14 @@ describe("BlueprintService", () => {
           null,
           null,
           ratedBy,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          savedBy ?? null,
         );
         const [url, options] = mockHttp.get.mock.calls[0];
+        if (savedBy != null) expect(url).toContain("savedBy=" + savedBy);
         if (secure) {
           expect(url.startsWith("/api/getblueprintsSecure?")).toBe(true);
           expect(options).toEqual({

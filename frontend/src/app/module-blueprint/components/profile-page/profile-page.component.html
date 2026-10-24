@@ -269,6 +269,15 @@
         >
           Rated
         </button>
+        <button
+          type="button"
+          [class.active]="activeTab === 'saved'"
+          [attr.aria-pressed]="activeTab === 'saved'"
+          (click)="setTab('saved')"
+          i18n
+        >
+          Saved
+        </button>
       </div>
 
       <div

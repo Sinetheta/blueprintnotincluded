@@ -1,0 +1,25 @@
+<button
+  type="button"
+  class="bni-btn save-button"
+  [class.save-button--saved]="saved"
+  [pTooltip]="disabled ? title : ''"
+  [title]="disabled ? '' : title"
+  [attr.aria-pressed]="saved"
+  [disabled]="disabled || working"
+  (click)="toggle()"
+>
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    [attr.fill]="saved ? 'currentColor' : 'none'"
+    stroke="currentColor"
+    stroke-width="2.2"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M6 3h12v18l-6-4.5L6 21z"></path>
+  </svg>
+  <ng-container *ngIf="!saved" i18n>Save</ng-container>
+  <ng-container *ngIf="saved" i18n>Saved</ng-container>
+</button>

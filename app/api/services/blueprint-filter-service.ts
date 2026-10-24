@@ -4,6 +4,7 @@ import { CATEGORIES, ROOM_TYPE_IDS, DLC_ID_PATTERN, MAX_DLC_FILTER_IDS } from '.
 import { apiError } from '../utils/apiError';
 import { parseOlderThan } from '../utils/pagination';
 import { BlueprintRatingModel } from '../models/blueprint-rating';
+import { BlueprintBookmarkModel } from '../models/blueprint-bookmark';
 
 const MAX_SKIP = 10000;
 
@@ -28,6 +29,8 @@ export interface ParsedBlueprintFilters {
   filterExcludeDlcs: string[] | null;
   filterForkedFrom: string | null;
   filterRatedBy: string | null;
+  // Bookmarked-by-me list (profile "Saved" tab); same privacy rule as ratedBy.
+  filterSavedBy: string | null;
   sort: BlueprintSort;
   skip: number;
   dateFilter: Date;
@@ -180,6 +183,17 @@ export function parseBlueprintFilters(
     }
     const filterRatedBy = rawRatedBy ?? null;
 
+    const rawSavedBy = req.query.savedBy as string | undefined;
+    if (rawSavedBy != null && !mongoose.Types.ObjectId.isValid(rawSavedBy)) {
+      res.status(400).json(apiError(400, 'Invalid savedBy: must be a valid user id'));
+      return null;
+    }
+    if (rawSavedBy != null && rawSavedBy !== viewerUserId) {
+      res.status(403).json(apiError(403, "Cannot view another user's saved blueprints"));
+      return null;
+    }
+    const filterSavedBy = rawSavedBy ?? null;
+
     const rawSort = req.query.sort as string | undefined;
     if (rawSort != null && !(SORTS as readonly string[]).includes(rawSort)) {
       res.status(400).json(apiError(400, `Invalid sort: must be one of ${SORTS.join(', ')}`));
@@ -219,6 +233,7 @@ export function parseBlueprintFilters(
       filterExcludeDlcs,
       filterForkedFrom,
       filterRatedBy,
+      filterSavedBy,
       sort,
       skip,
       dateFilter,
@@ -234,12 +249,32 @@ export function parseBlueprintFilters(
 // Ratings live in their own collection; resolve to ids first (the
 // {userId, updatedAt} index covers this). Throws on a db error — callers
 // respond 500, matching the previous inline behaviour.
+// The id membership lists a viewer's own private signals produce — rated by
+// me, saved by me — resolved up front so the main query stays one indexed
+// `_id: {$in}` clause. Both set (nothing in the UI does) means both: the
+// intersection.
 export async function resolveRatedByIds(
   parsed: ParsedBlueprintFilters
 ): Promise<mongoose.Types.ObjectId[] | null> {
-  if (parsed.filterRatedBy == null) return null;
-  if (BlueprintRatingModel.model == null) return [];
-  return BlueprintRatingModel.model.find({ userId: parsed.filterRatedBy }).distinct('blueprintId');
+  let ids: mongoose.Types.ObjectId[] | null = null;
+  if (parsed.filterRatedBy != null) {
+    ids =
+      BlueprintRatingModel.model == null
+        ? []
+        : await BlueprintRatingModel.model.find({ userId: parsed.filterRatedBy }).distinct('blueprintId');
+  }
+  if (parsed.filterSavedBy != null) {
+    const saved =
+      BlueprintBookmarkModel.model == null
+        ? []
+        : await BlueprintBookmarkModel.model.find({ userId: parsed.filterSavedBy }).distinct('blueprintId');
+    if (ids == null) ids = saved;
+    else {
+      const keep = new Set(saved.map(id => id.toString()));
+      ids = ids.filter(id => keep.has(id.toString()));
+    }
+  }
+  return ids;
 }
 
 // Builds the mongo filter for getblueprints. blueprintfacets does not call

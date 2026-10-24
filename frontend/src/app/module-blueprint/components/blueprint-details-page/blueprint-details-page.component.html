@@ -308,6 +308,12 @@
               [blueprintId]="details.id"
               [disabled]="!loggedIn"
             ></app-fork-button>
+            <app-save-button
+              [blueprintId]="details.id"
+              [saved]="details.savedByMe === true"
+              [disabled]="!loggedIn"
+              (changed)="details.savedByMe = $event"
+            ></app-save-button>
             <a
               class="details-fork-count"
               [routerLink]="['/discover']"

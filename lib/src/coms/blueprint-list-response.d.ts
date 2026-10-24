@@ -52,6 +52,11 @@ export interface BlueprintDetailsResponse extends BlueprintListItem {
     ownedByMe: boolean;
     sourceLang?: string | null;
     translationEnabled?: boolean;
+    savedByMe?: boolean;
+}
+export interface BookmarkResponse {
+    blueprintId: string;
+    saved: boolean;
 }
 export interface BlueprintSummaryBuildingResponse {
     id: string;

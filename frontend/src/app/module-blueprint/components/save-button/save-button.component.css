@@ -1,0 +1,13 @@
+:host {
+  display: inline-flex;
+}
+
+/* Saved state carries the mark colour the way an active facet does: the
+ * one interaction signal, no second surface. */
+.save-button--saved:not(:disabled) {
+  color: var(--bni-mark);
+}
+
+.save-button--saved:not(:disabled):hover {
+  color: var(--bni-mark-hi);
+}
