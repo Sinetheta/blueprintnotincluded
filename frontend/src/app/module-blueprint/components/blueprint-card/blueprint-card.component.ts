@@ -40,6 +40,17 @@ export class BlueprintCardComponent {
    * hover (or a tap through to the details page) away. Presenting machine
    * output as the author's words unmarked is the one thing this must not do.
    */
+  // The social row is omitted entirely when every count is zero.
+  get hasSocialCounts(): boolean {
+    const item = this.item;
+    return (
+      (item.commentCount ?? 0) > 0 ||
+      (item.nbForks ?? 0) > 0 ||
+      (item.nbViews ?? 0) > 0 ||
+      (item.nbDownloads ?? 0) > 0
+    );
+  }
+
   get translatedTitleTooltip(): string {
     const from = this.localeService.labelFor(this.item.nameSourceLang);
     return from

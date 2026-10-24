@@ -1,4 +1,5 @@
 import { Component, HostListener, OnInit } from "@angular/core";
+import { Title } from "@angular/platform-browser";
 import { ActivatedRoute } from "@angular/router";
 import { DatePipe } from "@angular/common";
 import { UserService } from "../../services/user-service";
@@ -80,6 +81,7 @@ export class ProfilePageComponent implements OnInit {
     private blueprintService: BlueprintService,
     public authService: AuthenticationService,
     public datepipe: DatePipe,
+    private titleService: Title,
   ) {
     const tempDate = new Date();
     this.loadingBlueprintItem = {
@@ -290,6 +292,9 @@ export class ProfilePageComponent implements OnInit {
     this.userService.getProfile(this.username).subscribe({
       next: (profile) => {
         this.profile = profile;
+        this.titleService.setTitle(
+          `${profile.username} · Blueprint Not Included`,
+        );
         this.bioDraft = profile.bio;
         this.loadingProfile = false;
         this.loadBlueprints();

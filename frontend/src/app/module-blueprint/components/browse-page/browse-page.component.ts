@@ -5,6 +5,7 @@ import {
   HostListener,
   ViewChild,
 } from "@angular/core";
+import { Title } from "@angular/platform-browser";
 import {
   BlueprintListItem,
   BlueprintListResponse,
@@ -203,6 +204,7 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private route: ActivatedRoute,
     private router: Router,
+    private titleService: Title,
   ) {
     const tempDate = new Date();
     this.loadingBlueprintItem = {
@@ -258,6 +260,9 @@ export class BrowsePageComponent implements OnInit, OnDestroy {
   private paramsSub?: Subscription;
 
   ngOnInit() {
+    this.titleService.setTitle(
+      $localize`:browse.documentTitle:Browse blueprints · Blueprint Not Included`,
+    );
     // Subscribe (not snapshot): badge links on cards navigate to /discover
     // with new params while this component is already active, so the same
     // instance must react. Our own applyFiltersToUrl writes come back

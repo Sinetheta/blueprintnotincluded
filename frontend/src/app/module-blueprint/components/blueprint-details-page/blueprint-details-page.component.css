@@ -21,8 +21,15 @@
   align-items: stretch;
   flex-wrap: wrap;
   margin-bottom: 30px;
-  background: linear-gradient(90deg, #343836 0%, #23262a 55%, #1d2024 100%);
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.55);
+  /* Tokens, not fixed charcoal, so the hero follows the palette — the light
+   * Paper palette would otherwise keep a dark slab here. */
+  background: linear-gradient(
+    90deg,
+    var(--bni-mount-hi) 0%,
+    var(--bni-mount) 55%,
+    var(--bni-board-deep) 100%
+  );
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.25);
 }
 
 /* No decorative grid here: the server-rendered hero now bakes a real grid at
@@ -61,14 +68,14 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent 62%, #2e3134 100%);
+  background: linear-gradient(90deg, transparent 62%, var(--bni-mount) 100%);
 }
 
 /* wrapped hero (narrow viewports): art sits above the copy, so the
  * melt runs downward instead */
 @media (max-width: 740px) {
   .thumbnail-melt {
-    background: linear-gradient(180deg, transparent 70%, #26292c 100%);
+    background: linear-gradient(180deg, transparent 70%, var(--bni-mount) 100%);
   }
 }
 
