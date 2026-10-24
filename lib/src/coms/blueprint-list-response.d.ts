@@ -53,6 +53,25 @@ export interface BlueprintDetailsResponse extends BlueprintListItem {
     sourceLang?: string | null;
     translationEnabled?: boolean;
 }
+export interface BlueprintSummaryBuildingResponse {
+    id: string;
+    name: string;
+    count: number;
+    icon: string | null;
+}
+export interface BlueprintSummaryMaterialResponse {
+    id: string;
+    name: string;
+    mass: number;
+    icon: string | null;
+}
+export interface BlueprintSummaryResponse {
+    width: number;
+    height: number;
+    buildingCount: number;
+    buildings: BlueprintSummaryBuildingResponse[];
+    materials: BlueprintSummaryMaterialResponse[];
+}
 export interface RelatedBlueprintsResponse {
     blueprints: BlueprintListItem[];
 }

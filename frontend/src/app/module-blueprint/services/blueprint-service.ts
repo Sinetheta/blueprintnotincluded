@@ -40,6 +40,7 @@ import {
   BlueprintResponse,
   BlueprintDetailsResponse,
   RelatedBlueprintsResponse,
+  BlueprintSummaryResponse,
   BlueprintDelete,
   BlueprintFacetsResponse,
 } from "../../../../../lib/index";
@@ -835,6 +836,21 @@ export class BlueprintService implements IObsBlueprintChange {
   getBlueprintDetails(id: string) {
     return this.http.get<BlueprintDetailsResponse>(
       this.contentLocale.appendToUrl(`/api/blueprints/${id}`),
+      this.authService.isLoggedIn()
+        ? {
+            headers: {
+              Authorization: `Bearer ${this.authService.getToken()}`,
+            },
+          }
+        : {},
+    );
+  }
+
+  // The spec sheet (footprint, per-building counts, material totals) for the
+  // details page. Token is optional; it is what lets an owner see a draft's.
+  getBlueprintSummary(id: string) {
+    return this.http.get<BlueprintSummaryResponse>(
+      `/api/blueprints/${id}/summary`,
       this.authService.isLoggedIn()
         ? {
             headers: {

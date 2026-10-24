@@ -8,6 +8,8 @@ import {
   BlueprintDetailsResponse,
   BlueprintListItem,
   BlueprintRateResponse,
+  BlueprintSummaryResponse,
+  formatMassKg,
 } from "../../../../../../lib/index";
 import { MessageService } from "primeng/api";
 import { BlueprintService } from "../../services/blueprint-service";
@@ -50,6 +52,36 @@ export class BlueprintDetailsPageComponent implements OnInit {
   notFound = false;
   loadError = false;
   relatedBlueprints: BlueprintListItem[] = [];
+
+  // The spec sheet: null until it arrives, and it may never arrive (it is a
+  // second request, and a failure leaves the page without the section rather
+  // than with an error — the preview and the actions are the page).
+  summary: BlueprintSummaryResponse | null = null;
+  summaryExpanded = false;
+  readonly formatMass = formatMassKg;
+
+  // Enough rows to characterise the build at a glance; the rest unfold. Most
+  // blueprints list 10–30 distinct buildings, the long tail is wire and tile.
+  static readonly SUMMARY_PREVIEW_ROWS = 10;
+
+  get visibleSummaryBuildings() {
+    const buildings = this.summary?.buildings ?? [];
+    return this.summaryExpanded
+      ? buildings
+      : buildings.slice(0, BlueprintDetailsPageComponent.SUMMARY_PREVIEW_ROWS);
+  }
+
+  get hiddenSummaryBuildingCount(): number {
+    return Math.max(
+      0,
+      (this.summary?.buildings.length ?? 0) -
+        BlueprintDetailsPageComponent.SUMMARY_PREVIEW_ROWS,
+    );
+  }
+
+  get hasSummary(): boolean {
+    return (this.summary?.buildingCount ?? 0) > 0;
+  }
 
   backLink: any[] = ["/discover"];
   backLabel = BACK_TO_DISCOVER;
@@ -205,6 +237,7 @@ export class BlueprintDetailsPageComponent implements OnInit {
         this.blueprintId = details.id;
         this.loading = false;
         this.loadRelatedBlueprints(details.id);
+        this.loadSummary(details.id);
       });
 
     this.route.fragment.subscribe((fragment) => {
@@ -243,6 +276,8 @@ export class BlueprintDetailsPageComponent implements OnInit {
     this.publishWorking = false;
     this.deleteWorking = false;
     this.relatedBlueprints = [];
+    this.summary = null;
+    this.summaryExpanded = false;
     this.translating = false;
     this.translation = null;
     this.showingTranslation = false;
@@ -261,6 +296,17 @@ export class BlueprintDetailsPageComponent implements OnInit {
         return EMPTY;
       }),
     );
+  }
+
+  private loadSummary(id: string) {
+    this.blueprintService.getBlueprintSummary(id).subscribe({
+      next: (summary) => {
+        // A late response for a blueprint the reader has since left.
+        if (this.details?.id !== id) return;
+        this.summary = summary;
+      },
+      error: (err) => console.warn("Failed to load blueprint summary", err),
+    });
   }
 
   // Decoration on the page — a failure here must never surface an error to

@@ -6,6 +6,11 @@ import { OpenGraphMeta, WebsiteMeta } from './websiteMeta';
 import { BlueprintModel } from './api/models/blueprint';
 import { UserModel } from './api/models/user';
 import {
+  describeSummary,
+  summarizeStoredBlueprint,
+  summaryCacheKey,
+} from './api/services/blueprint-summary-service';
+import {
   CARD_HEIGHT,
   CARD_WIDTH,
   CollageFilter,
@@ -63,6 +68,28 @@ export function staticCacheControl(filePath: string): string | null {
   return null;
 }
 
+const GENERIC_BLUEPRINT_DESCRIPTION = 'A blueprint for use in Oxygen Not Included.';
+
+// The unfurl text: what the blueprint contains, in numbers, so a link pasted
+// in Discord reads as a build and not as a bare title. Falls back to the
+// generic line when the stored data cannot be summarized — the page must
+// never fail over its own description.
+export function blueprintDescription(
+  data: unknown,
+  id: string,
+  modifiedAt: Date | null | undefined
+): string {
+  try {
+    const summary = summarizeStoredBlueprint(data as any, summaryCacheKey(id, modifiedAt));
+    const text = describeSummary(summary);
+    return text.length > 0 ? `${text} · ${GENERIC_BLUEPRINT_DESCRIPTION}` : GENERIC_BLUEPRINT_DESCRIPTION;
+  } catch (err) {
+    console.log('blueprint description summary error');
+    console.log(err);
+    return GENERIC_BLUEPRINT_DESCRIPTION;
+  }
+}
+
 export class StaticController {
   constructor() {
     this.getBlueprint = this.getBlueprint.bind(this);
@@ -74,11 +101,11 @@ export class StaticController {
   }
 
   public getBlueprint(req: Request, res: Response) {
-    const id = req.params.blueprintId;
+    const id = String(req.params.blueprintId);
     const blueprintUrl = `${process.env.HOST}${req.path}`;
     return BlueprintModel.model
       .findById(id)
-      .select('name modifiedAt isPublished')
+      .select('name modifiedAt isPublished data')
       .then(blueprint => {
         if (!blueprint) return res.status(404).send();
         // Drafts: serve the SPA shell with generic meta — the owner's page
@@ -94,7 +121,7 @@ export class StaticController {
         const ogImageUrl = `${process.env.HOST}/api/blueprints/${id}/preview/og.png?v=${version}`;
         const blueprintMeta = {
           'og:title': blueprint.name,
-          'og:description': 'A blueprint for use in Oxygen Not Included.',
+          'og:description': blueprintDescription(blueprint.data, id, blueprint.modifiedAt),
           'og:url': blueprintUrl,
           images: [
             {

@@ -46,6 +46,31 @@ function makeDetails(overrides: any = {}) {
   };
 }
 
+function makeSummary(overrides: any = {}) {
+  const buildings = Array.from({ length: 12 }, (_, i) => ({
+    id: `Building${i}`,
+    name: `Building ${i}`,
+    count: 12 - i,
+    icon: i === 0 ? null : `assets/ui_thumb/building${i}.webp`,
+  }));
+  return {
+    width: 21,
+    height: 14,
+    buildingCount: 78,
+    buildings,
+    materials: [
+      {
+        id: "IronOre",
+        name: "Iron Ore",
+        mass: 6200,
+        icon: "assets/ui_thumb/iron.webp",
+      },
+      { id: "SandStone", name: "Sandstone", mass: 800, icon: null },
+    ],
+    ...overrides,
+  };
+}
+
 describe("BlueprintDetailsPageComponent", () => {
   let component: BlueprintDetailsPageComponent;
   let fixture: ComponentFixture<BlueprintDetailsPageComponent>;
@@ -61,6 +86,7 @@ describe("BlueprintDetailsPageComponent", () => {
     blueprintService = {
       getBlueprintDetails: vi.fn().mockReturnValue(of(makeDetails())),
       getRelatedBlueprints: vi.fn().mockReturnValue(of({ blueprints: [] })),
+      getBlueprintSummary: vi.fn().mockReturnValue(of(makeSummary())),
       downloadBlueprintFile: vi.fn().mockReturnValue(of(undefined)),
       copySavedBlueprintShareString: vi.fn().mockResolvedValue(undefined),
       setPublished: vi.fn().mockReturnValue(of({ isPublished: true })),
@@ -966,6 +992,69 @@ describe("BlueprintDetailsPageComponent", () => {
       expect(messageService.add).toHaveBeenCalledWith(
         expect.objectContaining({ severity: "error" }),
       );
+    });
+  });
+
+  describe("spec sheet (What's inside)", () => {
+    it("renders the footprint, counts and materials from the summary endpoint", () => {
+      fixture.detectChanges();
+
+      expect(blueprintService.getBlueprintSummary).toHaveBeenCalledWith("bp1");
+      const section = fixture.debugElement.query(By.css(".details-spec"));
+      expect(section).not.toBeNull();
+      const stats = section.nativeElement.querySelector(
+        ".details-spec-stats",
+      ).textContent;
+      expect(stats).toContain("21×14");
+      expect(stats).toContain("78");
+      const rows = section.nativeElement.querySelectorAll(
+        ".details-spec-col:first-child .details-spec-row",
+      );
+      // Ten rows preview, the other two fold behind "Show 2 more".
+      expect(rows.length).toBe(10);
+      expect(rows[0].textContent).toContain("Building 0");
+      expect(rows[0].textContent).toContain("×12");
+      expect(
+        section.nativeElement.querySelector(".details-spec-more").textContent,
+      ).toContain("2 more");
+      const materials = section.nativeElement.querySelectorAll(
+        ".details-spec-col:last-child .details-spec-row",
+      );
+      expect(materials[0].textContent).toContain("Iron Ore");
+      expect(materials[0].textContent).toContain("6.2 t");
+      expect(materials[1].textContent).toContain("800 kg");
+    });
+
+    it("unfolds the full building list on request", () => {
+      fixture.detectChanges();
+      const more = fixture.debugElement.query(By.css(".details-spec-more"));
+      more.nativeElement.click();
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelectorAll(
+          ".details-spec-col:first-child .details-spec-row",
+        ).length,
+      ).toBe(12);
+      expect(
+        fixture.nativeElement.querySelector(".details-spec-more").textContent,
+      ).toContain("fewer");
+    });
+
+    it("renders no section for an empty blueprint or when the summary fails", () => {
+      blueprintService.getBlueprintSummary.mockReturnValue(
+        of(makeSummary({ buildingCount: 0, buildings: [], materials: [] })),
+      );
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css(".details-spec"))).toBeNull();
+
+      blueprintService.getBlueprintSummary.mockReturnValue(
+        throwError(() => ({ status: 500 })),
+      );
+      component.ngOnInit();
+      fixture.detectChanges();
+      expect(component.summary).toBeNull();
+      expect(fixture.debugElement.query(By.css(".details-spec"))).toBeNull();
+      expect(component.loading).toBe(false);
     });
   });
 });
