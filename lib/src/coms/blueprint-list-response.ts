@@ -119,6 +119,35 @@ export interface BlueprintDetailsResponse extends BlueprintListItem {
   translationEnabled?: boolean;
 }
 
+// GET /api/blueprints/:id/summary — the spec sheet (lib blueprint-summary),
+// with display names and menu icons resolved server-side from the loaded game
+// database so the details page needs no database of its own. Names are the
+// game's English strings; the icon paths are the frontend's ui_thumb assets.
+export interface BlueprintSummaryBuildingResponse {
+  id: string;
+  name: string;
+  count: number;
+  // Relative asset path ("assets/ui_thumb/x.webp"), or null for a prefab the
+  // database does not know (a mod building).
+  icon: string | null;
+}
+
+export interface BlueprintSummaryMaterialResponse {
+  id: string;
+  name: string;
+  // kg
+  mass: number;
+  icon: string | null;
+}
+
+export interface BlueprintSummaryResponse {
+  width: number;
+  height: number;
+  buildingCount: number;
+  buildings: BlueprintSummaryBuildingResponse[];
+  materials: BlueprintSummaryMaterialResponse[];
+}
+
 // "You might also like" shelf on the details page
 export interface RelatedBlueprintsResponse {
   blueprints: BlueprintListItem[];

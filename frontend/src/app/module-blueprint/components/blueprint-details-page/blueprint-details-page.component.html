@@ -362,6 +362,99 @@
         </div>
       </div>
 
+      <!-- The spec sheet: what the blueprint is made of, in numbers. A reader
+           judging whether to borrow a build wants its size, its parts and
+           its cost before opening the editor — the way a Factorio or DSP
+           blueprint page lists entities and required items. Names come from
+           the server, so the page needs no copy of the game database. -->
+      <section *ngIf="hasSummary && summary" class="details-spec">
+        <div class="details-spec-head">
+          <h2 i18n>What's inside</h2>
+          <p class="details-spec-stats">
+            <span class="details-spec-stat"
+              ><strong>{{ summary.width }}&times;{{ summary.height }}</strong>
+              <ng-container i18n>tiles</ng-container></span
+            >
+            <span class="details-spec-stat"
+              ><strong>{{ summary.buildingCount }}</strong>
+              <ng-container i18n>{summary.buildingCount, plural,
+                =1 {building}
+                other {buildings}
+              }</ng-container></span
+            >
+          </p>
+        </div>
+        <div class="details-spec-columns">
+          <div class="details-spec-col">
+            <h3 class="bni-facet-label" i18n>Buildings</h3>
+            <ul class="details-spec-list">
+              <li
+                *ngFor="let building of visibleSummaryBuildings"
+                class="details-spec-row"
+              >
+                <img
+                  *ngIf="building.icon; else noIcon"
+                  class="details-spec-icon"
+                  [src]="building.icon"
+                  alt=""
+                  width="28"
+                  height="28"
+                  loading="lazy"
+                />
+                <span class="details-spec-name">{{ building.name }}</span>
+                <span class="details-spec-count"
+                  >&times;{{ building.count }}</span
+                >
+              </li>
+            </ul>
+            <button
+              *ngIf="hiddenSummaryBuildingCount > 0 && !summaryExpanded"
+              type="button"
+              class="details-spec-more"
+              (click)="summaryExpanded = true"
+              i18n
+            >
+              Show {{ hiddenSummaryBuildingCount }} more
+            </button>
+            <button
+              *ngIf="hiddenSummaryBuildingCount > 0 && summaryExpanded"
+              type="button"
+              class="details-spec-more"
+              (click)="summaryExpanded = false"
+              i18n
+            >
+              Show fewer
+            </button>
+          </div>
+          <div *ngIf="summary.materials.length" class="details-spec-col">
+            <h3 class="bni-facet-label" i18n>Construction materials</h3>
+            <ul class="details-spec-list">
+              <li
+                *ngFor="let material of summary.materials"
+                class="details-spec-row"
+              >
+                <img
+                  *ngIf="material.icon; else noIcon"
+                  class="details-spec-icon"
+                  [src]="material.icon"
+                  alt=""
+                  width="28"
+                  height="28"
+                  loading="lazy"
+                />
+                <span class="details-spec-name">{{ material.name }}</span>
+                <span class="details-spec-count">{{
+                  formatMass(material.mass)
+                }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <ng-template #noIcon
+          ><span class="details-spec-icon details-spec-icon--none"></span
+        ></ng-template>
+      </section>
+
       <div *ngIf="relatedBlueprints.length" class="details-related">
         <h2 i18n>You might also like</h2>
         <div class="related-grid">

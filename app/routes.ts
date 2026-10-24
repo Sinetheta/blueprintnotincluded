@@ -93,6 +93,7 @@ export class Routes {
     app.route('/api/users/:username/following').get(this.userController.getFollowing);
     app.route('/api/blueprints/:id').get(this.uploadBlueprintController.getBlueprintDetails);
     app.route('/api/blueprints/:id/related').get(this.uploadBlueprintController.getRelatedBlueprints);
+    app.route('/api/blueprints/:id/summary').get(this.uploadBlueprintController.getBlueprintSummary);
     app.route('/api/blueprints/:id/preview/:variant').get(this.previewController.getPreview);
     // Open Graph card for Discover/profile shares: a collage of stored previews
     app.route('/api/social/collage.jpg').get(this.staticController.getCollage);

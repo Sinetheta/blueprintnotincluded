@@ -47,6 +47,7 @@ import {
   syncCurrentVersion,
 } from './services/blueprint-version-service';
 import { PreviewImageService } from './services/preview-image-service';
+import { summarizeStoredBlueprint, summaryCacheKey } from './services/blueprint-summary-service';
 import { runInBackground } from './services/background-tasks';
 import { deriveRooms } from './services/room-derivation-service';
 import { deriveMods } from './services/mod-derivation-service';
@@ -1629,6 +1630,41 @@ export class BlueprintController {
       console.log('getBlueprintDetails error');
       console.log(err);
       res.status(500).json(apiError(500, 'Failed to retrieve blueprint details'));
+    }
+  }
+
+  // The spec sheet: footprint, per-building counts and material totals,
+  // derived from the stored data on request (blueprint-summary-service).
+  // Same visibility rule as the details page — a draft is its owner's.
+  public async getBlueprintSummary(req: Request, res: Response): Promise<void> {
+    try {
+      if (BlueprintModel.model == null) {
+        res.status(503).send();
+        return;
+      }
+
+      const blueprintId = String(req.params.id);
+      if (!mongoose.Types.ObjectId.isValid(blueprintId)) {
+        res.status(400).json(apiError(400, 'Invalid blueprint id'));
+        return;
+      }
+
+      const blueprint = await BlueprintModel.model
+        .findOne({ _id: blueprintId, deletedAt: null })
+        .select('data modifiedAt isPublished owner');
+      const viewer = optionalViewer(req);
+      if (!blueprint || !canViewBlueprint(blueprint, viewer)) {
+        res.status(404).json(apiError(404, 'Blueprint not found'));
+        return;
+      }
+
+      res.json(
+        summarizeStoredBlueprint(blueprint.data, summaryCacheKey(blueprintId, blueprint.modifiedAt))
+      );
+    } catch (err) {
+      console.log('getBlueprintSummary error');
+      console.log(err);
+      res.status(500).json(apiError(500, 'Failed to summarize blueprint'));
     }
   }
 

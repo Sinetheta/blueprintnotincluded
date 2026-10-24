@@ -226,6 +226,121 @@
   text-decoration: underline;
 }
 
+/* ---- the spec sheet ----
+ * Quiet apparatus under the hero: two typed columns of name × count. Rows
+ * are hairline-ruled, numbers are tabular and right-aligned so a column of
+ * counts reads as a column. Icons are the menu thumbnails at the size the
+ * build menu uses them, never the full art. */
+.details-spec {
+  margin-top: 30px;
+}
+
+.details-spec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 12px;
+}
+
+.details-spec h2 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.details-spec-stats {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--bni-muted);
+}
+
+.details-spec-stat strong {
+  color: var(--bni-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.details-spec-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px 32px;
+}
+
+.details-spec-col h3 {
+  margin: 0 0 4px;
+}
+
+.details-spec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.details-spec-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--bni-rule);
+  font-size: 13.5px;
+}
+
+.details-spec-list .details-spec-row:first-child {
+  border-top: 0;
+}
+
+.details-spec-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.details-spec-icon--none {
+  display: inline-block;
+}
+
+.details-spec-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--bni-body);
+}
+
+.details-spec-count {
+  flex: none;
+  color: var(--bni-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.details-spec-more {
+  margin-top: 6px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--bni-mark);
+  cursor: pointer;
+}
+
+.details-spec-more:hover {
+  color: var(--bni-mark-hi);
+  text-decoration: underline;
+}
+
+.details-spec-more:focus-visible {
+  outline: 2px solid var(--bni-mark);
+  outline-offset: 2px;
+}
+
 .details-related {
   margin-top: 36px;
   margin-bottom: 36px;
