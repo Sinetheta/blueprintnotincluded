@@ -37,7 +37,18 @@ interface SignatureVote {
 }
 export declare const SIGNATURE_PREFABS: Record<string, SignatureVote[]>;
 export declare const ROCKET_CONTROL_STATION_ID = "RocketControlStation";
-export declare function deriveCategory(prefabIds: string[], lookup: CategoryLookup): Category | null;
+export interface CategoryContext {
+    title?: string | null;
+    terrainFeatureIds?: readonly string[] | null;
+}
+export declare const CONTEXT_WEIGHT = 6;
+interface TitleSignature {
+    category: Category;
+    pattern: RegExp;
+    weight: number;
+}
+export declare const TITLE_SIGNATURES: readonly TitleSignature[];
+export declare function deriveCategory(prefabIds: string[], lookup: CategoryLookup, context?: CategoryContext): Category | null;
 export interface RocketStackPart {
     prefabId: string;
     x: number;

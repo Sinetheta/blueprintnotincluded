@@ -142,7 +142,12 @@ async function run(dryRun: boolean, recategorize: boolean, limit: number | null)
 
     if (doc.category != null) alreadyTagged++;
     const shouldDerive = recategorize || doc.category == null;
-    const derivedCategory = shouldDerive ? deriveCategory(prefabIds, categoryLookup) : null;
+    const derivedCategory = shouldDerive
+      ? deriveCategory(prefabIds, categoryLookup, {
+          title: doc.name,
+          terrainFeatureIds: (mdb?.terrainFeatures ?? []).map(feature => feature.id),
+        })
+      : null;
     if (doc.category == null) {
       if (derivedCategory != null) tagged++;
       else leftUntagged++;

@@ -250,7 +250,12 @@ export class ComponentSaveDialogComponent {
         BuildMenuCategory.buildMenuCategories,
         BuildMenuItem.buildMenuItems,
       );
-      const category = deriveCategory(prefabIds, this._categoryLookup);
+      const category = deriveCategory(prefabIds, this._categoryLookup, {
+        title: this.saveBlueprintForm.value.name ?? this.blueprintService.name,
+        terrainFeatureIds: (blueprint.terrainFeatures ?? []).map(
+          (feature) => feature.id,
+        ),
+      });
       if (category != null) this.saveBlueprintForm.patchValue({ category });
     }
   }
